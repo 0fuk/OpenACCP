@@ -9,6 +9,15 @@ Report current state, completed work, unverified claims, blockers, next actions,
 
 Use owner-readable language. Do not call validator pass semantic approval or reviewer recommendation final acceptance.
 
+## Chat Table Fit Rule
+
+Formal reports are often rendered in narrow chat panes. Keep the table readable:
+
+- Use short first-column labels: `Changed`, `Progress`, `Gate`, `Area`, `Goal`, `Gaps`, `Next`.
+- Keep each table cell to a short summary.
+- Do not put long paths, URLs, commit hashes, full commands, validation logs, or long inline-code snippets inside table cells.
+- Put detailed evidence after the table under `Evidence Details` as normal bullets.
+
 ## Post-Install Startup Report
 
 After installing OpenACP as a skill + workflow kit, produce a formal report automatically. The user should not need to request it separately.

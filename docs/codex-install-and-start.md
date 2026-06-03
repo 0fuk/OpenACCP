@@ -64,6 +64,8 @@ The report should include:
 - gaps,
 - next step.
 
+For chat readability, keep the report table short. Long paths, commands, commit hashes, URLs, and validation logs should go below the table in `Evidence Details`, not inside table cells.
+
 The next step must ask for:
 
 - your working directory, which is required,
