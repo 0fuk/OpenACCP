@@ -72,8 +72,18 @@ After the user provides those inputs, return:
 - one Primary Orchestrator launcher,
 - two Frontier Orchestrator launchers.
 
-The launchers must be shown in chat as copyable fenced prompt blocks. Writing launcher files to disk is allowed only as a secondary convenience; it must not be the only output.
+Full launcher prompt records must be written to disk first, preferably under `<working-directory>/.openacp/launchers/`.
 
-Before each launcher block, guide the user in natural language to create a new thread from the left sidebar and paste the full block there. Keep each launcher block self-contained so a new agent thread can start from it without reading the previous chat.
+If the working directory is not writable, do not fall back to full prompt bodies in chat. Stop and ask for a writable working directory or explicit permission to use another safe path.
 
-Use `templates/primary-orchestrator-launcher.md` and `templates/frontier-orchestrator-launcher.md`. Do not create a demo package by default. Use bootstrap only when the user has no source pack, PRD, spec, facts path, or uploaded project materials and explicitly approves creating starter artifacts.
+Recommended file names:
+
+- `primary-orchestrator.prompt.md`
+- `frontier-a.prompt.md`
+- `frontier-b.prompt.md`
+
+The chat output must only include short copyable launchers that point to those files. Do not paste full prompt bodies into chat.
+
+Before each short launcher block, guide the user in natural language to create a new thread from the left sidebar and paste the short launcher there. Each short launcher must name the prompt record path, Prompt ID, explicit UTF-8 read rule, and stop rule for read failure, missing Prompt ID, or corrupted text.
+
+Use `templates/primary-orchestrator-launcher.md` and `templates/frontier-orchestrator-launcher.md` for the full on-disk prompt records. Use `templates/short-chat-launcher.md` for the chat launchers. Do not create a demo package by default. Use bootstrap only when the user has no source pack, PRD, spec, facts path, or uploaded project materials and explicitly approves creating starter artifacts.

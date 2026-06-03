@@ -1,4 +1,9 @@
-# Frontier Orchestrator Launcher
+# Frontier Orchestrator Prompt Record
+
+This template is for the full on-disk Frontier prompt record. Write it to a local file, then give the user a short chat launcher that references this file and its Prompt ID. Do not paste this full prompt record into chat as the launcher.
+
+Prompt ID:
+Prompt record path:
 
 ## Role
 

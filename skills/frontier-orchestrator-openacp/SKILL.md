@@ -83,6 +83,12 @@ A Frontier launcher should name:
 
 If lane scope is unclear, report the gap and prepare a question or package for Primary. Do not invent lane facts.
 
+## Downstream Launchers
+
+If Frontier creates downstream worker, reviewer, discovery, or task-card-only prompts, write the full prompt record to disk first. In chat, return only a short launcher that names the prompt record path, Prompt ID, UTF-8 read requirement, and read-failure stop rule.
+
+Do not paste full downstream prompt bodies into chat.
+
 ## Closure Proof
 
 Before reporting `blocked` or `closed`, provide:

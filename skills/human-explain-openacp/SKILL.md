@@ -37,4 +37,4 @@ After OpenACP installation and validation, explain the missing inputs in practic
 - The facts input can be a source pack, PRD, spec, design document, facts path, or uploaded project materials.
 - If the facts input is uploaded material instead of a path, say that it will be treated as candidate facts until the agent organizes or validates it.
 
-Do not end with only "send paths". Say why the inputs matter and what will happen next: after the user provides them, the agent will return one copyable Primary Orchestrator launcher and two copyable Frontier Orchestrator launchers.
+Do not end with only "send paths". Say why the inputs matter and what will happen next: after the user provides them, the agent will write the full Primary and Frontier prompt records to the working directory, then return short copyable chat launchers that point to those files.

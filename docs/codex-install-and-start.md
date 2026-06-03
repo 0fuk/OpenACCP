@@ -90,6 +90,7 @@ Use:
 
 - `templates/primary-orchestrator-launcher.md`
 - `templates/frontier-orchestrator-launcher.md`
+- `templates/short-chat-launcher.md`
 - `examples/primary-two-frontier-kickoff/`
 
 The launchers must name:
@@ -109,16 +110,57 @@ The launchers must also include active closure rules:
 - Primary should dispatch bounded subagents and consume evidence until only final-authority or explicitly-out gaps remain.
 - Frontier should run the B0/B1/B2 closure loop, maintain a rolling backlog, dispatch allowed downstream subagents, consume child handoffs, and provide closure proof before returning to Primary.
 
-The launchers must be returned in chat as copyable fenced prompt blocks. Writing launcher files into the user's working directory is optional and must not replace the chat output.
+The full launcher prompt records must be written to disk first. Use the user's working directory, preferably:
+
+```text
+<working-directory>/.openacp/launchers/
+```
+
+Write one full Primary prompt record and two full Frontier prompt records. Each full prompt record must include a stable Prompt ID, role, authority, inputs, scope, forbidden effects, validation expectations, and output expectations.
+
+If the working directory is not writable, do not fall back to pasting full prompt bodies into chat. Stop and ask the user for a writable working directory or explicit permission to use another non-Soar path.
+
+Recommended file names:
+
+- `<working-directory>/.openacp/launchers/primary-orchestrator.prompt.md`
+- `<working-directory>/.openacp/launchers/frontier-a.prompt.md`
+- `<working-directory>/.openacp/launchers/frontier-b.prompt.md`
+
+The chat output must not contain the full prompt bodies. Chat should contain only short copyable launchers that point to the on-disk prompt records.
 
 Use this interaction shape:
 
-1. Tell the user: `Create a new thread from the left sidebar, paste the full Primary Orchestrator launcher below, and start that thread.`
-2. Print the full Primary launcher in a fenced `prompt` block.
-3. Tell the user: `Create another new thread from the left sidebar, paste the full Frontier A launcher below, and start that thread.`
-4. Print the full Frontier A launcher in a fenced `prompt` block.
-5. Tell the user: `Create another new thread from the left sidebar, paste the full Frontier B launcher below, and start that thread.`
-6. Print the full Frontier B launcher in a fenced `prompt` block.
+1. Tell the user which full prompt record files were written.
+2. Tell the user: `Create a new thread from the left sidebar, paste the short Primary launcher below, and start that thread.`
+3. Print a short Primary launcher in a fenced `prompt` block.
+4. Tell the user: `Create another new thread from the left sidebar, paste the short Frontier A launcher below, and start that thread.`
+5. Print a short Frontier A launcher in a fenced `prompt` block.
+6. Tell the user: `Create another new thread from the left sidebar, paste the short Frontier B launcher below, and start that thread.`
+7. Print a short Frontier B launcher in a fenced `prompt` block.
+
+The short chat launcher should contain only:
+
+- a short title and purpose,
+- the full prompt record path,
+- the Prompt ID,
+- an explicit UTF-8 read requirement,
+- a stop rule if the file cannot be read cleanly, the Prompt ID is missing, or the text appears corrupted.
+
+Example short chat launcher:
+
+```text
+<Project> - Primary Orchestrator - Startup
+Purpose: start the Primary coordination thread.
+
+Read and execute this OpenACP prompt record:
+- Prompt Record: <working-directory>/.openacp/launchers/primary-orchestrator.prompt.md
+- Prompt ID: openacp-primary-startup
+
+Hard requirements:
+1. Read the prompt record explicitly as UTF-8.
+2. Execute only the named Prompt ID.
+3. If the file cannot be read cleanly, the Prompt ID is missing, or the text appears corrupted, stop and report launcher-read failure.
+```
 
 If the user has no source pack, PRD, spec, facts path, or uploaded project materials, do not invent one. Offer the bootstrap path and use `openacp init` only after the user explicitly approves creating starter artifacts.
 

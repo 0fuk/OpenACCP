@@ -29,7 +29,7 @@ After installation and validation, there will be a formal report. In the next st
 
 If you do not have a prepared facts path, you can upload or attach the project materials instead. A clear working directory is still required.
 
-After you provide those, I will return one Primary Orchestrator launcher and two Frontier Orchestrator launchers for this project as copyable prompt blocks in chat. I may also write launcher files when useful, but files must not replace the copyable chat output.
+After you provide those, I will write the full Primary and Frontier prompt records to your working directory, then return short copyable chat launchers that point to those files. The full prompt bodies belong on disk, not in the chat launcher.
 
 Expected agent startup flow:
 
@@ -44,7 +44,7 @@ Expected agent startup flow:
 5. Read the installed skills plus the shortest docs path.
 6. Produce a formal report using `templates/formal-report.md`.
 7. Ask for the user's real working directory and source pack, PRD, spec, or facts path. The working directory is mandatory; if the user has no facts path, accept uploaded project materials as the facts input.
-8. After the user provides those inputs, return one Primary Orchestrator launcher and two Frontier Orchestrator launchers as separate fenced prompt blocks in chat. Before each block, tell the user to create a new thread from the left sidebar and paste the full block there.
+8. After the user provides those inputs, write one full Primary prompt record and two full Frontier prompt records under `<working-directory>/.openacp/launchers/`, then return three short chat launchers. Before each short launcher, tell the user to create a new thread from the left sidebar and paste only the short launcher there.
 
 Skills to install or load:
 

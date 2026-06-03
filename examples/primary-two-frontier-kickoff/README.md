@@ -27,15 +27,37 @@ After the user provides project inputs, return:
 1. One Primary Orchestrator launcher.
 2. Two Frontier Orchestrator launchers.
 
-Return the launchers as copyable prompt blocks in chat. Do not only write launcher files to disk. If files are written, still print the full prompt blocks.
-
-Before each block, tell the user where to use it:
+Write the full launcher prompt records to disk first, preferably under:
 
 ```text
-Create a new thread from the left sidebar, paste the full Primary Orchestrator launcher below, and start that thread.
+<working-directory>/.openacp/launchers/
 ```
 
-Then print the full launcher in a fenced `prompt` block. Repeat the same pattern for Frontier A and Frontier B.
+Then return short copyable launchers in chat. Do not paste the full prompt bodies into chat.
+
+Before each short launcher block, tell the user where to use it:
+
+```text
+Create a new thread from the left sidebar, paste the short Primary Orchestrator launcher below, and start that thread.
+```
+
+Then print the short launcher in a fenced `prompt` block. Repeat the same pattern for Frontier A and Frontier B.
+
+Example short chat launcher:
+
+```prompt
+<Project> - Primary Orchestrator - Startup
+Purpose: start the Primary coordination thread.
+
+Read and execute this OpenACP prompt record:
+- Prompt Record: <working-directory>/.openacp/launchers/primary-orchestrator.prompt.md
+- Prompt ID: openacp-primary-startup
+
+Hard requirements:
+1. Read the prompt record explicitly as UTF-8.
+2. Execute only the named Prompt ID.
+3. If the file cannot be read cleanly, the Prompt ID is missing, or the text appears corrupted, stop and report launcher-read failure.
+```
 
 Use:
 
