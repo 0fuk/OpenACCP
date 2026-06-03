@@ -14,6 +14,34 @@ ACP Coordination manages multi-agent work once a project has enough local facts.
 8. Consume evidence through final authority.
 9. Report status in human-readable form.
 
+## Active Closure
+
+OpenACP coordination is an active closure loop, not a passive status chain.
+
+Primary and Frontier should repeatedly:
+
+1. refresh facts,
+2. classify gaps,
+3. dispatch bounded subagents when useful,
+4. consume handoffs and reviews,
+5. update backlog,
+6. continue B0/B1/B2-safe work,
+7. reserve only true final-authority decisions for B3.
+
+A lane is not closed because a seed checklist is complete. A lane closes only when the current visible gaps are resolved, delegated with handoff paths, explicitly out, or final-authority-only with a Primary-ready packet.
+
+## Subagents
+
+Use subagents for bounded work:
+
+- discovery,
+- reviewer sidecars,
+- task-card preparation,
+- scoped workers,
+- validation or risk scan.
+
+Each subagent needs a role, authority boundary, input facts, allowed scope, forbidden scope, stop conditions, and expected output. The parent orchestrator must consume the result before claiming progress.
+
 ## Parallel Work
 
 Parallel work is safer when scopes are disjoint, handoff paths do not collide, reviewers know their targets, and final authority owns integration order.

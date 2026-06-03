@@ -29,6 +29,24 @@ Primary must not treat validator pass, worker claims, Frontier synthesis, or rev
 3. Decide whether the project is ready for coordination or needs bootstrap.
 4. Prepare two Frontier launchers only after lane boundaries are clear enough.
 
+## Active Closure Rules
+
+Primary must actively push work toward closure:
+
+1. Classify gaps into B0, B1, B2, B3, or explicitly out.
+2. Dispatch subagents when bounded work can reduce risk.
+3. Consume handoffs and reviewer reports before claiming progress.
+4. Reclassify remaining gaps after every consume.
+5. Stop only when remaining gaps are final-authority-only, explicitly out, or blocked on user facts that cannot be safely assumed.
+
+Use B0/B1/B2 preparation before asking for B3. A B3 boundary does not prevent safer package, review, or validation work.
+
+## Subagent Dispatch Rules
+
+Dispatch packages must include role, authority, inputs, allowed scope, forbidden scope, validation, expected output, and handoff or report path.
+
+Subagents may produce evidence or packages. They do not own final acceptance.
+
 ## Required Output
 
 Return:

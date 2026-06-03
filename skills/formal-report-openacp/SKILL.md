@@ -27,3 +27,13 @@ The next step must ask for:
 
 - your working directory,
 - your current source pack, PRD, spec, or facts path.
+
+## Next Step Rule
+
+The next step in a formal report must be actionable.
+
+For Primary, name the decision, dispatch, consume, or closure action Primary should perform.
+
+For Frontier, include a Frontier-owned B0/B1/B2 action when any safe lane-local work remains. Return to Primary only when the report includes closure proof showing every visible remaining gap is final-authority-only or explicitly out.
+
+Avoid a next step that only says "wait". If waiting is unavoidable, name what evidence or user fact is missing and what prepared packet will be used when it arrives.

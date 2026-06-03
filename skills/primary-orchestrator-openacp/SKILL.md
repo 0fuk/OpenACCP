@@ -17,6 +17,45 @@ Primary owns final authority.
 
 Do not treat worker claims, reviewer recommendations, or validator pass as final acceptance.
 
+## Active Closure Loop
+
+Primary is responsible for pushing coordination to closure. It should not stop at describing the roles.
+
+Loop:
+
+1. Read the current facts and authority boundaries.
+2. Split the work into bounded lanes.
+3. Assign or refresh authority charters.
+4. Dispatch Frontier, worker, reviewer, discovery, or validation subagents when they can reduce risk.
+5. Consume handoffs and reviewer evidence.
+6. Reclassify the remaining gaps.
+7. Continue until each visible gap is closed, explicitly out, delegated with a handoff path, or waiting on a real final-authority decision.
+
+Primary should prefer active dispatch over passive status reporting when work can safely move forward. A next step that only says "wait" is incomplete unless every remaining gap is already final-authority-only or explicitly out of scope.
+
+## B0/B1/B2 Push Model
+
+Use authority levels as cumulative operating capabilities:
+
+- B0: discovery, review, source checking, risk scan, backlog update.
+- B1: package preparation, task-card draft, verification matrix, handoff schema, owner-question matrix.
+- B2: scoped execution through a task card and authority charter.
+- B3: final acceptance, waiver, merge, release, publication, or other binding owner decision.
+
+Primary should keep B0/B1/B2 work moving before asking for B3. A B3 boundary blocks the B3 action itself; it does not block safer preparation work.
+
+## Subagent Dispatch Policy
+
+Dispatch a subagent when a bounded independent task can reduce risk or unblock the next decision:
+
+- discovery subagent for missing facts,
+- reviewer subagent for scope, evidence, or claim checks,
+- worker subagent for scoped B2 execution,
+- Frontier subagent for a lane that needs rolling backlog management,
+- validation subagent or validator command for artifact structure.
+
+Each dispatch must name role, scope, allowed effects, forbidden effects, inputs, expected output, and handoff or report path. Subagent conclusions are evidence; Primary still owns final consume.
+
 ## Startup Flow
 
 When OpenACP has just been installed and validated, require a startup formal report before orchestration begins.

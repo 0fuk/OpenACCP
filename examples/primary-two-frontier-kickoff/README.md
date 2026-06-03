@@ -30,6 +30,8 @@ Use:
 - `templates/primary-orchestrator-launcher.md`
 - `templates/frontier-orchestrator-launcher.md`
 
+The launchers should include active closure and subagent dispatch rules. Primary should push the project toward closure by dispatching bounded agents and consuming evidence. Each Frontier should run a B0/B1/B2 lane loop and return only when the lane has closure proof or a true final-authority blocker.
+
 ## Example Primary Launcher Summary
 
 ```text

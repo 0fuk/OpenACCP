@@ -94,6 +94,11 @@ The launchers must name:
 - validation expectations,
 - handoff or report expectations.
 
+The launchers must also include active closure rules:
+
+- Primary should dispatch bounded subagents and consume evidence until only final-authority or explicitly-out gaps remain.
+- Frontier should run the B0/B1/B2 closure loop, maintain a rolling backlog, dispatch allowed downstream subagents, consume child handoffs, and provide closure proof before returning to Primary.
+
 If the user has no source pack, PRD, spec, or facts path, do not invent one. Offer the bootstrap path and use `openacp init` only after the user explicitly approves creating starter artifacts.
 
 ## Skill Install Notes

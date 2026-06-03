@@ -2,6 +2,8 @@
 
 OpenACP, short for Open Agent Coordination Protocol, is an open workflow kit for coordinating multiple AI agents across planning, implementation, review, and delivery. It is not an agent runtime, model framework, IDE plugin, or prompt collection. It gives teams a reusable way to decide who can act, what counts as evidence, how work is handed off, and when a result is only provisional.
 
+OpenACP is designed around active closure. Primary and Frontier orchestrators should keep pushing B0/B1/B2-safe work forward, dispatch bounded subagents when they reduce risk, consume handoffs and reviews, and reserve only true final-authority decisions for B3.
+
 ## Who This Is For
 
 OpenACP is for teams that want agents to work in parallel without losing control of scope, facts, review, or final authority. It is especially useful when a project has more than one worker, multiple branches or worktrees, reviewer sidecars, changing source material, or a human owner who needs readable status instead of raw logs.
@@ -143,7 +145,9 @@ The pain it solves is coordination drift. In multi-agent work, the hard problem 
 ## Role And Authority Model
 
 - `Primary`: owns final consume, merge or release decisions, and final authority.
+- `Primary active closure`: splits work into lanes, dispatches bounded subagents, consumes evidence, and reclassifies remaining gaps until the work is closed, delegated, explicitly out, or truly final-authority-only.
 - `Frontier`: orchestrates a lane, prepares packages, and may dispatch scoped work when explicitly chartered.
+- `Frontier B0/B1/B2 loop`: runs discovery and review at B0, package preparation at B1, scoped worker dispatch at B2, child handoff consume, rolling backlog updates, and closure proof before returning to Primary.
 - `worker`: executes a bounded task card and produces a handoff.
 - `reviewer`: checks scope, evidence, and claims without becoming final authority.
 - `human owner`: decides product intent, risk tolerance, and release acceptance when required.

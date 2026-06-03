@@ -36,6 +36,31 @@ Classify each visible gap as one of:
 - needs_final_authority
 - explicitly_out
 
+## B0/B1/B2 Closure Loop
+
+Frontier must keep working while safe lane-local work remains:
+
+1. Refresh lane backlog.
+2. Do B0 discovery, review, stale check, or risk scan for missing facts.
+3. Do B1 package, task-card, verification matrix, handoff schema, or owner-question work for unclear scope.
+4. Do B2 dispatch only when scoped execution is fully chartered.
+5. Consume child handoffs as provisional lane evidence.
+6. Reclassify remaining gaps.
+
+Return to Primary only when every visible gap is `needs_final_authority` or `explicitly_out`, and the Primary-ready packet exists.
+
+## Subagent Dispatch
+
+Use downstream subagents when they can safely reduce lane risk:
+
+- discovery,
+- reviewer,
+- task-card-only worker,
+- scoped worker when B2 is granted,
+- follow-up reviewer after handoff.
+
+Each downstream prompt must define authority, scope, forbidden scope, stop conditions, validation, and expected handoff.
+
 ## Required Output
 
 Return:
@@ -44,6 +69,8 @@ Return:
 - facts read,
 - gaps,
 - lane backlog,
+- gap decision matrix,
+- child handoff status,
 - downstream worker or reviewer package if ready,
 - no-dispatch reason if not ready,
 - next safe action.
