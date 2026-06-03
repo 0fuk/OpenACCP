@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openacp.dev/schemas/status-report.schema.json",
+  "title": "OpenACP Status Report",
+  "type": "object",
+  "required": ["schemaVersion", "artifactType", "reportId", "basisRefs", "currentState", "completedWork", "unverifiedClaims", "blockers", "nextActions", "authorityLimits"],
+  "properties": {
+    "schemaVersion": { "const": "openacp-status-report.v1" },
+    "artifactType": { "enum": ["status-report", "formal-report", "human-status"] },
+    "reportId": { "type": "string", "minLength": 1 },
+    "basisRefs": { "$ref": "#/$defs/nonEmptyStrings" },
+    "currentState": { "type": "string", "minLength": 1 },
+    "completedWork": { "type": "array", "items": { "type": "string" } },
+    "unverifiedClaims": { "type": "array", "items": { "type": "string" } },
+    "blockers": { "type": "array", "items": { "type": "string" } },
+    "nextActions": { "$ref": "#/$defs/nonEmptyStrings" },
+    "authorityLimits": { "$ref": "#/$defs/nonEmptyStrings" }
+  },
+  "$defs": { "nonEmptyStrings": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } } },
+  "additionalProperties": true
+}

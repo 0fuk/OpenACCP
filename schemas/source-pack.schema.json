@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openacp.dev/schemas/source-pack.schema.json",
+  "title": "OpenACP Source Pack",
+  "type": "object",
+  "required": ["schemaVersion", "artifactType", "currentSources", "referenceSources", "deprecatedSources", "readingOrder", "conflictPolicy", "scopeBoundaryRef", "openQuestionsRef", "assumptionsRef"],
+  "properties": {
+    "schemaVersion": { "const": "openacp-source-pack.v1" },
+    "artifactType": { "const": "source-pack" },
+    "currentSources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/source" } },
+    "referenceSources": { "type": "array", "items": { "$ref": "#/$defs/source" } },
+    "deprecatedSources": { "type": "array", "items": { "$ref": "#/$defs/source" } },
+    "readingOrder": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "conflictPolicy": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "scopeBoundaryRef": { "type": "string", "minLength": 1 },
+    "openQuestionsRef": { "type": "string", "minLength": 1 },
+    "assumptionsRef": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": ["sourceId", "title", "status"],
+      "properties": {
+        "sourceId": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["current", "reference", "deprecated"] }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

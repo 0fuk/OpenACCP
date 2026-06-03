@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "openacp-source-pack.v1",
+  "artifactType": "source-pack",
+  "currentSources": [{ "sourceId": "SRC-ISSUE-PRD", "title": "Issue triage rough PRD", "status": "current" }],
+  "referenceSources": [{ "sourceId": "REF-PRIOR-CHAT", "title": "Earlier brainstorming", "status": "reference" }],
+  "deprecatedSources": [{ "sourceId": "DEP-AUTO-REPLY", "title": "Automatic reply idea", "status": "deprecated" }],
+  "readingOrder": ["source-pack.json", "scope-boundary.json", "assumptions.json", "task-card.json"],
+  "conflictPolicy": ["Current sources win over reference sources.", "Outbound side effects require human approval."],
+  "scopeBoundaryRef": "scope-boundary.json",
+  "openQuestionsRef": "open-questions.md",
+  "assumptionsRef": "assumptions.json"
+}

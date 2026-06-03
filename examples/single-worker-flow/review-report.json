@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "openacp-review-report.v1",
+  "artifactType": "review-report",
+  "reviewId": "REV-DOCS-001",
+  "targetHandoffId": "HAND-DOCS-001",
+  "reviewedArtifacts": ["task-card.json", "handoff.json", "docs/getting-started.md"],
+  "scopeAssessment": "Changed artifacts stay inside docs-only scope.",
+  "testAssessment": "Manual review evidence is recorded; no automated doc lint exists in this demo.",
+  "claimAssessment": "The worker claims verified documentation only and does not claim final acceptance.",
+  "findings": [],
+  "recommendation": "approve",
+  "residualRisk": "Final authority should decide whether the guide is sufficient for publication."
+}

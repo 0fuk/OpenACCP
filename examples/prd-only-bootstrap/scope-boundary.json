@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "openacp-scope-boundary.v1",
+  "artifactType": "scope-boundary",
+  "inScope": ["Classify local sample issue text.", "Prepare a draft response for human review."],
+  "outOfScope": ["Send replies automatically.", "Modify a real issue tracker."],
+  "deferred": ["Real tracker integration."],
+  "requiresHumanApproval": ["Real tracker access.", "Outbound messages.", "Paid external API."],
+  "forbiddenActions": ["Post a generated response without approval.", "Use reference-only sources as current scope."],
+  "stopConditions": ["Real tracker credentials are required.", "Outbound side effects are required."],
+  "scopeLeakExamples": ["Automatically closing issues.", "Posting generated replies."]
+}

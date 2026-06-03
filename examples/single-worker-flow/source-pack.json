@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "openacp-source-pack.v1",
+  "artifactType": "source-pack",
+  "currentSources": [{ "sourceId": "SRC-DEMO-PRD", "title": "Demo docs PRD", "status": "current" }],
+  "referenceSources": [],
+  "deprecatedSources": [],
+  "readingOrder": ["source-pack.json", "task-card.json", "handoff.json", "review-report.json"],
+  "conflictPolicy": ["The task card controls worker scope."],
+  "scopeBoundaryRef": "scope-boundary.json",
+  "openQuestionsRef": "open-questions.md",
+  "assumptionsRef": "assumptions.json"
+}

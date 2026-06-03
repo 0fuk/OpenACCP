@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "openacp-authority-charter.v1",
+  "artifactType": "authority-charter",
+  "charterId": "CHARTER-DOCS-LANE",
+  "grantedRole": "frontier",
+  "authorityLevel": "B2",
+  "allowedActions": ["Read source pack.", "Prepare docs-only task cards.", "Dispatch docs-only workers.", "Consume child handoffs as provisional evidence."],
+  "forbiddenActions": ["Modify runtime.", "Claim final acceptance.", "Merge or publish documentation."],
+  "delegationRules": ["Downstream workers need task card, scope, verification, and handoff path.", "Reviewers remain read-only."],
+  "finalAuthorityReservedTo": "Primary or human owner",
+  "scopeLimits": ["Documentation lane only.", "No dependency changes.", "No publication."],
+  "expiresWhen": "The documentation lane is closed or final authority revokes the charter."
+}

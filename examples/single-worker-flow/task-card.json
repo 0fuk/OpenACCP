@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "openacp-task-card.v1",
+  "artifactType": "task-card",
+  "taskId": "TASK-DOCS-001",
+  "objective": "Create a concise getting-started guide for a demo project.",
+  "inputRefs": ["SRC-DEMO-PRD"],
+  "allowedScope": { "filesOrArtifacts": ["docs/**"], "effects": ["docs-only"] },
+  "forbiddenScope": { "filesOrArtifacts": ["src/**", "package-lock.json"], "effects": ["dependency-change", "external-side-effect"], "claims": ["accepted", "merged", "released"] },
+  "acceptanceCriteria": ["The guide explains local demo setup.", "The guide names remaining assumptions."],
+  "verificationPlan": [{ "check": "markdown review", "method": "Manual read-through against task card", "required": true }],
+  "stopConditions": ["Implementation code changes are needed.", "A dependency change is needed."],
+  "expectedHandoff": { "artifactType": "handoff", "requiredFields": ["changedArtifacts", "verificationEvidence", "risks"] },
+  "authorityRequired": "B2",
+  "authorityCharterRef": "authority-charter.json",
+  "riskLevel": "low"
+}

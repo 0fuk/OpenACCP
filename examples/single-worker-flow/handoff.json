@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "openacp-handoff.v1",
+  "artifactType": "handoff",
+  "handoffId": "HAND-DOCS-001",
+  "taskId": "TASK-DOCS-001",
+  "actorRole": "worker",
+  "workspaceRef": "demo-workspace",
+  "branchRef": "docs/getting-started",
+  "changedArtifacts": [{ "path": "docs/getting-started.md", "changeType": "created" }],
+  "claims": ["Created a getting-started guide for local demo setup."],
+  "verificationEvidence": [{ "check": "markdown review", "method": "Manual read-through", "result": "pass", "exitCode": null, "evidenceRef": "handoff notes" }],
+  "deviations": [],
+  "risks": ["No automated documentation lint is configured for this demo."],
+  "assumptionsUsed": ["The demo can be described without deployment."],
+  "remainingWork": ["Final authority still needs to consume reviewer recommendation."],
+  "stateClaim": "verified"
+}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "openacp-authority-charter.v1",
+  "artifactType": "authority-charter",
+  "charterId": "CHARTER-SPEC-WORKER",
+  "grantedRole": "worker",
+  "authorityLevel": "B2",
+  "allowedActions": ["Draft spec and docs artifacts named in the task card.", "Use local sample material only.", "Produce a structured handoff."],
+  "forbiddenActions": ["Access real credentials.", "Modify a live tracker.", "Send outbound messages.", "Claim final acceptance."],
+  "delegationRules": ["The worker cannot delegate side effects or final authority."],
+  "finalAuthorityReservedTo": "Primary or human owner",
+  "scopeLimits": ["Local sample issue text only.", "Docs and spec artifacts only."],
+  "expiresWhen": "The bootstrap task is completed, amended, rejected, or revoked."
+}

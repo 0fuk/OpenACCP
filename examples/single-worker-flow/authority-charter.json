@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "openacp-authority-charter.v1",
+  "artifactType": "authority-charter",
+  "charterId": "CHARTER-DOCS-WORKER",
+  "grantedRole": "worker",
+  "authorityLevel": "B2",
+  "allowedActions": ["Create or update docs artifacts named in the task card.", "Run the verification plan.", "Produce a structured handoff."],
+  "forbiddenActions": ["Modify runtime code.", "Change dependencies.", "Claim final acceptance.", "Merge or publish the work."],
+  "delegationRules": ["The worker cannot delegate final authority.", "Reviewer work must remain read-only."],
+  "finalAuthorityReservedTo": "Primary or human owner",
+  "scopeLimits": ["Documentation-only scope.", "No external side effects."],
+  "expiresWhen": "The task card is completed, amended, rejected, or revoked."
+}

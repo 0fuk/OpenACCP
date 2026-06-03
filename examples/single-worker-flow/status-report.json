@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "openacp-status-report.v1",
+  "artifactType": "status-report",
+  "reportId": "STAT-DOCS-001",
+  "basisRefs": ["task-card.json", "handoff.json", "review-report.json"],
+  "currentState": "The docs-only worker result is reviewed and ready for final-authority consume.",
+  "completedWork": ["A getting-started guide was created and reviewed."],
+  "unverifiedClaims": [],
+  "blockers": ["Final authority has not accepted the reviewed evidence."],
+  "nextActions": ["Final authority should consume the handoff and reviewer recommendation."],
+  "authorityLimits": ["The worker and reviewer do not own merge or final acceptance authority."]
+}

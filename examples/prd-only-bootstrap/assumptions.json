@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "openacp-assumption-ledger.v1",
+  "artifactType": "assumption-ledger",
+  "assumptions": [
+    {
+      "assumptionId": "ASM-001",
+      "statement": "The first slice can use local sample issue text.",
+      "evidence": "The bootstrap request does not authorize real tracker access.",
+      "riskIfWrong": "Integration constraints may be missed.",
+      "canProceed": true,
+      "needsHumanConfirmation": false,
+      "expiresWhen": "A real tracker integration task is created."
+    }
+  ]
+}
