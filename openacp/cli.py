@@ -10,9 +10,9 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from .validate import VERSION
+    from .version import VERSION
 except ImportError:  # pragma: no cover - supports direct script execution
-    from validate import VERSION
+    from version import VERSION
 
 
 def json_text(data: dict[str, Any]) -> str:

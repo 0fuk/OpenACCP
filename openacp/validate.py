@@ -16,8 +16,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-
-VERSION = "0.1.0"
+try:
+    from .version import VERSION
+except ImportError:  # pragma: no cover - supports direct script execution
+    from version import VERSION
 
 RULESETS = {
     "source-pack",

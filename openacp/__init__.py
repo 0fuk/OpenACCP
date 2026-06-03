@@ -1,5 +1,5 @@
 """OpenACP command-line package."""
 
-from .validate import VERSION
+from .version import VERSION
 
 __all__ = ["VERSION"]
