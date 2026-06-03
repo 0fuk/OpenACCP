@@ -66,12 +66,20 @@ The report should include:
 
 The next step must ask for:
 
-- your working directory,
+- your working directory, which is required,
 - your current source pack, PRD, spec, or facts path.
 
-## After The User Provides Paths
+If the user does not have a prepared facts path, the agent may ask the user to upload or attach the project materials. The working directory is still mandatory because the launchers need a concrete place where work can happen.
 
-After the user provides a working directory and facts path, the agent should return:
+Use plain human-readable wording for the final ask. For example:
+
+```text
+I have installed and validated OpenACP, but I cannot build useful project launchers yet because I do not know where your project work should happen or which materials count as current facts. Please send me one clear working directory. This is required. Also send your source pack, PRD, spec, design document, or facts path. If you do not have a clean facts path yet, you can upload the project materials instead and I will treat them as candidate facts, but I still need the working directory.
+```
+
+## After The User Provides Project Inputs
+
+After the user provides a working directory and facts input, the agent should return:
 
 - one Primary Orchestrator launcher,
 - two Frontier Orchestrator launchers.
@@ -87,7 +95,7 @@ The launchers must name:
 - role,
 - authority level,
 - working directory,
-- source pack or facts path,
+- source pack or facts input,
 - writable paths,
 - read-only references,
 - forbidden paths or side effects,
@@ -99,7 +107,18 @@ The launchers must also include active closure rules:
 - Primary should dispatch bounded subagents and consume evidence until only final-authority or explicitly-out gaps remain.
 - Frontier should run the B0/B1/B2 closure loop, maintain a rolling backlog, dispatch allowed downstream subagents, consume child handoffs, and provide closure proof before returning to Primary.
 
-If the user has no source pack, PRD, spec, or facts path, do not invent one. Offer the bootstrap path and use `openacp init` only after the user explicitly approves creating starter artifacts.
+The launchers must be returned in chat as copyable fenced prompt blocks. Writing launcher files into the user's working directory is optional and must not replace the chat output.
+
+Use this interaction shape:
+
+1. Tell the user: `Create a new thread from the left sidebar, paste the full Primary Orchestrator launcher below, and start that thread.`
+2. Print the full Primary launcher in a fenced `prompt` block.
+3. Tell the user: `Create another new thread from the left sidebar, paste the full Frontier A launcher below, and start that thread.`
+4. Print the full Frontier A launcher in a fenced `prompt` block.
+5. Tell the user: `Create another new thread from the left sidebar, paste the full Frontier B launcher below, and start that thread.`
+6. Print the full Frontier B launcher in a fenced `prompt` block.
+
+If the user has no source pack, PRD, spec, facts path, or uploaded project materials, do not invent one. Offer the bootstrap path and use `openacp init` only after the user explicitly approves creating starter artifacts.
 
 ## Skill Install Notes
 

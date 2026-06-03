@@ -19,6 +19,10 @@ Report log path:
 
 Do not claim final states without final-authority evidence.
 
+## Post-Install Startup Note
+
+When this report is used immediately after installing OpenACP, the `Next step` cell must ask for a required working directory and a facts input. The facts input can be a source pack, PRD, spec, design document, facts path, or uploaded project materials. Do not end with only "send paths"; explain that the working directory is required because launchers need a concrete project workspace, and that the facts input is needed so the launchers can start from current evidence.
+
 ## Mini Example
 
 | Item | Content |

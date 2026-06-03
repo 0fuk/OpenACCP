@@ -74,7 +74,7 @@ A Frontier launcher should name:
 - lane objective,
 - authority level,
 - working directory,
-- source pack, PRD, spec, or facts path,
+- source pack, PRD, spec, facts path, or uploaded materials,
 - writable paths,
 - read-only reference paths,
 - forbidden paths or side effects,

@@ -62,12 +62,18 @@ When OpenACP has just been installed and validated, require a startup formal rep
 
 After the report, ask the user for:
 
-- working directory,
+- working directory, which is required,
 - current source pack, PRD, spec, or facts path.
 
-After the user provides those paths, return:
+If no prepared facts path exists, accept uploaded project materials as facts input, but still require a working directory.
+
+After the user provides those inputs, return:
 
 - one Primary Orchestrator launcher,
 - two Frontier Orchestrator launchers.
 
-Use `templates/primary-orchestrator-launcher.md` and `templates/frontier-orchestrator-launcher.md`. Do not create a demo package by default. Use bootstrap only when the user has no source pack, PRD, spec, or facts path and explicitly approves creating starter artifacts.
+The launchers must be shown in chat as copyable fenced prompt blocks. Writing launcher files to disk is allowed only as a secondary convenience; it must not be the only output.
+
+Before each launcher block, guide the user in natural language to create a new thread from the left sidebar and paste the full block there. Keep each launcher block self-contained so a new agent thread can start from it without reading the previous chat.
+
+Use `templates/primary-orchestrator-launcher.md` and `templates/frontier-orchestrator-launcher.md`. Do not create a demo package by default. Use bootstrap only when the user has no source pack, PRD, spec, facts path, or uploaded project materials and explicitly approves creating starter artifacts.

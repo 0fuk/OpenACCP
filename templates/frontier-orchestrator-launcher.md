@@ -18,7 +18,7 @@ Frontier must not claim final acceptance, merge, publish, release, waive, or mak
 ## Lane Inputs
 
 - Working directory:
-- Source pack, PRD, spec, or facts path:
+- Source pack, PRD, spec, facts path, or uploaded materials:
 - Lane objective:
 - Writable paths:
 - Read-only reference paths:

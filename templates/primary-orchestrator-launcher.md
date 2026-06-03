@@ -17,14 +17,14 @@ Primary must not treat validator pass, worker claims, Frontier synthesis, or rev
 ## Project Inputs
 
 - Working directory:
-- Current source pack, PRD, spec, or facts path:
+- Current source pack, PRD, spec, facts path, or uploaded materials:
 - Writable paths:
 - Read-only reference paths:
 - Forbidden paths or side effects:
 
 ## Startup Checks
 
-1. Read the current source pack, PRD, spec, or facts path first.
+1. Read the current source pack, PRD, spec, facts path, or uploaded materials first.
 2. Identify missing source pack, scope boundary, assumptions, task cards, or authority charters.
 3. Decide whether the project is ready for coordination or needs bootstrap.
 4. Prepare two Frontier launchers only after lane boundaries are clear enough.

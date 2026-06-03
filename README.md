@@ -24,10 +24,12 @@ The agent should install the OpenACP skills and Python workflow kit, run validat
 
 After installation and validation, there will be a formal report. In the next step, I will ask you for:
 
-- your working directory
+- your working directory, which is required
 - your current source pack, PRD, spec, or facts path
 
-After you provide those, I will return one Primary Orchestrator launcher and two Frontier Orchestrator launchers for this project.
+If you do not have a prepared facts path, you can upload or attach the project materials instead. A clear working directory is still required.
+
+After you provide those, I will return one Primary Orchestrator launcher and two Frontier Orchestrator launchers for this project as copyable prompt blocks in chat. I may also write launcher files when useful, but files must not replace the copyable chat output.
 
 Expected agent startup flow:
 
@@ -41,8 +43,8 @@ Expected agent startup flow:
    - `openacp-validate --version`
 5. Read the installed skills plus the shortest docs path.
 6. Produce a formal report using `templates/formal-report.md`.
-7. Ask for the user's real working directory and source pack, PRD, spec, or facts path.
-8. After the user provides those paths, return one Primary Orchestrator launcher and two Frontier Orchestrator launchers.
+7. Ask for the user's real working directory and source pack, PRD, spec, or facts path. The working directory is mandatory; if the user has no facts path, accept uploaded project materials as the facts input.
+8. After the user provides those inputs, return one Primary Orchestrator launcher and two Frontier Orchestrator launchers as separate fenced prompt blocks in chat. Before each block, tell the user to create a new thread from the left sidebar and paste the full block there.
 
 Skills to install or load:
 
@@ -58,7 +60,7 @@ Skills to install or load:
 - `skills/discovery-openacp/`
 - `skills/validator-openacp/`
 
-Do not create a demo package by default. Use `openacp init` only when the user has no current source pack, PRD package, spec, or facts path and explicitly wants bootstrap artifacts.
+Do not create a demo package by default. Use `openacp init` only when the user has no current source pack, PRD package, spec, facts path, or uploaded project materials and explicitly wants bootstrap artifacts.
 
 Read the detailed startup contract in `docs/codex-install-and-start.md`.
 
@@ -94,7 +96,7 @@ openacp-validate --help
 openacp-validate --version
 ```
 
-If you do not have a source pack, PRD package, spec, or facts path, create a starter package from a vague PRD or product note:
+If you do not have a source pack, PRD package, spec, facts path, or uploaded project materials, create a starter package from a vague PRD or product note:
 
 ```bash
 openacp init ./my-openacp-package
