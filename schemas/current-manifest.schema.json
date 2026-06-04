@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openacp.dev/schemas/current-manifest.schema.json",
+  "title": "OpenACP Current Manifest",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "artifactType",
+    "manifestId",
+    "preferredLanguage",
+    "workingDirectory",
+    "factsInput",
+    "currentSourcePackRef",
+    "invalidSourceRefs",
+    "deprecatedSourceRefs",
+    "promptRegistryRef",
+    "responseRegistryRef",
+    "handoffRegistryRef",
+    "sequenceRegistryRef",
+    "cardRegistryRef"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "openacp-current-manifest.v1" },
+    "artifactType": { "const": "current-manifest" },
+    "manifestId": { "type": "string", "minLength": 1 },
+    "preferredLanguage": { "type": "string", "minLength": 1 },
+    "workingDirectory": { "type": "string", "minLength": 1 },
+    "factsInput": {},
+    "currentSourcePackRef": { "type": "string", "minLength": 1 },
+    "invalidSourceRefs": { "type": "array", "items": { "type": "string" } },
+    "deprecatedSourceRefs": { "type": "array", "items": { "type": "string" } },
+    "promptRegistryRef": { "type": "string", "minLength": 1 },
+    "responseRegistryRef": { "type": "string", "minLength": 1 },
+    "handoffRegistryRef": { "type": "string", "minLength": 1 },
+    "sequenceRegistryRef": { "type": "string", "minLength": 1 },
+    "cardRegistryRef": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": true
+}

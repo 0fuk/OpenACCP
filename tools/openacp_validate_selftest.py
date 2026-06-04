@@ -65,9 +65,17 @@ def fixtures(tmp: Path) -> dict[str, Path]:
         "artifactType": "handoff",
         "handoffId": "HAND-001",
         "taskId": "TASK-001",
+        "responseId": "RESP-001",
         "actorRole": "worker",
+        "authority": "B2",
         "workspaceRef": "local-workspace",
+        "worktree": "worktrees/docs-task-001",
         "branchRef": "docs/task-001",
+        "baseCommit": "BASE-001",
+        "commit": "COMMIT-001",
+        "dataRisk": "low",
+        "effectsPreset": "docs_task_card_commit",
+        "changedFiles": ["docs/guide.md"],
         "changedArtifacts": [{"path": "docs/guide.md", "changeType": "created"}],
         "claims": ["Implemented starter documentation"],
         "verificationEvidence": [{"check": "scan", "method": "validator", "result": "pass", "exitCode": 0}],
@@ -155,23 +163,55 @@ def main() -> int:
             1,
         )
 
-        bad_frontier_actor = json.loads(paths["handoff"].read_text(encoding="utf-8"))
-        bad_frontier_actor["actorRole"] = "frontier"
-        bad_frontier_actor_path = tmp / "bad-frontier-actor.json"
-        write_json(bad_frontier_actor_path, bad_frontier_actor)
+        frontier_actor = json.loads(paths["handoff"].read_text(encoding="utf-8"))
+        frontier_actor["actorRole"] = "frontier"
+        frontier_actor["effectsPreset"] = "orchestration_local_write"
+        frontier_actor_path = tmp / "frontier-actor.json"
+        write_json(frontier_actor_path, frontier_actor)
         assert_exit(
-            "frontier handoff cannot satisfy B2 implementation task",
-            run(["--artifact", str(bad_frontier_actor_path), "--ruleset", "handoff", "--task-card", str(paths["task_card"]), "--strict"]),
+            "frontier B2 lane handoff accepted",
+            run(["--artifact", str(frontier_actor_path), "--ruleset", "handoff", "--task-card", str(paths["task_card"]), "--strict"]),
+            0,
+        )
+
+        bad_repro = json.loads(paths["handoff"].read_text(encoding="utf-8"))
+        del bad_repro["baseCommit"]
+        bad_repro_path = tmp / "bad-repro-handoff.json"
+        write_json(bad_repro_path, bad_repro)
+        assert_exit(
+            "handoff reproducibility fields required",
+            run(["--artifact", str(bad_repro_path), "--ruleset", "handoff", "--task-card", str(paths["task_card"]), "--strict"]),
             1,
         )
 
         bad_scope = json.loads(paths["handoff"].read_text(encoding="utf-8"))
         bad_scope["changedArtifacts"] = [{"path": "src/app.py", "changeType": "updated"}]
+        bad_scope["changedFiles"] = ["src/app.py"]
         bad_scope_path = tmp / "bad-scope.json"
         write_json(bad_scope_path, bad_scope)
         assert_exit(
             "scope overrun rejected",
             run(["--artifact", str(bad_scope_path), "--ruleset", "handoff", "--task-card", str(paths["task_card"]), "--strict"]),
+            1,
+        )
+
+        bad_changed_files = json.loads(paths["handoff"].read_text(encoding="utf-8"))
+        bad_changed_files["changedFiles"] = ["src/app.py"]
+        bad_changed_files_path = tmp / "bad-changed-files.json"
+        write_json(bad_changed_files_path, bad_changed_files)
+        assert_exit(
+            "changedFiles scope overrun rejected",
+            run(["--artifact", str(bad_changed_files_path), "--ruleset", "handoff", "--task-card", str(paths["task_card"]), "--strict"]),
+            1,
+        )
+
+        bad_worker_b3 = json.loads(paths["handoff"].read_text(encoding="utf-8"))
+        bad_worker_b3["authority"] = "B3"
+        bad_worker_b3_path = tmp / "bad-worker-b3.json"
+        write_json(bad_worker_b3_path, bad_worker_b3)
+        assert_exit(
+            "worker B3 handoff rejected",
+            run(["--artifact", str(bad_worker_b3_path), "--ruleset", "handoff", "--task-card", str(paths["task_card"]), "--strict"]),
             1,
         )
 
@@ -225,6 +265,175 @@ def main() -> int:
             run(["--artifact", str(bad_forbidden_claim_path), "--ruleset", "handoff", "--task-card", str(paths["task_card"]), "--strict"]),
             1,
         )
+
+        current_manifest = {
+            "schemaVersion": "openacp-current-manifest.v1",
+            "artifactType": "current-manifest",
+            "manifestId": "MAN-001",
+            "preferredLanguage": "Chinese",
+            "workingDirectory": str(tmp / "work"),
+            "factsInput": str(paths["source_pack"]),
+            "currentSourcePackRef": str(paths["source_pack"]),
+            "invalidSourceRefs": [],
+            "deprecatedSourceRefs": ["DEP-001"],
+            "promptRegistryRef": "prompts.json",
+            "responseRegistryRef": "responses.json",
+            "handoffRegistryRef": "handoffs.json",
+            "sequenceRegistryRef": "sequence-registry.json",
+            "cardRegistryRef": "cards.json",
+        }
+        for ref_name in [
+            "prompts.json",
+            "responses.json",
+            "handoffs.json",
+            "sequence-registry.json",
+            "cards.json",
+        ]:
+            (tmp / ref_name).write_text("[]\n", encoding="utf-8")
+        current_manifest_path = tmp / "current-manifest.json"
+        write_json(current_manifest_path, current_manifest)
+        assert_exit("valid current manifest", run(["--artifact", str(current_manifest_path), "--ruleset", "current-manifest", "--strict"]), 0)
+
+        bad_current_manifest = dict(current_manifest)
+        bad_current_manifest["deprecatedSourceRefs"] = ["SRC-001"]
+        bad_current_manifest_path = tmp / "bad-current-manifest.json"
+        write_json(bad_current_manifest_path, bad_current_manifest)
+        assert_exit("current manifest rejects deprecated current source", run(["--artifact", str(bad_current_manifest_path), "--ruleset", "current-manifest", "--strict"]), 1)
+
+        bad_invalid_manifest = dict(current_manifest)
+        bad_invalid_manifest["invalidSourceRefs"] = ["SRC-001"]
+        bad_invalid_manifest_path = tmp / "bad-invalid-manifest.json"
+        write_json(bad_invalid_manifest_path, bad_invalid_manifest)
+        assert_exit("current manifest rejects invalid current source", run(["--artifact", str(bad_invalid_manifest_path), "--ruleset", "current-manifest", "--strict"]), 1)
+
+        sequence_registry = {
+            "schemaVersion": "openacp-sequence-registry.v1",
+            "artifactType": "sequence-registry",
+            "registryId": "SEQ-001",
+            "currentPromptId": "PROMPT-001",
+            "latestResponseId": "RESP-001",
+            "prompts": [{"promptId": "PROMPT-001", "path": "prompt.md", "role": "primary", "status": "active"}],
+            "responses": [{"responseId": "RESP-001", "promptId": "PROMPT-001", "path": "response.md", "status": "complete"}],
+            "handoffs": [{"handoffId": "HAND-001", "taskId": "TASK-001", "path": "handoff.json", "status": "present"}],
+            "cards": [{"cardId": "CARD-001", "status": "ready", "ownerRole": "primary"}],
+        }
+        sequence_registry_path = tmp / "sequence-registry.json"
+        write_json(sequence_registry_path, sequence_registry)
+        assert_exit("valid sequence registry", run(["--artifact", str(sequence_registry_path), "--ruleset", "sequence-registry", "--strict"]), 0)
+
+        bad_sequence_registry = dict(sequence_registry)
+        bad_sequence_registry["currentPromptId"] = "PROMPT-MISSING"
+        bad_sequence_registry_path = tmp / "bad-sequence-registry.json"
+        write_json(bad_sequence_registry_path, bad_sequence_registry)
+        assert_exit("sequence registry current prompt required", run(["--artifact", str(bad_sequence_registry_path), "--ruleset", "sequence-registry", "--strict"]), 1)
+
+        bad_response_registry = json.loads(json.dumps(sequence_registry))
+        bad_response_registry["currentPromptId"] = "PROMPT-002"
+        bad_response_registry["prompts"].append({"promptId": "PROMPT-002", "path": "other.md", "role": "frontier", "status": "active"})
+        bad_response_registry_path = tmp / "bad-response-registry.json"
+        write_json(bad_response_registry_path, bad_response_registry)
+        assert_exit("sequence registry latest response prompt match required", run(["--artifact", str(bad_response_registry_path), "--ruleset", "sequence-registry", "--strict"]), 1)
+
+        prompt_record_path = tmp / "primary.prompt.md"
+        prompt_record_path.write_text(
+            "\n".join(
+                [
+                    "Prompt ID: PROMPT-001",
+                    "Role: Primary",
+                    "Authority level: B3",
+                    "Preferred language: Chinese",
+                    "Use human-explain-openacp for every reply.",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("valid prompt record", run(["--artifact", str(prompt_record_path), "--ruleset", "prompt-record", "--strict"]), 0)
+
+        launcher_path = tmp / "launcher.md"
+        launcher_path.write_text(
+            "\n".join(
+                [
+                    "Project - Primary Orchestrator - Startup",
+                    "Purpose: start the Primary coordination thread.",
+                    "",
+                    "Read and execute this OpenACP prompt record:",
+                    f"- Prompt Record: {prompt_record_path}",
+                    "- Prompt ID: PROMPT-001",
+                    "- Preferred language: Chinese",
+                    "",
+                    "Hard requirements:",
+                    "1. Read the prompt record explicitly as UTF-8.",
+                    "2. Execute only the named Prompt ID.",
+                    "3. If the file cannot be read cleanly, the Prompt ID is missing, or the text appears corrupted, stop and report launcher-read failure.",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("valid short launcher", run(["--artifact", str(launcher_path), "--ruleset", "launcher", "--strict"]), 0)
+
+        bad_launcher_language_path = tmp / "bad-launcher-language.md"
+        bad_launcher_language_path.write_text(
+            launcher_path.read_text(encoding="utf-8").replace("- Preferred language: Chinese\n", ""),
+            encoding="utf-8",
+        )
+        assert_exit("launcher preferred language required", run(["--artifact", str(bad_launcher_language_path), "--ruleset", "launcher", "--strict"]), 1)
+
+        bad_launcher_path = tmp / "bad-launcher.md"
+        bad_launcher_path.write_text(launcher_path.read_text(encoding="utf-8") + "\n\n## Active Closure Rules\nFull prompt body here.\n", encoding="utf-8")
+        assert_exit("full prompt rejected from launcher", run(["--artifact", str(bad_launcher_path), "--ruleset", "launcher", "--strict"]), 1)
+
+        formal_report_path = tmp / "formal-report.md"
+        formal_report_path.write_text(
+            "\n".join(
+                [
+                    "Response ID: RESP-001",
+                    "",
+                    "| Item | Content |",
+                    "|---|---|",
+                    "| Changed | Primary created startup artifacts. |",
+                    "| Progress | 80%. Startup is ready but final acceptance is pending. |",
+                    "| Gate | Startup validation passed. |",
+                    "| Area | OpenACP startup. |",
+                    "| Goal | Start Primary from current facts. |",
+                    "| Gaps | User project execution has not started. |",
+                    "| Next | Start the Primary launcher. |",
+                    "",
+                    "## Evidence Details",
+                    "- Basis: validator selftest fixture.",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("valid formal report", run(["--artifact", str(formal_report_path), "--ruleset", "formal-report", "--strict"]), 0)
+
+        bad_formal_report_path = tmp / "bad-formal-report.md"
+        bad_formal_report_path.write_text(
+            formal_report_path.read_text(encoding="utf-8").replace("| Changed |", "| What changed |"),
+            encoding="utf-8",
+        )
+        assert_exit("legacy formal report rows rejected", run(["--artifact", str(bad_formal_report_path), "--ruleset", "formal-report", "--strict"]), 1)
+
+        bad_report_id_path = tmp / "bad-report-id.md"
+        bad_report_id_path.write_text(formal_report_path.read_text(encoding="utf-8").replace("Response ID:", "Report ID:"), encoding="utf-8")
+        assert_exit("formal report requires response id", run(["--artifact", str(bad_report_id_path), "--ruleset", "formal-report", "--strict"]), 1)
+
+        frontier_contract_path = tmp / "frontier-contract.md"
+        frontier_contract_path.write_text(
+            "\n".join(
+                [
+                    "Prompt ID: FRONTIER-001",
+                    "Role: Frontier",
+                    "Authority level: B2",
+                    "Use human-explain-openacp and formal-report-openacp for every status reply.",
+                    "gapDecisionMatrix",
+                    "branchReturnGate",
+                    "worktreeDecision",
+                    "Dispatch bounded worker, reviewer, and subagent work inside the lane.",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("valid frontier contract", run(["--artifact", str(frontier_contract_path), "--ruleset", "frontier-contract", "--strict"]), 0)
 
         public_pkg = tmp / "public-package"
         (public_pkg / "templates").mkdir(parents=True)

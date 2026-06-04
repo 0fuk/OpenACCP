@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openacp.dev/schemas/sequence-registry.schema.json",
+  "title": "OpenACP Sequence Registry",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "artifactType",
+    "registryId",
+    "currentPromptId",
+    "latestResponseId",
+    "prompts",
+    "responses",
+    "handoffs",
+    "cards"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "openacp-sequence-registry.v1" },
+    "artifactType": { "const": "sequence-registry" },
+    "registryId": { "type": "string", "minLength": 1 },
+    "currentPromptId": { "type": "string", "minLength": 1 },
+    "latestResponseId": { "type": "string", "minLength": 1 },
+    "prompts": {
+      "type": "array",
+      "items": { "type": "object", "required": ["promptId", "path", "role", "status"], "additionalProperties": true }
+    },
+    "responses": {
+      "type": "array",
+      "items": { "type": "object", "required": ["responseId", "promptId", "path", "status"], "additionalProperties": true }
+    },
+    "handoffs": {
+      "type": "array",
+      "items": { "type": "object", "required": ["handoffId", "taskId", "path", "status"], "additionalProperties": true }
+    },
+    "cards": {
+      "type": "array",
+      "items": { "type": "object", "required": ["cardId", "status", "ownerRole"], "additionalProperties": true }
+    }
+  },
+  "additionalProperties": true
+}

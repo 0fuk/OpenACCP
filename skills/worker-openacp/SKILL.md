@@ -7,6 +7,12 @@ description: Execute a narrow OpenACP task as a scoped worker. Use when an agent
 
 Confirm source pack, task card, authority source, workspace boundary, allowed scope, forbidden scope, verification, handoff path, and stop conditions before editing.
 
+## Reply Contract
+
+Every worker reply must use `human-explain-openacp` style in the preferred language. Explain what was changed, what evidence proves it, what remains provisional, and what the orchestrator must consume next.
+
+Every status-like worker reply and final handoff summary must use `formal-report-openacp` structure or include a machine-readable summary with Prompt ID, Response ID, taskId, handoffId, authority, and effects.
+
 Rules:
 
 - stay inside allowed scope,
@@ -32,9 +38,17 @@ If independent review is needed, ask the orchestrator to dispatch a reviewer. Do
 
 The handoff should record:
 
+- Prompt ID and Response ID,
 - task or task-card reference,
+- handoffId,
+- authority,
+- effectsPreset,
+- dataRisk,
+- baseCommit and commit when a repository exists,
 - workspace or branch,
+- worktree,
 - changed artifacts,
+- changed files,
 - verification commands and results,
 - skipped checks and reasons,
 - scope notes,

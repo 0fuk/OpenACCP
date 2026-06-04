@@ -11,6 +11,7 @@ Purpose: <one short sentence>
 Read and execute this OpenACP prompt record:
 - Prompt Record: <absolute-or-user-visible-path>
 - Prompt ID: <prompt-id>
+- Preferred language: <preferred-language-or-current-conversation-language>
 
 Hard requirements:
 1. Read the prompt record explicitly as UTF-8.

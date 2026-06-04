@@ -22,15 +22,28 @@ except ImportError:  # pragma: no cover - supports direct script execution
     from version import VERSION
 
 RULESETS = {
-    "source-pack",
-    "scope-boundary",
-    "task-card",
     "authority-charter",
-    "handoff",
-    "review-report",
-    "status-report",
     "assumption-ledger",
+    "current-manifest",
+    "formal-report",
+    "frontier-contract",
+    "handoff",
+    "launcher",
+    "prompt-record",
+    "review-report",
+    "scope-boundary",
+    "sequence-registry",
+    "source-pack",
+    "status-report",
+    "task-card",
     "public-package",
+}
+
+TEXT_RULESETS = {
+    "prompt-record",
+    "launcher",
+    "formal-report",
+    "frontier-contract",
 }
 
 REQUIRED_FIELDS: dict[str, list[str]] = {
@@ -90,9 +103,17 @@ REQUIRED_FIELDS: dict[str, list[str]] = {
         "artifactType",
         "handoffId",
         "taskId",
+        "responseId",
         "actorRole",
+        "authority",
         "workspaceRef",
+        "worktree",
         "branchRef",
+        "baseCommit",
+        "commit",
+        "dataRisk",
+        "effectsPreset",
+        "changedFiles",
         "changedArtifacts",
         "claims",
         "verificationEvidence",
@@ -132,6 +153,33 @@ REQUIRED_FIELDS: dict[str, list[str]] = {
         "artifactType",
         "assumptions",
     ],
+    "current-manifest": [
+        "schemaVersion",
+        "artifactType",
+        "manifestId",
+        "preferredLanguage",
+        "workingDirectory",
+        "factsInput",
+        "currentSourcePackRef",
+        "invalidSourceRefs",
+        "deprecatedSourceRefs",
+        "promptRegistryRef",
+        "responseRegistryRef",
+        "handoffRegistryRef",
+        "sequenceRegistryRef",
+        "cardRegistryRef",
+    ],
+    "sequence-registry": [
+        "schemaVersion",
+        "artifactType",
+        "registryId",
+        "currentPromptId",
+        "latestResponseId",
+        "prompts",
+        "responses",
+        "handoffs",
+        "cards",
+    ],
 }
 
 ARTIFACT_TYPE_BY_RULESET = {
@@ -142,6 +190,8 @@ ARTIFACT_TYPE_BY_RULESET = {
     "handoff": "handoff",
     "review-report": "review-report",
     "assumption-ledger": "assumption-ledger",
+    "current-manifest": "current-manifest",
+    "sequence-registry": "sequence-registry",
 }
 
 FINAL_STATE_CLAIMS = {
@@ -167,6 +217,32 @@ ROLES = {"primary", "frontier", "worker", "reviewer", "discovery", "human-owner"
 REVIEW_RECOMMENDATIONS = {"approve", "amend", "split-follow-up", "reject"}
 VERIFY_RESULTS = {"pass", "fail", "skipped"}
 SOURCE_STATUSES = {"current", "reference", "deprecated"}
+DATA_RISK_LEVELS = {"none", "low", "medium", "high", "sensitive"}
+EFFECTS_PRESETS = {
+    "read_only_handoff",
+    "review_handoff",
+    "orchestration_local_write",
+    "docs_task_card_commit",
+    "implementation_local_commit",
+    "primary_only",
+    "custom_expanded",
+}
+PROMPT_ID_RE = re.compile(r"(?im)^\s*(?:-\s*)?Prompt ID\s*:\s*`?([A-Za-z0-9][A-Za-z0-9_.:-]*)`?\s*$")
+RESPONSE_ID_RE = re.compile(r"(?im)^\s*(?:-\s*)?Response ID\s*:\s*`?([A-Za-z0-9][A-Za-z0-9_.:-]*)`?\s*$")
+PROMPT_RECORD_RE = re.compile(r"(?im)^\s*-\s*Prompt Record\s*:\s*(.+?)\s*$")
+
+FORMAL_ROW_SETS = [
+    {"Changed", "Progress", "Gate", "Area", "Goal", "Gaps", "Next"},
+]
+
+FULL_PROMPT_MARKERS = [
+    "## Active Closure Rules",
+    "## B0/B1/B2 Closure Loop",
+    "## Project Inputs",
+    "## Startup Work",
+    "# Primary Orchestrator Prompt Record",
+    "# Frontier Orchestrator Prompt Record",
+]
 
 MOJIBAKE_MARKERS = [
     chr(0xFFFD),
@@ -329,6 +405,151 @@ def require_non_empty_array(data: dict[str, Any], field: str, report: Report) ->
         report.add(f"{field.upper()}_NON_EMPTY", "blocking", "pass", f"{field} is non-empty.")
 
 
+def require_non_empty_string(data: dict[str, Any], field: str, report: Report) -> None:
+    value = data.get(field)
+    if not isinstance(value, str) or not value.strip():
+        report.add(f"{field.upper()}_NON_EMPTY", "blocking", "fail", f"{field} must be a non-empty string.")
+    else:
+        report.add(f"{field.upper()}_NON_EMPTY", "blocking", "pass", f"{field} is present.")
+
+
+def normalize_table_label(raw: str) -> str:
+    cleaned = raw.strip().strip("`")
+    cleaned = cleaned.replace("\u3000", "")
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned
+
+
+def extract_table_rows(text: str) -> list[tuple[str, str]]:
+    rows: list[tuple[str, str]] = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|") or not stripped.endswith("|"):
+            continue
+        cells = [cell.strip() for cell in stripped.strip("|").split("|")]
+        if len(cells) < 2:
+            continue
+        left = normalize_table_label(cells[0])
+        right = cells[1].strip()
+        if not left or left.lower() in {"item", "项", "字段"}:
+            continue
+        if set(left) <= {"-"}:
+            continue
+        rows.append((left, right))
+    return rows
+
+
+def validate_prompt_record_text(text: str, report: Report) -> None:
+    prompt_ids = PROMPT_ID_RE.findall(text)
+    if not prompt_ids:
+        report.add("PROMPT_ID", "blocking", "fail", "Prompt record must include a stable Prompt ID line.")
+    elif len(set(prompt_ids)) != 1:
+        report.add("PROMPT_ID", "blocking", "fail", "Prompt record must contain exactly one stable Prompt ID.")
+    else:
+        report.add("PROMPT_ID", "blocking", "pass", f"Prompt ID found: {prompt_ids[0]}.")
+    if re.search(r"(?im)^\s*(Role|角色)\s*:", text):
+        report.add("PROMPT_ROLE", "blocking", "pass", "Prompt record names a role.")
+    else:
+        report.add("PROMPT_ROLE", "blocking", "fail", "Prompt record must name a role.")
+    if re.search(r"(?im)^\s*(Authority|权限|Authority level)\s*:", text):
+        report.add("PROMPT_AUTHORITY", "blocking", "pass", "Prompt record names authority.")
+    else:
+        report.add("PROMPT_AUTHORITY", "blocking", "fail", "Prompt record must name authority.")
+    if re.search(r"(?i)preferred\s*language|preferredLanguage|首选语言|语言", text):
+        report.add("PREFERRED_LANGUAGE", "blocking", "pass", "Prompt record carries language preference.")
+    else:
+        report.add("PREFERRED_LANGUAGE", "blocking", "fail", "Prompt record must carry preferred language.")
+    if "human-explain-openacp" in text:
+        report.add("HUMAN_EXPLAIN_REQUIRED", "blocking", "pass", "Prompt record requires human-explain-openacp.")
+    else:
+        report.add("HUMAN_EXPLAIN_REQUIRED", "blocking", "fail", "Prompt record must require human-explain-openacp for replies.")
+
+
+def validate_launcher_text(text: str, report: Report) -> None:
+    line_count = len([line for line in text.splitlines() if line.strip()])
+    if line_count > 40:
+        report.add("SHORT_LAUNCHER_LENGTH", "blocking", "fail", "Launcher must be short; full prompt records belong on disk.")
+    else:
+        report.add("SHORT_LAUNCHER_LENGTH", "blocking", "pass", "Launcher is short.")
+    prompt_ids = PROMPT_ID_RE.findall(text)
+    if not prompt_ids:
+        report.add("PROMPT_ID", "blocking", "fail", "Launcher must name a Prompt ID.")
+    else:
+        report.add("PROMPT_ID", "blocking", "pass", "Launcher names a Prompt ID.")
+    if PROMPT_RECORD_RE.search(text):
+        report.add("PROMPT_RECORD_PATH", "blocking", "pass", "Launcher names a prompt record path.")
+    else:
+        report.add("PROMPT_RECORD_PATH", "blocking", "fail", "Launcher must name the on-disk prompt record path.")
+    if re.search(r"UTF-?8", text, re.IGNORECASE):
+        report.add("UTF8_REQUIREMENT", "blocking", "pass", "Launcher requires explicit UTF-8 read.")
+    else:
+        report.add("UTF8_REQUIREMENT", "blocking", "fail", "Launcher must require explicit UTF-8 read.")
+    if re.search(r"(?i)preferred\s*language|preferredLanguage", text):
+        report.add("PREFERRED_LANGUAGE", "blocking", "pass", "Launcher carries preferred language.")
+    else:
+        report.add("PREFERRED_LANGUAGE", "blocking", "fail", "Launcher must carry the preferred language or language fallback.")
+    lowered = text.lower()
+    if "stop" in lowered and ("missing" in lowered or "corrupt" in lowered or "cannot be read" in lowered):
+        report.add("READ_FAILURE_STOP", "blocking", "pass", "Launcher has a read-failure stop rule.")
+    else:
+        report.add("READ_FAILURE_STOP", "blocking", "fail", "Launcher must stop on read failure, missing Prompt ID, or corruption.")
+    full_hits = [marker for marker in FULL_PROMPT_MARKERS if marker in text]
+    if full_hits:
+        report.add("FULL_PROMPT_IN_LAUNCHER", "blocking", "fail", "Launcher appears to contain a full prompt body: " + ", ".join(full_hits))
+    else:
+        report.add("FULL_PROMPT_IN_LAUNCHER", "blocking", "pass", "Launcher does not include configured full-prompt markers.")
+
+
+def validate_formal_report_text(text: str, report: Report) -> None:
+    response_ids = RESPONSE_ID_RE.findall(text)
+    if not response_ids:
+        report.add("RESPONSE_ID", "blocking", "fail", "Formal report must include Response ID.")
+    else:
+        report.add("RESPONSE_ID", "blocking", "pass", "Formal report includes Response ID.")
+    rows = extract_table_rows(text)
+    labels = {label for label, _ in rows}
+    if any(required.issubset(labels) for required in FORMAL_ROW_SETS):
+        report.add("FORMAL_ROWS", "blocking", "pass", "Formal report has a known role-aware row set.")
+    else:
+        report.add("FORMAL_ROWS", "blocking", "fail", "Formal report rows must match a known OpenACP row set.")
+    bad_labels = labels.intersection({"What changed", "Checkpoint", "Lane or area", "Next step", "Validation"})
+    if bad_labels:
+        report.add("LEGACY_ROW_LABELS", "blocking", "fail", "Legacy or overlong row labels found: " + ", ".join(sorted(bad_labels)))
+    else:
+        report.add("LEGACY_ROW_LABELS", "blocking", "pass", "No legacy long row labels found.")
+    progress_cells = [right for label, right in rows if label in {"Progress", "总体进度"}]
+    if progress_cells and any(re.search(r"\d+\s*%", cell) for cell in progress_cells):
+        report.add("PROGRESS_PERCENT", "blocking", "pass", "Progress row includes a numeric estimate.")
+    else:
+        report.add("PROGRESS_PERCENT", "blocking", "fail", "Formal report progress row must include a numeric percentage.")
+    if re.search(r"Evidence Details|证据|依据|Basis", text, re.IGNORECASE):
+        report.add("EVIDENCE_DETAILS", "blocking", "pass", "Formal report includes evidence or basis details outside the table.")
+    else:
+        report.add("EVIDENCE_DETAILS", "blocking", "fail", "Formal report must include Evidence Details or basis outside the table.")
+
+
+def validate_frontier_contract_text(text: str, report: Report) -> None:
+    if re.search(r"(?i)authority(?:Level| level)?\s*[:：]\s*B2|Authority\s+B2|权限.*B2", text):
+        report.add("FRONTIER_B2_AUTHORITY", "blocking", "pass", "Frontier contract grants B2 lane authority.")
+    else:
+        report.add("FRONTIER_B2_AUTHORITY", "blocking", "fail", "Frontier contract must grant B2 lane authority by default.")
+    required_terms = ["gapDecisionMatrix", "branchReturnGate", "worktreeDecision"]
+    missing = [term for term in required_terms if term not in text]
+    if missing:
+        report.add("FRONTIER_CLOSURE_FIELDS", "blocking", "fail", "Frontier contract missing closure fields: " + ", ".join(missing))
+    else:
+        report.add("FRONTIER_CLOSURE_FIELDS", "blocking", "pass", "Frontier closure fields are present.")
+    lowered = text.lower()
+    if "worker" in lowered and "reviewer" in lowered and ("subagent" in lowered or "sub-agent" in lowered or "dispatch" in lowered):
+        report.add("FRONTIER_DISPATCH", "blocking", "pass", "Frontier contract allows bounded downstream dispatch.")
+    else:
+        report.add("FRONTIER_DISPATCH", "blocking", "fail", "Frontier contract must allow bounded worker/reviewer/subagent dispatch.")
+    if "human-explain-openacp" in text and "formal-report-openacp" in text:
+        report.add("FRONTIER_REPORTING", "blocking", "pass", "Frontier contract requires human explanation and formal reports.")
+    else:
+        report.add("FRONTIER_REPORTING", "blocking", "fail", "Frontier contract must require human-explain-openacp and formal-report-openacp.")
+
+
 def validate_source_pack(data: dict[str, Any], report: Report) -> None:
     if data.get("artifactType") != "source-pack":
         report.add("ARTIFACT_TYPE", "blocking", "fail", "artifactType must be source-pack.")
@@ -470,6 +691,152 @@ def validate_authority_charter(data: dict[str, Any], report: Report) -> None:
         report.add("AUTHORITY_LEVEL", "blocking", "pass", "authorityLevel is valid.")
     if data.get("grantedRole") in {"frontier", "worker", "reviewer", "discovery"} and data.get("authorityLevel") == "B3":
         report.add("B3_NON_PRIMARY", "blocking", "fail", "B3 final authority should not be granted to non-final roles by default.")
+    elif data.get("grantedRole") == "frontier" and data.get("authorityLevel") == "B2":
+        report.add("FRONTIER_B2_DEFAULT", "blocking", "pass", "Frontier is granted B2 lane authority.")
+
+
+def validate_current_manifest(data: dict[str, Any], report: Report) -> None:
+    if data.get("artifactType") != "current-manifest":
+        report.add("ARTIFACT_TYPE", "blocking", "fail", "artifactType must be current-manifest.")
+    else:
+        report.add("ARTIFACT_TYPE", "blocking", "pass", "artifactType is current-manifest.")
+    for field_name in [
+        "manifestId",
+        "preferredLanguage",
+        "workingDirectory",
+        "currentSourcePackRef",
+        "promptRegistryRef",
+        "responseRegistryRef",
+        "handoffRegistryRef",
+        "sequenceRegistryRef",
+        "cardRegistryRef",
+    ]:
+        require_non_empty_string(data, field_name, report)
+    facts_input = data.get("factsInput")
+    if isinstance(facts_input, (str, list, dict)) and facts_input:
+        report.add("FACTS_INPUT", "blocking", "pass", "factsInput is present.")
+    else:
+        report.add("FACTS_INPUT", "blocking", "fail", "factsInput must name the current fact input path or uploaded materials.")
+    if isinstance(data.get("invalidSourceRefs"), list):
+        report.add("INVALID_SOURCE_REFS", "blocking", "pass", "invalidSourceRefs is an array.")
+    else:
+        report.add("INVALID_SOURCE_REFS", "blocking", "fail", "invalidSourceRefs must be an array.")
+    if isinstance(data.get("deprecatedSourceRefs"), list):
+        report.add("DEPRECATED_SOURCE_REFS", "blocking", "pass", "deprecatedSourceRefs is an array.")
+    else:
+        report.add("DEPRECATED_SOURCE_REFS", "blocking", "fail", "deprecatedSourceRefs must be an array.")
+    validate_manifest_refs_exist(data, report)
+
+
+def resolve_ref(base: Path, path_text: str) -> Path:
+    path = Path(path_text)
+    if path.is_absolute():
+        return path
+    return base / path
+
+
+def validate_manifest_refs_exist(data: dict[str, Any], report: Report) -> None:
+    artifact_base = Path(report.artifact).parent
+    for field_name in [
+        "currentSourcePackRef",
+        "promptRegistryRef",
+        "responseRegistryRef",
+        "handoffRegistryRef",
+        "sequenceRegistryRef",
+        "cardRegistryRef",
+    ]:
+        value = data.get(field_name)
+        if not isinstance(value, str) or not value.strip():
+            continue
+        target = resolve_ref(artifact_base, value)
+        if target.exists():
+            report.add(f"{field_name.upper()}_EXISTS", "blocking", "pass", f"{field_name} exists.", str(target))
+        else:
+            report.add(f"{field_name.upper()}_EXISTS", "blocking", "fail", f"{field_name} does not exist.", str(target))
+    source_ref = data.get("currentSourcePackRef")
+    if isinstance(source_ref, str) and source_ref.strip():
+        source_path = resolve_ref(artifact_base, source_ref)
+        source_report = Report(str(source_path), "source-pack")
+        source_pack = load_json(source_path, source_report) if source_path.exists() else None
+        if isinstance(source_pack, dict):
+            current_ids = {
+                str(source.get("sourceId"))
+                for source in source_pack.get("currentSources", [])
+                if isinstance(source, dict) and source.get("sourceId")
+            }
+            deprecated_refs = {str(ref) for ref in data.get("deprecatedSourceRefs", [])}
+            invalid_refs = {str(ref) for ref in data.get("invalidSourceRefs", [])}
+            conflicts = sorted(current_ids.intersection(deprecated_refs.union(invalid_refs)))
+            if conflicts:
+                report.add("CURRENT_SOURCE_STATUS_CONFLICT", "blocking", "fail", "Source ids cannot be both current and deprecated or invalid: " + ", ".join(conflicts))
+            else:
+                report.add("CURRENT_SOURCE_STATUS_CONFLICT", "blocking", "pass", "No current/deprecated or current/invalid source id conflict.")
+
+
+def validate_sequence_registry(data: dict[str, Any], report: Report) -> None:
+    if data.get("artifactType") != "sequence-registry":
+        report.add("ARTIFACT_TYPE", "blocking", "fail", "artifactType must be sequence-registry.")
+    else:
+        report.add("ARTIFACT_TYPE", "blocking", "pass", "artifactType is sequence-registry.")
+    for field_name in ["registryId", "currentPromptId", "latestResponseId"]:
+        require_non_empty_string(data, field_name, report)
+    for field_name in ["prompts", "responses", "handoffs", "cards"]:
+        value = data.get(field_name)
+        if not isinstance(value, list):
+            report.add(f"{field_name.upper()}_ARRAY", "blocking", "fail", f"{field_name} must be an array.")
+        else:
+            report.add(f"{field_name.upper()}_ARRAY", "blocking", "pass", f"{field_name} is an array.")
+    prompt_ids = {
+        str(item.get("promptId"))
+        for item in data.get("prompts", [])
+        if isinstance(item, dict) and item.get("promptId")
+    }
+    if data.get("currentPromptId") in prompt_ids:
+        report.add("CURRENT_PROMPT_REGISTERED", "blocking", "pass", "currentPromptId is registered.")
+    else:
+        report.add("CURRENT_PROMPT_REGISTERED", "blocking", "fail", "currentPromptId must appear in prompts[].promptId.")
+    response_ids = {
+        str(item.get("responseId"))
+        for item in data.get("responses", [])
+        if isinstance(item, dict) and item.get("responseId")
+    }
+    if data.get("latestResponseId") in response_ids:
+        report.add("LATEST_RESPONSE_REGISTERED", "blocking", "pass", "latestResponseId is registered.")
+    else:
+        report.add("LATEST_RESPONSE_REGISTERED", "blocking", "fail", "latestResponseId must appear in responses[].responseId.")
+    prompt_status = {
+        str(item.get("promptId")): str(item.get("status", ""))
+        for item in data.get("prompts", [])
+        if isinstance(item, dict) and item.get("promptId")
+    }
+    if prompt_status.get(str(data.get("currentPromptId"))) in {"deprecated", "invalid", "rejected"}:
+        report.add("CURRENT_PROMPT_STATUS", "blocking", "fail", "currentPromptId must not point to deprecated, invalid, or rejected prompt status.")
+    else:
+        report.add("CURRENT_PROMPT_STATUS", "blocking", "pass", "currentPromptId status is usable.")
+    response_prompt_by_id = {
+        str(item.get("responseId")): str(item.get("promptId"))
+        for item in data.get("responses", [])
+        if isinstance(item, dict) and item.get("responseId")
+    }
+    if response_prompt_by_id.get(str(data.get("latestResponseId"))) == str(data.get("currentPromptId")):
+        report.add("LATEST_RESPONSE_PROMPT_MATCH", "blocking", "pass", "latestResponseId belongs to currentPromptId.")
+    else:
+        report.add("LATEST_RESPONSE_PROMPT_MATCH", "blocking", "fail", "latestResponseId must belong to currentPromptId.")
+    known_card_ids = {
+        str(item.get("cardId"))
+        for item in data.get("cards", [])
+        if isinstance(item, dict) and item.get("cardId")
+    }
+    handoff_card_refs = [
+        str(item.get("cardId"))
+        for item in data.get("handoffs", [])
+        if isinstance(item, dict) and item.get("cardId")
+    ]
+    unknown_handoff_cards = sorted({card_id for card_id in handoff_card_refs if card_id and card_id not in known_card_ids})
+    if unknown_handoff_cards:
+        report.add("HANDOFF_CARD_REFS", "blocking", "fail", "Handoff entries reference unknown cards: " + ", ".join(unknown_handoff_cards))
+    else:
+        report.add("HANDOFF_CARD_REFS", "blocking", "pass", "Handoff card references are known or omitted.")
 
 
 def validate_handoff(data: dict[str, Any], report: Report, task_card: dict[str, Any] | None) -> None:
@@ -477,6 +844,21 @@ def validate_handoff(data: dict[str, Any], report: Report, task_card: dict[str, 
         report.add("ARTIFACT_TYPE", "blocking", "fail", "artifactType must be handoff.")
     else:
         report.add("ARTIFACT_TYPE", "blocking", "pass", "artifactType is handoff.")
+    if data.get("authority") not in AUTHORITY_LEVELS:
+        report.add("HANDOFF_AUTHORITY", "blocking", "fail", "handoff authority must be B0, B1, B2, or B3.")
+    else:
+        report.add("HANDOFF_AUTHORITY", "blocking", "pass", "handoff authority is valid.")
+    if data.get("dataRisk") not in DATA_RISK_LEVELS:
+        report.add("DATA_RISK", "blocking", "fail", "dataRisk must be none, low, medium, high, or sensitive.")
+    else:
+        report.add("DATA_RISK", "blocking", "pass", "dataRisk is valid.")
+    if data.get("effectsPreset") not in EFFECTS_PRESETS:
+        report.add("EFFECTS_PRESET", "blocking", "fail", "effectsPreset is not a known OpenACP effects preset.")
+    else:
+        report.add("EFFECTS_PRESET", "blocking", "pass", "effectsPreset is valid.")
+    for field_name in ["responseId", "worktree", "baseCommit", "commit"]:
+        require_non_empty_string(data, field_name, report)
+    require_non_empty_array(data, "changedFiles", report)
     state = str(data.get("stateClaim", ""))
     if state not in NON_FINAL_HANDOFF_STATES:
         report.add("HANDOFF_STATE_CLAIM", "blocking", "fail", "handoff stateClaim must be proposed, implemented, verified, or reviewed.")
@@ -534,10 +916,13 @@ def check_handoff_scope(data: dict[str, Any], task_card: dict[str, Any] | None, 
     bad: list[str] = []
     forbidden_patterns = task_card.get("forbiddenScope", {}).get("filesOrArtifacts", [])
     forbidden_hits: list[str] = []
-    for artifact in data.get("changedArtifacts", []):
-        if not isinstance(artifact, dict):
-            continue
-        path = str(artifact.get("path", ""))
+    changed_artifact_paths = [
+        str(artifact.get("path", ""))
+        for artifact in data.get("changedArtifacts", [])
+        if isinstance(artifact, dict) and artifact.get("path")
+    ]
+    changed_files = [str(path) for path in data.get("changedFiles", []) if str(path).strip()]
+    for path in sorted(set(changed_artifact_paths + changed_files)):
         if not any(fnmatch.fnmatch(path, str(pattern)) or path == str(pattern) for pattern in allowed):
             bad.append(path)
         if any(fnmatch.fnmatch(path, str(pattern)) or path == str(pattern) for pattern in forbidden_patterns):
@@ -550,23 +935,41 @@ def check_handoff_scope(data: dict[str, Any], task_card: dict[str, Any] | None, 
         report.add("FORBIDDEN_ARTIFACTS_TOUCHED", "blocking", "fail", f"Changed artifacts match forbidden scope: {', '.join(forbidden_hits)}")
     else:
         report.add("FORBIDDEN_ARTIFACTS_TOUCHED", "blocking", "pass", "No changed artifacts match forbidden file scope.")
+    artifact_set = set(changed_artifact_paths)
+    file_set = set(changed_files)
+    if artifact_set != file_set:
+        missing_from_files = sorted(artifact_set - file_set)
+        missing_from_artifacts = sorted(file_set - artifact_set)
+        parts = []
+        if missing_from_files:
+            parts.append("missing from changedFiles: " + ", ".join(missing_from_files))
+        if missing_from_artifacts:
+            parts.append("missing from changedArtifacts: " + ", ".join(missing_from_artifacts))
+        report.add("CHANGED_FILES_ARTIFACTS_MATCH", "blocking", "fail", "; ".join(parts))
+    else:
+        report.add("CHANGED_FILES_ARTIFACTS_MATCH", "blocking", "pass", "changedFiles and changedArtifacts paths match.")
     check_forbidden_handoff_claims(data, task_card, report)
 
 
 def validate_handoff_actor_authority(data: dict[str, Any], task_card: dict[str, Any], report: Report) -> None:
     actor = data.get("actorRole")
-    level = task_card.get("authorityRequired")
+    task_level = task_card.get("authorityRequired")
+    handoff_level = data.get("authority")
     allowed_by_actor = {
         "discovery": {"B0"},
         "reviewer": {"B0"},
-        "frontier": {"B0", "B1"},
+        "frontier": {"B0", "B1", "B2"},
         "worker": {"B2"},
     }
     allowed_levels = allowed_by_actor.get(str(actor), set())
-    if level not in allowed_levels:
-        report.add("HANDOFF_ACTOR_AUTHORITY", "blocking", "fail", f"actorRole {actor} is not compatible with task authorityRequired {level}.")
+    if handoff_level not in allowed_levels:
+        report.add("HANDOFF_ACTOR_AUTHORITY", "blocking", "fail", f"actorRole {actor} is not compatible with handoff authority {handoff_level}.")
     else:
-        report.add("HANDOFF_ACTOR_AUTHORITY", "blocking", "pass", "actorRole is compatible with task authority.")
+        report.add("HANDOFF_ACTOR_AUTHORITY", "blocking", "pass", "actorRole is compatible with handoff authority.")
+    if task_level != handoff_level:
+        report.add("HANDOFF_TASK_AUTHORITY_MATCH", "blocking", "fail", f"handoff authority {handoff_level} must match task authorityRequired {task_level}.")
+    else:
+        report.add("HANDOFF_TASK_AUTHORITY_MATCH", "blocking", "pass", "handoff authority matches task authorityRequired.")
 
 
 def check_forbidden_handoff_claims(data: dict[str, Any], task_card: dict[str, Any], report: Report) -> None:
@@ -678,7 +1081,6 @@ def validate_json_artifact(args: argparse.Namespace) -> Report:
         report.add("UTF8_READ", "blocking", "fail", read_error, str(artifact_path))
         return report
     assert text is not None
-    scan_private_leaks(text, report, str(artifact_path))
     scan_secret_markers(text, report, str(artifact_path))
     data = load_json(artifact_path, report)
     if not isinstance(data, dict):
@@ -710,6 +1112,36 @@ def validate_json_artifact(args: argparse.Namespace) -> Report:
         validate_status_report(data, report)
     elif args.ruleset == "assumption-ledger":
         validate_assumption_ledger(data, report)
+    elif args.ruleset == "current-manifest":
+        validate_current_manifest(data, report)
+    elif args.ruleset == "sequence-registry":
+        validate_sequence_registry(data, report)
+    return report
+
+
+def validate_text_artifact(args: argparse.Namespace) -> Report:
+    artifact_path = Path(args.artifact)
+    report = Report(str(artifact_path), args.ruleset)
+    if not artifact_path.exists():
+        report.add("ARTIFACT_EXISTS", "blocking", "fail", "Artifact path does not exist.", str(artifact_path))
+        return report
+    report.add("ARTIFACT_EXISTS", "blocking", "pass", "Artifact path exists.", str(artifact_path))
+    text, read_error = read_utf8(artifact_path)
+    if read_error:
+        report.add("UTF8_READ", "blocking", "fail", read_error, str(artifact_path))
+        return report
+    assert text is not None
+    report.add("UTF8_READ", "blocking", "pass", "Artifact read as UTF-8.")
+    scan_mojibake(text, report, str(artifact_path))
+    scan_secret_markers(text, report, str(artifact_path))
+    if args.ruleset == "prompt-record":
+        validate_prompt_record_text(text, report)
+    elif args.ruleset == "launcher":
+        validate_launcher_text(text, report)
+    elif args.ruleset == "formal-report":
+        validate_formal_report_text(text, report)
+    elif args.ruleset == "frontier-contract":
+        validate_frontier_contract_text(text, report)
     return report
 
 
@@ -780,6 +1212,11 @@ def main(argv: list[str] | None = None) -> int:
             print("--artifact is required for public-package scan", file=sys.stderr)
             return 2
         report = scan_public_package(Path(args.artifact))
+    elif args.ruleset in TEXT_RULESETS:
+        if not args.artifact:
+            print("--artifact is required", file=sys.stderr)
+            return 2
+        report = validate_text_artifact(args)
     else:
         if not args.artifact:
             print("--artifact is required", file=sys.stderr)

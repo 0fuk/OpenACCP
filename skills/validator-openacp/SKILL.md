@@ -16,6 +16,11 @@ For cross-checks:
 ```bash
 python tools/openacp_validate.py --artifact task-card.json --ruleset task-card --source-pack source-pack.json --strict
 python tools/openacp_validate.py --artifact handoff.json --ruleset handoff --task-card task-card.json --strict
+python tools/openacp_validate.py --artifact primary-orchestrator.prompt.md --ruleset prompt-record --strict
+python tools/openacp_validate.py --artifact primary.short-launcher.md --ruleset launcher --strict
+python tools/openacp_validate.py --artifact status.md --ruleset formal-report --strict
+python tools/openacp_validate.py --artifact current-manifest.json --ruleset current-manifest --source-pack source-pack.json --strict
+python tools/openacp_validate.py --artifact sequence-registry.json --ruleset sequence-registry --strict
 ```
 
 Validator pass is not work completion.

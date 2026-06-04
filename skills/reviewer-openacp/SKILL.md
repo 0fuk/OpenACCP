@@ -7,6 +7,12 @@ description: Perform read-only OpenACP sidecar review of a task card, branch, di
 
 Reviewer provides read-only evidence.
 
+## Reply Contract
+
+Every reviewer reply must use `human-explain-openacp` style in the preferred language. Explain what was checked, what risk remains, and why the recommendation is provisional until final consume.
+
+Every status-like reviewer reply and final review summary must use `formal-report-openacp` structure or include a machine-readable summary with Prompt ID, Response ID, target taskId or handoffId, authority, recommendation, and effects.
+
 Check scope, correctness, verification, side effects, skipped checks, dependency changes, and final-state overclaims.
 
 Recommendation must be approve, amend, split-follow-up, or reject.

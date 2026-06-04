@@ -69,29 +69,27 @@ For chat readability, keep the report table short. Long paths, commands, commit 
 The next step must ask for:
 
 - your working directory, which is required,
-- your current source pack, PRD, spec, or facts path.
+- your current source pack, PRD, spec, or facts path,
+- your preferred language for future Primary, Frontier, worker, reviewer, and discovery replies.
 
 If the user does not have a prepared facts path, the agent may ask the user to upload or attach the project materials. The working directory is still mandatory because the launchers need a concrete place where work can happen.
 
 Use plain human-readable wording for the final ask. For example:
 
 ```text
-I have installed and validated OpenACP, but I cannot build useful project launchers yet because I do not know where your project work should happen or which materials count as current facts. Please send me one clear working directory. This is required. Also send your source pack, PRD, spec, design document, or facts path. If you do not have a clean facts path yet, you can upload the project materials instead and I will treat them as candidate facts, but I still need the working directory.
+I have installed and validated OpenACP, but I cannot build a useful Primary launcher yet because I do not know where your project work should happen, which materials count as current facts, or which language you want future agents to use. Please send me one clear working directory. This is required. Also send your source pack, PRD, spec, design document, or facts path. If you do not have a clean facts path yet, you can upload the project materials instead and I will treat them as candidate facts, but I still need the working directory. Please also tell me your preferred language; if you do not specify one, I will keep using your current language.
 ```
 
 ## After The User Provides Project Inputs
 
-After the user provides a working directory and facts input, the agent should return:
+After the user provides a working directory, facts input, and preferred language or language fallback, the agent should return:
 
-- one Primary Orchestrator launcher,
-- two Frontier Orchestrator launchers.
+- one Primary Orchestrator launcher.
 
 Use:
 
 - `templates/primary-orchestrator-launcher.md`
-- `templates/frontier-orchestrator-launcher.md`
 - `templates/short-chat-launcher.md`
-- `examples/primary-two-frontier-kickoff/`
 
 The launchers must name:
 
@@ -99,16 +97,20 @@ The launchers must name:
 - authority level,
 - working directory,
 - source pack or facts input,
+- preferred language,
 - writable paths,
 - read-only references,
 - forbidden paths or side effects,
 - validation expectations,
 - handoff or report expectations.
 
-The launchers must also include active closure rules:
+The Primary prompt record must also include active closure rules:
 
 - Primary should dispatch bounded subagents and consume evidence until only final-authority or explicitly-out gaps remain.
-- Frontier should run the B0/B1/B2 closure loop, maintain a rolling backlog, dispatch allowed downstream subagents, consume child handoffs, and provide closure proof before returning to Primary.
+- Primary must inspect the working directory and facts input before dispatching Frontier.
+- Primary must create or refresh current manifest, source status, sequence registry, and CARD/task-card candidates.
+- Primary must decide 1-5 Frontier lanes dynamically based on project complexity, CARD grouping, risk, and parallel safety.
+- Primary must grant each Frontier B2 lane-local authority by default unless a narrower authority is explicitly safer.
 
 The full launcher prompt records must be written to disk first. Use the user's working directory, preferably:
 
@@ -116,33 +118,28 @@ The full launcher prompt records must be written to disk first. Use the user's w
 <working-directory>/.openacp/launchers/
 ```
 
-Write one full Primary prompt record and two full Frontier prompt records. Each full prompt record must include a stable Prompt ID, role, authority, inputs, scope, forbidden effects, validation expectations, and output expectations.
+Write exactly one full Primary prompt record. It must include a stable Prompt ID, role, B3 authority, inputs, preferred language, scope, forbidden effects, validation expectations, output expectations, workspace review duties, CARD creation duties, and dynamic Frontier dispatch rules.
 
-If the working directory is not writable, do not fall back to pasting full prompt bodies into chat. Stop and ask the user for a writable working directory or explicit permission to use another non-Soar path.
+If the working directory is not writable, do not fall back to pasting full prompt bodies into chat. Stop and ask the user for a writable working directory or explicit permission to use another safe path.
 
 Recommended file names:
 
 - `<working-directory>/.openacp/launchers/primary-orchestrator.prompt.md`
-- `<working-directory>/.openacp/launchers/frontier-a.prompt.md`
-- `<working-directory>/.openacp/launchers/frontier-b.prompt.md`
 
-The chat output must not contain the full prompt bodies. Chat should contain only short copyable launchers that point to the on-disk prompt records.
+The chat output must not contain the full prompt body. Chat should contain only one short copyable Primary launcher that points to the on-disk prompt record.
 
 Use this interaction shape:
 
-1. Tell the user which full prompt record files were written.
+1. Tell the user which full Primary prompt record file was written.
 2. Tell the user: `Create a new thread from the left sidebar, paste the short Primary launcher below, and start that thread.`
 3. Print a short Primary launcher in a fenced `prompt` block.
-4. Tell the user: `Create another new thread from the left sidebar, paste the short Frontier A launcher below, and start that thread.`
-5. Print a short Frontier A launcher in a fenced `prompt` block.
-6. Tell the user: `Create another new thread from the left sidebar, paste the short Frontier B launcher below, and start that thread.`
-7. Print a short Frontier B launcher in a fenced `prompt` block.
 
 The short chat launcher should contain only:
 
 - a short title and purpose,
 - the full prompt record path,
 - the Prompt ID,
+- the preferred language or language fallback,
 - an explicit UTF-8 read requirement,
 - a stop rule if the file cannot be read cleanly, the Prompt ID is missing, or the text appears corrupted.
 
@@ -155,6 +152,7 @@ Purpose: start the Primary coordination thread.
 Read and execute this OpenACP prompt record:
 - Prompt Record: <working-directory>/.openacp/launchers/primary-orchestrator.prompt.md
 - Prompt ID: openacp-primary-startup
+- Preferred language: <user-preferred-or-current-language>
 
 Hard requirements:
 1. Read the prompt record explicitly as UTF-8.
@@ -163,6 +161,22 @@ Hard requirements:
 ```
 
 If the user has no source pack, PRD, spec, facts path, or uploaded project materials, do not invent one. Offer the bootstrap path and use `openacp init` only after the user explicitly approves creating starter artifacts.
+
+## Primary Runtime Dispatch
+
+The Primary thread, not the install startup thread, decides Frontier dispatch.
+
+Primary must first:
+
+1. Read the prompt record, working directory, facts input, and preferred language.
+2. Explain in the preferred language what B0/B1/B2/B3 mean for this project.
+3. Inspect the working directory and facts input.
+4. Create or refresh OpenACP current manifest, source status, invalid or deprecated sources, sequence registry, and CARD/task-card candidates.
+5. Group CARDs into 1-5 lanes based on complexity, risk, dependencies, and parallel safety.
+6. Write full Frontier prompt records to disk only for the lanes it decides are useful.
+7. Return short Frontier chat launchers for those lanes.
+
+Frontier lanes should default to B2 lane-local authority. A B2 Frontier may actively run B0 discovery, B1 packaging, B2 scoped worker/reviewer/subagent dispatch, child handoff consume, provisional lane evidence synthesis, and closure proof inside its assigned lane. Frontier must not perform B3 final acceptance, waiver, merge, release, publication, or cross-lane final decisions.
 
 ## Skill Install Notes
 

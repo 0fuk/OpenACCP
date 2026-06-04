@@ -1,15 +1,18 @@
 # Primary Plus Two Frontier Kickoff
 
-This example shows the expected post-install startup output shape after a user provides a real working directory and a source pack, PRD, spec, facts path, or uploaded project materials.
+This example shows the expected output shape after a Primary thread has inspected a real working directory, reviewed the facts input, created CARDs, and decided that two Frontier lanes are useful.
 
-It is not a demo package. It is a launcher pattern for starting real work.
+It is not the default GitHub install startup. Install startup should return only one short Primary launcher. Frontier launchers are created later by Primary after CARD and lane analysis.
 
-## Required User Inputs
+## Required Primary Inputs
 
-The agent should ask for:
+Primary should already have:
 
 - working directory, which is required,
-- current source pack, PRD, spec, or facts path.
+- current source pack, PRD, spec, or facts path,
+- preferred language,
+- current manifest or manifest draft,
+- CARD/task-card candidates.
 
 If no facts path exists yet, the user can upload project materials instead. The working directory is still required.
 
@@ -22,10 +25,10 @@ Optional but useful:
 
 ## Output Shape
 
-After the user provides project inputs, return:
+After Primary decides that two Frontier lanes are useful, return:
 
-1. One Primary Orchestrator launcher.
-2. Two Frontier Orchestrator launchers.
+1. One Frontier A launcher.
+2. One Frontier B launcher.
 
 Write the full launcher prompt records to disk first, preferably under:
 
@@ -38,7 +41,7 @@ Then return short copyable launchers in chat. Do not paste the full prompt bodie
 Before each short launcher block, tell the user where to use it:
 
 ```text
-Create a new thread from the left sidebar, paste the short Primary Orchestrator launcher below, and start that thread.
+Create a new thread from the left sidebar, paste the short Frontier launcher below, and start that thread.
 ```
 
 Then print the short launcher in a fenced `prompt` block. Repeat the same pattern for Frontier A and Frontier B.
@@ -46,12 +49,13 @@ Then print the short launcher in a fenced `prompt` block. Repeat the same patter
 Example short chat launcher:
 
 ```prompt
-<Project> - Primary Orchestrator - Startup
-Purpose: start the Primary coordination thread.
+<Project> - Frontier A - Source Pack Lane
+Purpose: start the source-pack and scope-baseline lane.
 
 Read and execute this OpenACP prompt record:
-- Prompt Record: <working-directory>/.openacp/launchers/primary-orchestrator.prompt.md
-- Prompt ID: openacp-primary-startup
+- Prompt Record: <working-directory>/.openacp/launchers/frontier-a.prompt.md
+- Prompt ID: openacp-frontier-a-source-pack
+- Preferred language: <user-preferred-or-current-language>
 
 Hard requirements:
 1. Read the prompt record explicitly as UTF-8.
@@ -64,27 +68,30 @@ Use:
 - `templates/primary-orchestrator-launcher.md`
 - `templates/frontier-orchestrator-launcher.md`
 
-The launchers should include active closure and subagent dispatch rules. Primary should push the project toward closure by dispatching bounded agents and consuming evidence. Each Frontier should run a B0/B1/B2 lane loop and return only when the lane has closure proof or a true final-authority blocker.
+The launchers should include active closure and subagent dispatch rules. Each Frontier should run a B0/B1/B2 lane loop under B2 lane-local authority and return only when the lane has closure proof or a true final-authority blocker.
 
-## Example Primary Launcher Summary
+## Example Primary Decision Summary
 
 ```text
 Role: Primary Orchestrator
 Authority: B3 final authority
 Working directory: <user-provided path>
 Facts input: <user-provided source pack, PRD, spec, facts path, or uploaded materials>
+Preferred language: <user-provided language>
+CARDs: <CARD list created by Primary>
 Goal: decide source status, authority boundaries, and lane split.
-Next action: read the facts input, issue a startup formal report, then dispatch two bounded Frontier lanes.
+Next action: dispatch the selected B2 Frontier lanes and consume their provisional evidence.
 ```
 
 ## Example Frontier A Launcher Summary
 
 ```text
 Role: Frontier Orchestrator
-Authority: B0/B1 by default, B2 only if explicitly chartered
+Authority: B2 lane-local
 Lane: <lane A objective>
 Working directory: <user-provided path>
 Facts input: <user-provided source pack, PRD, spec, facts path, or uploaded materials>
+Assigned CARDs: <CARD ids>
 Goal: discover gaps, prepare task cards, and identify safe worker packages for lane A.
 ```
 
@@ -92,10 +99,11 @@ Goal: discover gaps, prepare task cards, and identify safe worker packages for l
 
 ```text
 Role: Frontier Orchestrator
-Authority: B0/B1 by default, B2 only if explicitly chartered
+Authority: B2 lane-local
 Lane: <lane B objective>
 Working directory: <user-provided path>
 Facts input: <user-provided source pack, PRD, spec, facts path, or uploaded materials>
+Assigned CARDs: <CARD ids>
 Goal: discover gaps, prepare task cards, and identify safe worker packages for lane B.
 ```
 

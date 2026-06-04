@@ -12,11 +12,11 @@ Package preparation: worker prompt drafts, reviewer prompt drafts, task-card-onl
 
 ## B2
 
-Scoped execution under an explicit charter. B2 requires allowed actions, forbidden actions, allowed files or effects, workspace or branch boundary, verification, handoff path, and stop conditions.
+Scoped execution under a visible charter. A Primary-launched Frontier should default to B2 lane-local authority unless Primary explicitly narrows it. B2 requires assigned CARDs or task cards, allowed actions, forbidden actions, allowed files or effects, workspace or branch boundary, verification, handoff path, data-risk limits, resource-use limits, and stop conditions.
 
 ## B3
 
-Final authority: merge, release, final acceptance, waiver, checkpoint, publication, cross-lane final decisions, unrestricted real resource use, or destructive cleanup.
+Final authority: merge, release, final acceptance, waiver, checkpoint, publication, cross-lane final decisions, unrestricted real resource use, broad dependency authorization, or destructive cleanup.
 
 ## Gap Decision Matrix
 

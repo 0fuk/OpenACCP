@@ -26,10 +26,11 @@ After installation and validation, there will be a formal report. In the next st
 
 - your working directory, which is required
 - your current source pack, PRD, spec, or facts path
+- your preferred language for all future agent replies
 
 If you do not have a prepared facts path, you can upload or attach the project materials instead. A clear working directory is still required.
 
-After you provide those, I will write the full Primary and Frontier prompt records to your working directory, then return short copyable chat launchers that point to those files. The full prompt bodies belong on disk, not in the chat launcher.
+After you provide those, I will write one full Primary prompt record to your working directory, then return one short copyable Primary chat launcher that points to that file. The full prompt body belongs on disk, not in the chat launcher.
 
 Expected agent startup flow:
 
@@ -43,8 +44,9 @@ Expected agent startup flow:
    - `openacp-validate --version`
 5. Read the installed skills plus the shortest docs path.
 6. Produce a formal report using `templates/formal-report.md`.
-7. Ask for the user's real working directory and source pack, PRD, spec, or facts path. The working directory is mandatory; if the user has no facts path, accept uploaded project materials as the facts input.
-8. After the user provides those inputs, write one full Primary prompt record and two full Frontier prompt records under `<working-directory>/.openacp/launchers/`, then return three short chat launchers. Before each short launcher, tell the user to create a new thread from the left sidebar and paste only the short launcher there.
+7. Ask for the user's real working directory, source pack, PRD, spec, or facts path, and preferred language. The working directory is mandatory; if the user has no facts path, accept uploaded project materials as the facts input. If preferred language is omitted, use the user's current language consistently.
+8. After the user provides those inputs, write exactly one full Primary prompt record under `<working-directory>/.openacp/launchers/`, then return exactly one short Primary chat launcher. Before the short launcher, tell the user to create a new thread from the left sidebar and paste only that short launcher there.
+9. Do not create Frontier launchers during GitHub install startup. The Primary thread inspects the workspace and facts, creates CARDs, then dynamically decides whether to launch 1-5 B2 Frontier lanes.
 
 Skills to install or load:
 
@@ -148,7 +150,7 @@ The pain it solves is coordination drift. In multi-agent work, the hard problem 
 
 - `Primary`: owns final consume, merge or release decisions, and final authority.
 - `Primary active closure`: splits work into lanes, dispatches bounded subagents, consumes evidence, and reclassifies remaining gaps until the work is closed, delegated, explicitly out, or truly final-authority-only.
-- `Frontier`: orchestrates a lane, prepares packages, and may dispatch scoped work when explicitly chartered.
+- `Frontier`: orchestrates a lane, prepares packages, and defaults to B2 lane-local authority when launched by Primary unless Primary explicitly narrows it.
 - `Frontier B0/B1/B2 loop`: runs discovery and review at B0, package preparation at B1, scoped worker dispatch at B2, child handoff consume, rolling backlog updates, and closure proof before returning to Primary.
 - `worker`: executes a bounded task card and produces a handoff.
 - `reviewer`: checks scope, evidence, and claims without becoming final authority.
@@ -183,7 +185,7 @@ For B2/B3 task cards, strict validation requires `authorityCharterRef`. This kee
 
 - `examples/single-worker-flow/`: complete strict-validation fixture.
 - `examples/prd-only-bootstrap/`: strict bootstrap fixture for teams starting from a rough PRD.
-- `examples/primary-two-frontier-kickoff/`: startup example for one Primary and two Frontier launchers.
+- `examples/primary-two-frontier-kickoff/`: concept example for Primary-generated Frontier launchers after CARD and lane analysis, not default install startup.
 - `examples/primary-orchestrator-flow/`: concept example for final-authority dispatch and consume.
 - `examples/frontier-lane-flow/`: concept example for lane authority.
 - `examples/multi-worktree-review/`: concept example for multiple workers and reviewer sidecars.

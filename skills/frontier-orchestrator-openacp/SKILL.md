@@ -7,6 +7,12 @@ description: Run a bounded OpenACP Frontier lane. Use for lane backlog managemen
 
 Frontier is a lane orchestrator, not a default implementation worker.
 
+## Reply Contract
+
+Every Frontier reply must use `human-explain-openacp` style in the preferred language. Explain what the lane has proven, what is provisional, what remains missing, and what Frontier will do next.
+
+Every status-like Frontier reply must also use `formal-report-openacp` structure with the Frontier/Lane row contract and evidence details outside the table. Do not return machine-log prose as the main user-facing answer.
+
 ## Gap Decisions
 
 - do_now
@@ -15,6 +21,8 @@ Frontier is a lane orchestrator, not a default implementation worker.
 - apply_conservative_default
 - needs_final_authority
 - explicitly_out
+
+Frontier defaults to B2 lane-local authority when launched by Primary, unless the prompt record explicitly grants a narrower authority.
 
 Continue B0/B1/B2-safe work while it can reduce risk. Do not claim final acceptance.
 
@@ -28,7 +36,7 @@ Loop:
 2. Classify every visible gap with the gap decision matrix.
 3. Do B0 work for missing facts, stale facts, scope review, risk scan, or reviewer dispatch.
 4. Do B1 work when the gap needs a package, task card, verification matrix, handoff schema, or owner-question matrix.
-5. Do B2 work only when scoped execution fields are complete and the authority charter permits it.
+5. Do B2 work when scoped execution fields are complete and the lane authority permits it.
 6. Consume child handoffs as provisional lane evidence.
 7. Reclassify remaining gaps and continue.
 
@@ -51,7 +59,7 @@ Seed artifacts are starting points, not a closed checklist. Finishing the seed l
 
 ## Subagent Dispatch Policy
 
-Frontier should actively dispatch bounded downstream subagents when allowed by its authority charter:
+Frontier should actively dispatch bounded downstream subagents when useful inside its lane authority:
 
 - discovery for missing facts,
 - reviewer for scope, evidence, risk, or claim checks,
@@ -60,6 +68,8 @@ Frontier should actively dispatch bounded downstream subagents when allowed by i
 - follow-up reviewer after a worker handoff.
 
 Every downstream package must include target role, authority level, inputs, allowed scope, forbidden scope, stop conditions, verification, and expected handoff. Do not use subagents for B3 final authority, merge, publication, release, waiver, or unauthorized implementation.
+
+A B2 Frontier may dispatch scoped workers and reviewers for lane-local implementation when CARD, task-card, allowed paths, effects, verification, handoff path, and stop conditions are clear.
 
 ## Child Handoff Consume
 
@@ -72,9 +82,11 @@ A bundle is complete only when every child has a terminal status and each handof
 A Frontier launcher should name:
 
 - lane objective,
-- authority level,
+- authority level, defaulting to B2 lane-local,
 - working directory,
 - source pack, PRD, spec, facts path, or uploaded materials,
+- preferred language,
+- assigned CARDs,
 - writable paths,
 - read-only reference paths,
 - forbidden paths or side effects,
@@ -96,5 +108,7 @@ Before reporting `blocked` or `closed`, provide:
 - gap decision matrix for remaining gaps,
 - child ledger or child status summary,
 - downstream prompts created or explicit no-dispatch reasons,
+- worktreeDecision,
+- branchReturnGate result,
 - Primary-ready packet when final authority is needed,
 - why no B0/B1/B2-safe action can further reduce risk.

@@ -18,10 +18,16 @@ The validator is not a full JSON Schema engine. It uses hardcoded rules that mat
 - `scope-boundary`: in-scope, out-of-scope, approval, forbidden action, and stop-condition coverage.
 - `task-card`: executable slice, source refs, scope, verification plan, authority level, and B2/B3 authority charter reference.
 - `authority-charter`: granted role, authority level, final authority reservation, and scope limits.
-- `handoff`: non-final worker or role claims, changed artifact scope, task ID match, verification evidence, and forbidden claims.
+- `handoff`: non-final worker or role claims, `Response ID`, authority, base and result commits, worktree, data risk, effects preset, changed file scope, task ID match, verification evidence, and forbidden claims.
 - `review-report`: reviewer recommendation and review evidence shape.
 - `status-report`: current state, unverified claims, blockers, next actions, and authority limits.
 - `assumption-ledger`: assumptions, evidence, risk, and confirmation flags.
+- `prompt-record`: full on-disk orchestrator or worker prompt record with Prompt ID, role, authority, preferred language, and human-readable reply contract.
+- `launcher`: short chat launcher that points to an on-disk prompt record, requires explicit UTF-8 reading, and does not paste the full prompt body into chat.
+- `formal-report`: readable status report with `Response ID`, stable table rows, numeric progress, basis, and evidence details.
+- `frontier-contract`: Frontier prompt or report text with B2 lane-local authority, active B0/B1/B2 closure rules, gap decision matrix, branch return gate, worktree decision, and dispatch rules.
+- `current-manifest`: current fact anchor that records preferred language, facts input, current source pack, invalid sources, deprecated sources, sequence registry, active cards, and active lanes.
+- `sequence-registry`: registry of prompt records, responses, handoffs, active cards, and current/latest pointers.
 - `public-package`: UTF-8, common mojibake, local paths, internal identifier markers, lightweight secret markers, and internal formal reports placed in public report paths.
 
 ## Commands
@@ -42,6 +48,23 @@ Handoff validation should include the task card:
 ```bash
 python tools/openacp_validate.py --artifact examples/single-worker-flow/handoff.json --ruleset handoff --task-card examples/single-worker-flow/task-card.json --strict
 ```
+
+Prompt records, short launchers, and formal reports can be checked before dispatch or status publication:
+
+```bash
+python tools/openacp_validate.py --artifact .openacp/launchers/primary-orchestrator.prompt.md --ruleset prompt-record --strict
+python tools/openacp_validate.py --artifact .openacp/launchers/primary-orchestrator.short.md --ruleset launcher --strict
+python tools/openacp_validate.py --artifact .openacp/reports/response.md --ruleset formal-report --strict
+```
+
+Manifest and registry validation should run after Primary creates or refreshes coordination state:
+
+```bash
+python tools/openacp_validate.py --artifact .openacp/current-manifest.json --ruleset current-manifest --source-pack .openacp/source-pack.json --strict
+python tools/openacp_validate.py --artifact .openacp/sequence-registry.json --ruleset sequence-registry --strict
+```
+
+Individual project artifacts may contain that project's local working paths. The `public-package` ruleset is stricter and is intended for release packages, where private local paths, internal identifiers, and secret-like strings must not appear.
 
 After editable install:
 

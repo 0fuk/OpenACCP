@@ -42,6 +42,8 @@ Use subagents for bounded work:
 
 Each subagent needs a role, authority boundary, input facts, allowed scope, forbidden scope, stop conditions, and expected output. The parent orchestrator must consume the result before claiming progress.
 
+Primary should create or refresh CARDs before Frontier dispatch. A Primary-launched Frontier should usually receive B2 lane-local authority so it can actively run B0 discovery, B1 packaging, B2 scoped worker or reviewer dispatch, child handoff consume, and closure proof inside the assigned lane.
+
 ## Parallel Work
 
 Parallel work is safer when scopes are disjoint, handoff paths do not collide, reviewers know their targets, and final authority owns integration order.
