@@ -2,7 +2,7 @@
 
 OpenACP has two adoption paths. Pick the shortest one that matches your current material.
 
-For Codex or Claude Code startup, begin with `docs/codex-install-and-start.md`. The default path is to install skills, install the workflow kit, validate, produce a formal report automatically, then ask for the required working directory, a source pack, PRD, spec, facts path or uploaded project materials, and the user's preferred language. After those inputs arrive, startup returns one short Primary launcher only; Primary later reviews the workspace, creates CARDs, and decides whether to launch 1-5 Frontier lanes.
+For Codex or Claude Code startup, begin with `docs/codex-install-and-start.md`. The default path is to install skills, install the workflow kit, validate, produce a formal report automatically, then ask for the required working directory, a source pack, PRD, spec, facts path or uploaded project materials, and the user's preferred language. After those inputs arrive, startup returns one short Primary launcher only, printed in chat as a fenced `prompt` block; Primary later reviews the workspace, creates CARDs, and decides whether to launch 1-5 Frontier lanes.
 
 ## Path A: I Only Have A PRD
 

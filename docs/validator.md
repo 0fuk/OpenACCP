@@ -26,6 +26,7 @@ The validator is not a full JSON Schema engine. It uses hardcoded rules that mat
 - `assumption-ledger`: assumptions, evidence, risk, and confirmation flags.
 - `prompt-record`: full on-disk orchestrator or worker prompt record with Prompt ID, role, authority, preferred language, and human-readable reply contract.
 - `launcher`: short chat launcher that points to an on-disk prompt record, requires explicit UTF-8 reading, and does not paste the full prompt body into chat. Worker, reviewer, discovery, validation, and task-card-only launchers are rejected unless they are explicitly marked as fallback launchers with a direct-dispatch failure reason. Use `--prompt-record` to cross-check the launcher Prompt ID against the full prompt record.
+- `launcher-output`: response-log or chat-output text that must include one or more copyable fenced `prompt` blocks, plus natural-language instruction to open a new left-sidebar thread and paste the launcher. It rejects file-link-only and `Get-Content` substitutes.
 - `formal-report`: readable status report with `Response ID`, `Response log path`, stable role-aware table rows, numeric progress, basis, and evidence details.
 - `frontier-contract`: Frontier prompt or report text with B2 lane-local authority, active B0/B1/B2 closure rules, gap decision matrix, branch return gate, worktree decision, subagent-first current-thread dispatch, child ledger, human next step, fallback-only child launcher rules, and a JSON `openacp-frontier-orchestration-contract.v1` block.
 - `current-manifest`: current fact anchor that records preferred language, facts input, current source pack, invalid sources, deprecated sources, sequence registry, active cards, active lanes, superseded prompts, cancelled prompts, and latest consume refs.
@@ -62,6 +63,7 @@ Prompt records, short launchers, and formal reports can be checked before dispat
 ```bash
 python tools/openacp_validate.py --artifact .openacp/launchers/primary-orchestrator.prompt.md --ruleset prompt-record --expect-prompt-id <prompt-id> --strict
 python tools/openacp_validate.py --artifact .openacp/launchers/primary-orchestrator.short.md --ruleset launcher --prompt-record .openacp/launchers/primary-orchestrator.prompt.md --expect-prompt-id <prompt-id> --strict
+python tools/openacp_validate.py --artifact .openacp/reports/response-with-launcher.md --ruleset launcher-output --strict
 python tools/openacp_validate.py --artifact .openacp/reports/response.md --ruleset formal-report --strict
 ```
 

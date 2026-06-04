@@ -88,6 +88,8 @@ Recommended file names:
 
 The install-startup chat output must include only one short copyable Primary launcher that points to the on-disk Primary prompt record. Do not paste full prompt bodies into chat.
 
+The short launcher must be written to disk and printed in the Codex chat as a fenced `prompt` block. Writing `primary-orchestrator.short.md` is required for audit, but a file link, attachment, file list, or `Get-Content` command is not enough. The user must be able to copy the launcher directly from chat without opening a file.
+
 Before the short launcher block, guide the user in natural language to create a new thread from the left sidebar and paste the short launcher there. The short launcher must name the prompt record path, Prompt ID, preferred language or language fallback, explicit UTF-8 read rule, and stop rule for read failure, missing Prompt ID, or corrupted text.
 
 Use `templates/primary-orchestrator-launcher.md` for the full on-disk Primary prompt record. Use `templates/short-chat-launcher.md` for the chat launcher. Do not create Frontier launchers during install startup. Do not create a demo package by default. Use bootstrap only when the user has no source pack, PRD, spec, facts path, or uploaded project materials and explicitly approves creating starter artifacts.
@@ -111,6 +113,8 @@ When the Primary thread starts from the short launcher, it must:
 9. Require each Frontier prompt record to include the `openacp-frontier-orchestration-contract.v1` JSON block.
 10. Validate each Frontier prompt record with `openacp-validate --artifact <frontier-prompt-record> --ruleset frontier-contract --strict` before returning its short launcher.
 11. Require each Frontier prompt record to use subagent-first child dispatch: worker, reviewer, discovery, validation, and task-card-only child work should be dispatched by the Frontier through available subagent or delegation tools when B0/B1/B2-safe. Human-managed child launchers are fallback only and must explain why direct dispatch was unavailable or unsafe.
+
+For every selected Frontier, Primary must write the short Frontier launcher to disk and print it in its own fenced `prompt` block in chat. File links alone are invalid. Before each block, say which new left-sidebar thread the user should create and paste that block into.
 
 Primary should not hard-code exactly two Frontier lanes. If one lane is enough, launch one. If the project is broad, launch up to five. More than five lanes requires explicit user approval.
 

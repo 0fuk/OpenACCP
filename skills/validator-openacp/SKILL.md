@@ -18,6 +18,7 @@ python tools/openacp_validate.py --artifact task-card.json --ruleset task-card -
 python tools/openacp_validate.py --artifact handoff.json --ruleset handoff --task-card task-card.json --strict
 python tools/openacp_validate.py --artifact primary-orchestrator.prompt.md --ruleset prompt-record --expect-prompt-id <prompt-id> --strict
 python tools/openacp_validate.py --artifact primary.short-launcher.md --ruleset launcher --prompt-record primary-orchestrator.prompt.md --expect-prompt-id <prompt-id> --strict
+python tools/openacp_validate.py --artifact response-with-launcher.md --ruleset launcher-output --strict
 python tools/openacp_validate.py --artifact status.md --ruleset formal-report --strict
 python tools/openacp_validate.py --artifact frontier.prompt.md --ruleset frontier-contract --strict
 python tools/openacp_validate.py --artifact current-manifest.json --ruleset current-manifest --source-pack source-pack.json --strict
@@ -27,6 +28,8 @@ python tools/openacp_validate.py --artifact machine-summary.json --ruleset machi
 ```
 
 Use `frontier-contract` before launching or reusing a Frontier prompt. It checks the B2 lane contract, `openacp-frontier-orchestration-contract.v1` JSON block, subagent-first dispatch, child ledger, branch return gate, worktree decision, human-readable reporting, and fallback-only child launcher rule.
+
+Use `launcher-output` when a response is supposed to give the human a Primary or Frontier launcher. It rejects responses that only link `.short.md` files or give `Get-Content` commands instead of copyable fenced `prompt` blocks.
 
 Use `public-package` before release packaging. It checks UTF-8, mojibake, local path leaks, internal identifier markers, lightweight secret markers, and public report hygiene.
 

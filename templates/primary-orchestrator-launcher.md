@@ -48,6 +48,7 @@ Every status-like reply must use `formal-report-openacp` structure with stable O
 6. Group CARDs into 1-5 Frontier lanes based on complexity, risk, dependencies, and parallel safety.
 7. Write full Frontier prompt records only for selected lanes. Each Frontier prompt record must include the `openacp-frontier-orchestration-contract.v1` JSON block.
 8. Validate each Frontier prompt record with the `frontier-contract` ruleset before returning its short Frontier chat launcher.
+9. Write every selected short Frontier launcher to disk, then print it in its own fenced `prompt` block in chat. File links to `.short.md` launchers are evidence only and must not replace the copyable prompt blocks.
 
 ## Active Closure Rules
 
@@ -95,7 +96,7 @@ Return:
 - current manifest and sequence registry status,
 - CARD list or CARD creation blocker,
 - one recommended Primary next action,
-- zero to five Frontier Orchestrator short launchers, based on CARD and lane analysis.
+- zero to five Frontier Orchestrator short launchers, based on CARD and lane analysis, printed as copyable fenced `prompt` blocks.
 
 ## Validation Expectations
 
@@ -105,6 +106,7 @@ Use OpenACP validator when artifacts exist:
 openacp-validate --artifact <artifact> --ruleset <ruleset> --strict
 openacp-validate --artifact <prompt-record> --ruleset prompt-record --expect-prompt-id <prompt-id> --strict
 openacp-validate --artifact <short-launcher> --ruleset launcher --prompt-record <prompt-record> --expect-prompt-id <prompt-id> --strict
+openacp-validate --artifact <response-log-with-launcher> --ruleset launcher-output --strict
 openacp-validate --artifact <formal-report> --ruleset formal-report --strict
 openacp-validate --artifact <frontier-prompt-record> --ruleset frontier-contract --strict
 openacp-validate --artifact <current-manifest> --ruleset current-manifest --strict

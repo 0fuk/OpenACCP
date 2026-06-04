@@ -47,4 +47,8 @@ After OpenACP installation and validation, explain the missing inputs in practic
 - If the facts input is uploaded material instead of a path, say that it will be treated as candidate facts until the agent organizes or validates it.
 - Preferred language matters because every Primary, Frontier, worker, reviewer, and discovery reply should stay in one consistent language.
 
-Do not end with only "send paths". Say why the inputs matter and what will happen next: after the user provides them, the startup agent will write one full Primary prompt record to the working directory, then return one short copyable Primary chat launcher that points to that file. Frontier prompt records and short Frontier launchers are created later by Primary after workspace review, CARD creation, and lane analysis.
+Do not end with only "send paths". Say why the inputs matter and what will happen next: after the user provides them, the startup agent will write one full Primary prompt record to the working directory, then return one short copyable Primary chat launcher that points to that file.
+
+The short launcher must appear directly in chat as a fenced `prompt` block with natural-language guidance to create a new thread from the left sidebar and paste that block there. A file link, file attachment, file list, or `Get-Content` command is not enough.
+
+Frontier prompt records and short Frontier launchers are created later by Primary after workspace review, CARD creation, and lane analysis. When Primary creates Frontier launchers, each selected Frontier launcher also needs its own copyable fenced `prompt` block in chat.

@@ -137,7 +137,7 @@ Each downstream prompt must define authority, scope, forbidden scope, stop condi
 
 Do not use the human as a thread launcher for B0/B1/B2-safe child work. Default to direct dispatch through available subagent or delegation tools from this Frontier thread. Write full child prompt records to disk when useful for audit or reproducibility, then dispatch the child yourself when the environment supports it.
 
-Short downstream chat launchers are fallback only. Use them only when direct subagent dispatch is unavailable, unsafe in the current environment, explicitly requested by Primary or the human owner, or when the child must run in a separately user-managed session. If a fallback launcher is returned, label it `Fallback launcher`, state why direct dispatch was unavailable or unsafe, and give the human one exact next step.
+Short downstream chat launchers are fallback only. Use them only when direct subagent dispatch is unavailable, unsafe in the current environment, explicitly requested by Primary or the human owner, or when the child must run in a separately user-managed session. If a fallback launcher is returned, write it to disk, print it in chat as a fenced `prompt` block, label it `Fallback launcher`, state why direct dispatch was unavailable or unsafe, and give the human one exact next step. A `.short.md` link, attachment, file list, or `Get-Content` command is not enough.
 
 Maintain a child ledger with promptId, responseId, taskId, handoffId, role, authority, effects, subagent id or tool status, expected handoff path, terminal status, consume status, and remaining risk. Consume child handoffs before claiming lane progress.
 

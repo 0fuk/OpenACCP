@@ -38,6 +38,8 @@ Write the full launcher prompt records to disk first, preferably under:
 
 Then return short copyable launchers in chat. Do not paste the full prompt bodies into chat.
 
+The short launcher files may also be written to disk, but the chat response must include the exact short launcher text in fenced `prompt` blocks. Do not give only file links, attachments, file lists, or `Get-Content` commands.
+
 Before each short launcher block, tell the user where to use it:
 
 ```text

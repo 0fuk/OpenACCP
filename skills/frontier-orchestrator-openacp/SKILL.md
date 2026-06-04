@@ -140,7 +140,7 @@ Default order:
 4. Maintain a child ledger with promptId, responseId, taskId, handoffId, role, authority, effects, subagent id or tool status, expected handoff path, terminal status, consume status, and remaining risk.
 5. Consume child handoffs before claiming lane progress, then reclassify the remaining gaps.
 
-Short downstream chat launchers are fallback only. Use them only when direct subagent dispatch is unavailable, unsafe in the current environment, explicitly requested by Primary or the human owner, or when the child must run in a separately user-managed session. When returning a fallback launcher, label it `Fallback launcher`, state why direct dispatch was unavailable or unsafe, and include the exact human next step.
+Short downstream chat launchers are fallback only. Use them only when direct subagent dispatch is unavailable, unsafe in the current environment, explicitly requested by Primary or the human owner, or when the child must run in a separately user-managed session. When returning a fallback launcher, write it to disk, print it in chat as a fenced `prompt` block, label it `Fallback launcher`, state why direct dispatch was unavailable or unsafe, and include the exact human next step.
 
 Do not return to Primary or the human merely because a child prompt package was created. A package is not progress until it is dispatched, executed, consumed, or explicitly classified as a prepared package waiting on a real authority boundary.
 
@@ -175,6 +175,8 @@ If Frontier creates downstream worker, reviewer, discovery, or task-card-only pr
 Do not paste full downstream prompt bodies into chat. Do not return a short downstream launcher as the default path.
 
 Only return a short downstream launcher when it is a fallback launcher. It must name the prompt record path, Prompt ID, preferred language, UTF-8 read requirement, read-failure stop rule, and the reason Frontier could not dispatch the child itself.
+
+When a fallback launcher is truly required, write the short launcher to disk and also print it in chat as a fenced `prompt` block. Before the block, explain in human-readable language why Frontier could not dispatch the child itself and tell the user exactly which new left-sidebar thread to create and where to paste the block. A `.short.md` link, attachment, file list, or `Get-Content` command is not enough.
 
 ## Closure Proof
 

@@ -125,14 +125,17 @@ If the working directory is not writable, do not fall back to pasting full promp
 Recommended file names:
 
 - `<working-directory>/.openacp/launchers/primary-orchestrator.prompt.md`
+- `<working-directory>/.openacp/launchers/primary-orchestrator.short.md`
 
-The chat output must not contain the full prompt body. Chat should contain only one short copyable Primary launcher that points to the on-disk prompt record.
+The chat output must not contain the full prompt body. Chat must contain one short copyable Primary launcher that points to the on-disk prompt record.
+
+Writing the `.short.md` file is required for audit, but it does not replace the chat launcher. The agent must read or construct the short launcher and paste its exact contents into the Codex chat as a fenced `prompt` block. A file link, file attachment, file list, or `Get-Content` command is not a usable launcher for a new Codex user.
 
 Use this interaction shape:
 
 1. Tell the user which full Primary prompt record file was written.
 2. Tell the user: `Create a new thread from the left sidebar, paste the short Primary launcher below, and start that thread.`
-3. Print a short Primary launcher in a fenced `prompt` block.
+3. Print the exact short Primary launcher in a fenced `prompt` block.
 
 The short chat launcher should contain only:
 
@@ -145,7 +148,7 @@ The short chat launcher should contain only:
 
 Example short chat launcher:
 
-```text
+```prompt
 <Project> - Primary Orchestrator - Startup
 Purpose: start the Primary coordination thread.
 
@@ -175,11 +178,13 @@ Primary must first:
 5. Group CARDs into 1-5 lanes based on complexity, risk, dependencies, and parallel safety.
 6. Write full Frontier prompt records to disk only for the lanes it decides are useful.
 7. Validate each full Frontier prompt record with the `frontier-contract` ruleset before returning a short Frontier launcher.
-8. Return short Frontier chat launchers for those lanes.
+8. Write each short Frontier launcher to disk for audit, then print each selected Frontier launcher in its own fenced `prompt` block in chat.
+
+When Primary returns Frontier launchers, it must not return only links to `.short.md` files. It should say, in the preferred language, which new left-sidebar thread each prompt block belongs in, then show the copyable prompt block. If four Frontiers are selected, there should be four copyable `prompt` blocks, not just four file links.
 
 Frontier lanes should default to B2 lane-local authority. A B2 Frontier may actively run B0 discovery, B1 packaging, B2 scoped worker/reviewer/subagent dispatch, child handoff consume, provisional lane evidence synthesis, and closure proof inside its assigned lane. Frontier must not perform B3 final acceptance, waiver, merge, release, publication, or cross-lane final decisions.
 
-Inside a Frontier lane, worker/reviewer/discovery/validation child work should be dispatched by that Frontier through available subagent or delegation tools. Do not make the human open child worker or reviewer threads by default. If direct dispatch is unavailable or unsafe, the Frontier may return a short `Fallback launcher`, but it must explain why it could not dispatch the child itself and give one exact human next step.
+Inside a Frontier lane, worker/reviewer/discovery/validation child work should be dispatched by that Frontier through available subagent or delegation tools. Do not make the human open child worker or reviewer threads by default. If direct dispatch is unavailable or unsafe, the Frontier may return a short `Fallback launcher`, but it must write that launcher to disk, print it in chat as a fenced `prompt` block, explain why it could not dispatch the child itself, and give one exact human next step.
 
 Primary and Frontier should maintain machine-readable coordination state:
 
@@ -187,6 +192,12 @@ Primary and Frontier should maintain machine-readable coordination state:
 - `sequence-registry` records Prompt IDs, Response IDs, handoffs, consume results, active cards, active lanes, and current/latest pointers.
 - `consume-result` records what handoff or review evidence has been provisionally or finally consumed.
 - `machine-summary` gives compact locators for worker, reviewer, discovery, Frontier, or Primary output.
+
+Validate launcher-bearing response logs with:
+
+```bash
+openacp-validate --artifact <response-log-with-launcher.md> --ruleset launcher-output --strict
+```
 
 ## Skill Install Notes
 

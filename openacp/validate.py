@@ -30,6 +30,7 @@ RULESETS = {
     "frontier-contract",
     "handoff",
     "launcher",
+    "launcher-output",
     "machine-summary",
     "prompt-record",
     "review-report",
@@ -46,6 +47,7 @@ TEXT_RULESETS = {
     "launcher",
     "formal-report",
     "frontier-contract",
+    "launcher-output",
 }
 
 REQUIRED_FIELDS: dict[str, list[str]] = {
@@ -282,11 +284,15 @@ PROMPT_ID_RE = re.compile(r"(?im)^\s*(?:-\s*)?Prompt ID\s*:\s*`?([A-Za-z0-9][A-Z
 RESPONSE_ID_RE = re.compile(r"(?im)^\s*(?:-\s*)?Response ID\s*:\s*`?([A-Za-z0-9][A-Za-z0-9_.:-]*)`?\s*$")
 PROMPT_RECORD_RE = re.compile(r"(?im)^\s*-\s*Prompt Record\s*:\s*(.+?)\s*$")
 JSON_FENCE_RE = re.compile(r"```(?:json|JSON)?\s*(\{.*?\})\s*```", re.DOTALL)
+PROMPT_FENCE_RE = re.compile(r"```prompt\s*(.*?)```", re.DOTALL | re.IGNORECASE)
 ZH_ITEM = "\u9879"
 ZH_FIELD = "\u5b57\u6bb5"
 ZH_PROGRESS = "\u603b\u4f53\u8fdb\u5ea6"
 ZH_EVIDENCE = "\u8bc1\u636e"
 ZH_BASIS = "\u4f9d\u636e"
+ZH_LEFT_SIDEBAR = "\u5de6\u4fa7"
+ZH_NEW_THREAD = "\u65b0\u5efa"
+ZH_PASTE = "\u7c98\u8d34"
 
 FORMAL_ROW_SETS = [
     {"Changed", "Progress", "Gate", "Area", "Goal", "Gaps", "Next"},
@@ -633,6 +639,62 @@ def validate_launcher_text(
                 "fail",
                 f"Launcher Prompt ID {sorted(launcher_ids)} does not match prompt record Prompt ID {sorted(record_ids)}.",
             )
+
+
+def validate_launcher_output_text(text: str, report: Report) -> None:
+    prompt_blocks = [match.group(1).strip() for match in PROMPT_FENCE_RE.finditer(text)]
+    if not prompt_blocks:
+        report.add("PROMPT_FENCE", "blocking", "fail", "Launcher output must include at least one fenced ```prompt block with the copyable short launcher.")
+    else:
+        report.add("PROMPT_FENCE", "blocking", "pass", f"Found {len(prompt_blocks)} fenced prompt launcher block(s).")
+    lower_text = text.lower()
+    english_has_left_sidebar = bool(re.search(r"(?i)left\s+sidebar", text))
+    english_has_new_thread = bool(re.search(r"(?i)(new\s+thread|create\s+(?:a\s+)?(?:new\s+)?thread|open\s+(?:a\s+)?(?:new\s+)?thread|start\s+(?:that\s+)?thread)", text))
+    english_has_paste_action = bool(re.search(r"(?i)\b(?:paste|copy)\b.{0,80}\b(?:launcher|prompt|block)\b", text))
+    has_human_instruction = (
+        (english_has_left_sidebar and english_has_new_thread and english_has_paste_action)
+        or (ZH_LEFT_SIDEBAR in text and ZH_NEW_THREAD in text and ZH_PASTE in text)
+    )
+    if has_human_instruction:
+        report.add("HUMAN_THREAD_INSTRUCTION", "blocking", "pass", "Output tells the human where to paste the short launcher.")
+    else:
+        report.add("HUMAN_THREAD_INSTRUCTION", "blocking", "fail", "Output must tell the human to create a new left-sidebar thread and paste the short launcher there.")
+    if "get-content" in lower_text and not prompt_blocks:
+        report.add("GET_CONTENT_SUBSTITUTE", "blocking", "fail", "A Get-Content command is not a copyable chat launcher.")
+    else:
+        report.add("GET_CONTENT_SUBSTITUTE", "blocking", "pass", "No Get-Content-only launcher substitute found.")
+    if re.search(r"(?i)\.short\.md", text) and not prompt_blocks:
+        report.add("FILE_LINK_ONLY", "blocking", "fail", "Launcher output names short launcher files but does not include copyable prompt blocks.")
+    else:
+        report.add("FILE_LINK_ONLY", "blocking", "pass", "Output is not file-link-only.")
+    for idx, block in enumerate(prompt_blocks):
+        loc = f"promptBlock[{idx}]"
+        line_count = len([line for line in block.splitlines() if line.strip()])
+        if line_count > 40:
+            report.add("PROMPT_BLOCK_SHORT", "blocking", "fail", "Prompt block is too long; full prompt records belong on disk.", loc)
+        else:
+            report.add("PROMPT_BLOCK_SHORT", "blocking", "pass", "Prompt block is short.", loc)
+        if PROMPT_RECORD_RE.search(block):
+            report.add("PROMPT_BLOCK_RECORD_PATH", "blocking", "pass", "Prompt block names a prompt record path.", loc)
+        else:
+            report.add("PROMPT_BLOCK_RECORD_PATH", "blocking", "fail", "Prompt block must name the on-disk prompt record path.", loc)
+        if PROMPT_ID_RE.search(block):
+            report.add("PROMPT_BLOCK_ID", "blocking", "pass", "Prompt block names a Prompt ID.", loc)
+        else:
+            report.add("PROMPT_BLOCK_ID", "blocking", "fail", "Prompt block must name a Prompt ID.", loc)
+        if re.search(r"(?i)preferred\s*language|preferredLanguage", block):
+            report.add("PROMPT_BLOCK_LANGUAGE", "blocking", "pass", "Prompt block carries preferred language.", loc)
+        else:
+            report.add("PROMPT_BLOCK_LANGUAGE", "blocking", "fail", "Prompt block must carry preferred language.", loc)
+        if re.search(r"UTF-?8", block, re.IGNORECASE):
+            report.add("PROMPT_BLOCK_UTF8", "blocking", "pass", "Prompt block requires UTF-8 reading.", loc)
+        else:
+            report.add("PROMPT_BLOCK_UTF8", "blocking", "fail", "Prompt block must require UTF-8 reading.", loc)
+        block_lower = block.lower()
+        if "stop" in block_lower and ("missing" in block_lower or "corrupt" in block_lower or "cannot be read" in block_lower):
+            report.add("PROMPT_BLOCK_STOP_RULE", "blocking", "pass", "Prompt block has a read-failure stop rule.", loc)
+        else:
+            report.add("PROMPT_BLOCK_STOP_RULE", "blocking", "fail", "Prompt block must stop on read failure, missing Prompt ID, or corruption.", loc)
 
 
 def validate_formal_report_text(text: str, report: Report) -> None:
@@ -1629,6 +1691,8 @@ def validate_text_artifact(args: argparse.Namespace) -> Report:
             else:
                 report.add("PROMPT_RECORD_CROSSCHECK_READ", "blocking", "pass", "Prompt record cross-check target read as UTF-8.", str(prompt_record_path))
         validate_launcher_text(text, report, prompt_record_text, args.expect_prompt_id)
+    elif args.ruleset == "launcher-output":
+        validate_launcher_output_text(text, report)
     elif args.ruleset == "formal-report":
         validate_formal_report_text(text, report)
     elif args.ruleset == "frontier-contract":

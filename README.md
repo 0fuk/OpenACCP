@@ -30,7 +30,7 @@ After installation and validation, there will be a formal report. In the next st
 
 If you do not have a prepared facts path, you can upload or attach the project materials instead. A clear working directory is still required.
 
-After you provide those, I will write one full Primary prompt record to your working directory, then return one short copyable Primary chat launcher that points to that file. The full prompt body belongs on disk, not in the chat launcher.
+After you provide those, I will write one full Primary prompt record and one short launcher file to your working directory, then return that short copyable Primary chat launcher in chat. The full prompt body belongs on disk, not in the chat launcher. The short launcher must also be printed in the Codex chat as a fenced `prompt` block; a file link, attachment, or `Get-Content` command is not enough.
 
 Expected agent startup flow:
 
@@ -45,7 +45,7 @@ Expected agent startup flow:
 5. Read the installed skills plus the shortest docs path.
 6. Produce a formal report using `templates/formal-report.md`.
 7. Ask for the user's real working directory, source pack, PRD, spec, or facts path, and preferred language. The working directory is mandatory; if the user has no facts path, accept uploaded project materials as the facts input. If preferred language is omitted, use the user's current language consistently.
-8. After the user provides those inputs, write exactly one full Primary prompt record under `<working-directory>/.openacp/launchers/`, then return exactly one short Primary chat launcher. Before the short launcher, tell the user to create a new thread from the left sidebar and paste only that short launcher there.
+8. After the user provides those inputs, write exactly one full Primary prompt record and exactly one short launcher file under `<working-directory>/.openacp/launchers/`, then print exactly one short Primary chat launcher in a fenced `prompt` block. Before the short launcher, tell the user in natural language to create a new thread from the left sidebar and paste only that short launcher there. Do not return only a `.short.md` link, file attachment, file list, or `Get-Content` command.
 9. Do not create Frontier launchers during GitHub install startup. The Primary thread inspects the workspace and facts, creates CARDs, then dynamically decides whether to launch 1-5 B2 Frontier lanes.
 
 Skills to install or load:
@@ -176,6 +176,7 @@ Prompt records and short launchers should be checked together so the copyable ch
 ```bash
 python tools/openacp_validate.py --artifact primary-orchestrator.prompt.md --ruleset prompt-record --expect-prompt-id <prompt-id> --strict
 python tools/openacp_validate.py --artifact primary-orchestrator.short.md --ruleset launcher --prompt-record primary-orchestrator.prompt.md --expect-prompt-id <prompt-id> --strict
+python tools/openacp_validate.py --artifact response-with-launcher.md --ruleset launcher-output --strict
 ```
 
 Frontier prompt records should include the machine-readable `openacp-frontier-orchestration-contract.v1` block and pass the Frontier contract ruleset:

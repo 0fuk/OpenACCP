@@ -92,7 +92,7 @@ Subagent-first dispatch is required.
 
 Do not use the human as a thread launcher for B0/B1/B2-safe child work. Default to direct dispatch through available subagent or delegation tools from this Frontier thread. Write full child prompt records to disk when useful for audit or reproducibility, then dispatch the child yourself when the environment supports it.
 
-Short downstream chat launchers are fallback only. Use them only when direct subagent dispatch is unavailable, unsafe, explicitly requested, or when the child must run in a separately user-managed session. Label them `Fallback launcher` and explain why direct dispatch was not used.
+Short downstream chat launchers are fallback only. Use them only when direct subagent dispatch is unavailable, unsafe, explicitly requested, or when the child must run in a separately user-managed session. When fallback is truly required, write the short launcher to disk and print it in chat as a fenced `prompt` block. Label it `Fallback launcher`, explain why direct dispatch was not used, and tell the human exactly which new left-sidebar thread to create and where to paste the block. A `.short.md` link, attachment, file list, or `Get-Content` command is not enough.
 
 Maintain a child ledger with promptId, responseId, taskId, handoffId, role, authority, effects, subagent id or tool status, expected handoff path, terminal status, consume status, and remaining risk.
 

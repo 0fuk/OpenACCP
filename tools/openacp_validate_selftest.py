@@ -404,6 +404,80 @@ def main() -> int:
             0,
         )
 
+        launcher_output_path = tmp / "launcher-output.md"
+        launcher_output_path.write_text(
+            "\n".join(
+                [
+                    "Primary prompt record and short launcher were written to disk.",
+                    "请在左侧新建一个 thread，粘贴下面这个短 launcher，然后启动该 thread。",
+                    "",
+                    "```prompt",
+                    launcher_path.read_text(encoding="utf-8"),
+                    "```",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("valid launcher output includes copyable prompt", run(["--artifact", str(launcher_output_path), "--ruleset", "launcher-output", "--strict"]), 0)
+
+        english_launcher_output_path = tmp / "english-launcher-output.md"
+        english_launcher_output_path.write_text(
+            "\n".join(
+                [
+                    "Primary prompt record and short launcher were written to disk.",
+                    "Create a new thread from the left sidebar, paste the short Primary launcher below, and start that thread.",
+                    "",
+                    "```prompt",
+                    launcher_path.read_text(encoding="utf-8"),
+                    "```",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("valid English launcher output includes thread instruction", run(["--artifact", str(english_launcher_output_path), "--ruleset", "launcher-output", "--strict"]), 0)
+
+        bad_link_only_output_path = tmp / "bad-link-only-launcher-output.md"
+        bad_link_only_output_path.write_text(
+            "\n".join(
+                [
+                    "Primary prompt record and short launcher were written to disk.",
+                    "请在左侧新建一个 thread，粘贴短 launcher 后启动。",
+                    "",
+                    "- primary-orchestrator.short.md",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("launcher output rejects file-link-only response", run(["--artifact", str(bad_link_only_output_path), "--ruleset", "launcher-output", "--strict"]), 1)
+
+        bad_no_instruction_output_path = tmp / "bad-no-instruction-launcher-output.md"
+        bad_no_instruction_output_path.write_text(
+            "\n".join(
+                [
+                    "Primary prompt record and short launcher were written to disk.",
+                    "Here is the copyable launcher.",
+                    "",
+                    "```prompt",
+                    launcher_path.read_text(encoding="utf-8"),
+                    "```",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("launcher output rejects missing human thread instruction", run(["--artifact", str(bad_no_instruction_output_path), "--ruleset", "launcher-output", "--strict"]), 1)
+
+        bad_get_content_output_path = tmp / "bad-get-content-launcher-output.md"
+        bad_get_content_output_path.write_text(
+            "\n".join(
+                [
+                    "Run this command:",
+                    "Get-Content -Encoding UTF8 -LiteralPath 'primary-orchestrator.prompt.md'",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("launcher output rejects Get-Content substitute", run(["--artifact", str(bad_get_content_output_path), "--ruleset", "launcher-output", "--strict"]), 1)
+
         mismatch_prompt_record_path = tmp / "mismatch.prompt.md"
         mismatch_prompt_record_path.write_text(prompt_record_path.read_text(encoding="utf-8").replace("PROMPT-001", "PROMPT-OTHER"), encoding="utf-8")
         assert_exit(
