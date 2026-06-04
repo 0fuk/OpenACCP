@@ -26,5 +26,25 @@
     "Final decisions must name the source pack, task card, handoff, reviewer report, validator result, or waiver basis used.",
     "Publication, merge, and release decisions require the owner-defined release standard."
   ],
+  "dataRiskLimit": "sensitive",
+  "resourceUseLimit": [
+    "Project-local workspace, configured CI, and owner-approved publication or merge resources only."
+  ],
+  "allowedInputs": [
+    "Current manifest, source pack, sequence registry, task cards, authority charters, handoffs, review reports, validator reports, and owner decisions."
+  ],
+  "allowedOutputs": [
+    "Final consume results, authority charters, prompt records, launchers, status reports, merge or release decisions when authorized."
+  ],
+  "forbiddenSideEffects": [
+    "Unrecorded final waivers.",
+    "Using deprecated or invalid sources as current facts.",
+    "Credential or production use without owner approval."
+  ],
+  "stopConditions": [
+    "Current facts are invalid or superseded.",
+    "Security, credential, or production side effects lack owner approval.",
+    "Final evidence cannot be traced to accepted sources."
+  ],
   "expiresWhen": "The final decision is recorded or the owner revokes Primary authority."
 }

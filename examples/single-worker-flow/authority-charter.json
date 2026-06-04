@@ -9,5 +9,11 @@
   "delegationRules": ["The worker cannot delegate final authority.", "Reviewer work must remain read-only."],
   "finalAuthorityReservedTo": "Primary or human owner",
   "scopeLimits": ["Documentation-only scope.", "No external side effects."],
+  "dataRiskLimit": "low",
+  "resourceUseLimit": ["Local filesystem and local verification only."],
+  "allowedInputs": ["Source pack, task card, authority charter, and local docs context."],
+  "allowedOutputs": ["Docs artifacts, handoff, and machine summary."],
+  "forbiddenSideEffects": ["Network calls.", "Credential use.", "Publication.", "Dependency changes."],
+  "stopConditions": ["Scope expands beyond documentation.", "Data risk exceeds low.", "Final authority is required."],
   "expiresWhen": "The task card is completed, amended, rejected, or revoked."
 }

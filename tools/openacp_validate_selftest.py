@@ -303,6 +303,10 @@ def main() -> int:
             "handoffRegistryRef": "handoffs.json",
             "sequenceRegistryRef": "sequence-registry.json",
             "cardRegistryRef": "cards.json",
+            "activeLanes": [{"laneId": "primary", "role": "primary", "status": "active", "currentPromptId": "PROMPT-001", "authorityLevel": "B3"}],
+            "supersededPromptIds": [],
+            "cancelledPromptIds": [],
+            "latestConsumeRefs": ["CONSUME-001"],
         }
         for ref_name in [
             "prompts.json",
@@ -338,6 +342,8 @@ def main() -> int:
             "responses": [{"responseId": "RESP-001", "promptId": "PROMPT-001", "path": "response.md", "status": "complete"}],
             "handoffs": [{"handoffId": "HAND-001", "taskId": "TASK-001", "path": "handoff.json", "status": "present"}],
             "cards": [{"cardId": "CARD-001", "status": "ready", "ownerRole": "primary"}],
+            "consumes": [{"consumeId": "CONSUME-001", "responseId": "RESP-001", "targetHandoffIds": ["HAND-001"], "decision": "accepted", "authorityScope": "final"}],
+            "activeLanes": [{"laneId": "primary", "role": "primary", "status": "active", "currentPromptId": "PROMPT-001", "authorityLevel": "B3"}],
         }
         sequence_registry_path = tmp / "sequence-registry.json"
         write_json(sequence_registry_path, sequence_registry)
@@ -392,6 +398,19 @@ def main() -> int:
             encoding="utf-8",
         )
         assert_exit("valid short launcher", run(["--artifact", str(launcher_path), "--ruleset", "launcher", "--strict"]), 0)
+        assert_exit(
+            "launcher matches prompt record",
+            run(["--artifact", str(launcher_path), "--ruleset", "launcher", "--prompt-record", str(prompt_record_path), "--expect-prompt-id", "PROMPT-001", "--strict"]),
+            0,
+        )
+
+        mismatch_prompt_record_path = tmp / "mismatch.prompt.md"
+        mismatch_prompt_record_path.write_text(prompt_record_path.read_text(encoding="utf-8").replace("PROMPT-001", "PROMPT-OTHER"), encoding="utf-8")
+        assert_exit(
+            "launcher prompt record mismatch rejected",
+            run(["--artifact", str(launcher_path), "--ruleset", "launcher", "--prompt-record", str(mismatch_prompt_record_path), "--expect-prompt-id", "PROMPT-001", "--strict"]),
+            1,
+        )
 
         bad_child_launcher_path = tmp / "bad-child-launcher.md"
         bad_child_launcher_path.write_text(
@@ -431,6 +450,7 @@ def main() -> int:
             "\n".join(
                 [
                     "Response ID: RESP-001",
+                    "Response log path: chat reply",
                     "",
                     "| Item | Content |",
                     "|---|---|",
@@ -449,6 +469,31 @@ def main() -> int:
             encoding="utf-8",
         )
         assert_exit("valid formal report", run(["--artifact", str(formal_report_path), "--ruleset", "formal-report", "--strict"]), 0)
+
+        zh_frontier_report_path = tmp / "zh-frontier-formal-report.md"
+        zh_frontier_report_path.write_text(
+            "\n".join(
+                [
+                    "Response ID: RESP-ZH-001",
+                    "Response log path: chat reply",
+                    "",
+                    "| 项 | 内容 |",
+                    "|---|---|",
+                    "| 做了什么　 | Frontier 刷新了 lane backlog。 |",
+                    "| 总体进度　 | 60%。仍有 B2 子任务未 consume。 |",
+                    "| Checkpoint　 | lane-local closure。 |",
+                    "| Lane　　　 | docs lane。 |",
+                    "| 目标　　 | 收口当前 lane 的 B0/B1/B2 工作。 |",
+                    "| 缺口　　 | 需要继续 consume worker handoff。 |",
+                    "| 下一步　 | Frontier 继续派发 reviewer 并 consume 结果。 |",
+                    "",
+                    "## 依据",
+                    "- Basis: Chinese role-aware report fixture.",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("valid Chinese Frontier formal report", run(["--artifact", str(zh_frontier_report_path), "--ruleset", "formal-report", "--strict"]), 0)
 
         bad_formal_report_path = tmp / "bad-formal-report.md"
         bad_formal_report_path.write_text(
@@ -479,11 +524,110 @@ def main() -> int:
                     "Human-managed child launchers are fallback only when direct subagent dispatch is unavailable, unsafe, explicitly requested, or requires a separately user-managed session.",
                     "Maintain a child ledger with promptId, responseId, taskId, handoffId, role, authority, effects, subagent id, terminal status, consume status, and remaining risk.",
                     "Every reply must include a human next step.",
+                    "```json",
+                    json.dumps(
+                        {
+                            "schemaVersion": "openacp-frontier-orchestration-contract.v1",
+                            "artifactType": "frontier-orchestration-contract",
+                            "authorityLevel": "B2",
+                            "laneObjective": "Run one bounded lane to closure.",
+                            "backlogScope": {"seedArtifactsPolicy": "starting_points_not_exhaustive"},
+                            "operatingOrder": {"B0": "discover", "B1": "package", "B2": "dispatch"},
+                            "gapDecisionMatrix": {
+                                "allowedValues": [
+                                    "do_now",
+                                    "dispatch_current_thread_subagent",
+                                    "prepare_package",
+                                    "prepare_package_only_when_dispatch_unavailable",
+                                    "apply_conservative_default",
+                                    "needs_final_authority",
+                                    "explicitly_out",
+                                ]
+                            },
+                            "branchReturnGate": {"rule": "remaining gaps must be needs_final_authority or explicitly_out"},
+                            "worktreeDecision": {"requiredWhen": "creating_or_skipping_B2_worker"},
+                            "childLedger": {
+                                "requiredFields": [
+                                    "promptId",
+                                    "responseId",
+                                    "handoffId",
+                                    "role",
+                                    "authority",
+                                    "effects",
+                                    "terminalStatus",
+                                    "consumeStatus",
+                                ]
+                            },
+                            "subagentFirst": {"enabled": True},
+                            "defaultMode": "continue_until_lane_closure_or_true_final_authority_blocker",
+                            "continuationPolicy": "dispatch, consume, reclassify, continue",
+                            "seedArtifacts": [],
+                        },
+                        ensure_ascii=False,
+                    ),
+                    "```",
                 ]
             ),
             encoding="utf-8",
         )
         assert_exit("valid frontier contract", run(["--artifact", str(frontier_contract_path), "--ruleset", "frontier-contract", "--strict"]), 0)
+
+        consume_result_path = tmp / "consume-result.json"
+        write_json(
+            consume_result_path,
+            {
+                "schemaVersion": "openacp-consume-result.v1",
+                "artifactType": "consume-result",
+                "consumeId": "CONSUME-001",
+                "responseId": "RESP-001",
+                "consumerRole": "primary",
+                "authorityScope": "final",
+                "targetHandoffIds": ["HAND-001"],
+                "targetReviewIds": ["REV-001"],
+                "decision": "accepted",
+                "basisRefs": ["handoff.json", "review-report.json"],
+                "evidenceStatus": ["handoff verified"],
+                "claimsAccepted": ["scoped claim"],
+                "claimsRejected": ["no final release claim"],
+                "remainingRisks": ["release not included"],
+                "authorityLimits": ["example only"],
+                "nextActions": ["record decision"],
+            },
+        )
+        assert_exit("valid consume result", run(["--artifact", str(consume_result_path), "--ruleset", "consume-result", "--strict"]), 0)
+
+        bad_consume_path = tmp / "bad-consume-result.json"
+        bad_consume = json.loads(consume_result_path.read_text(encoding="utf-8"))
+        bad_consume["consumerRole"] = "frontier"
+        write_json(bad_consume_path, bad_consume)
+        assert_exit("frontier final consume rejected", run(["--artifact", str(bad_consume_path), "--ruleset", "consume-result", "--strict"]), 1)
+
+        machine_summary_path = tmp / "machine-summary.json"
+        write_json(
+            machine_summary_path,
+            {
+                "schemaVersion": "openacp-machine-summary.v1",
+                "artifactType": "machine-summary",
+                "summaryId": "MSUM-001",
+                "role": "worker",
+                "promptId": "PROMPT-001",
+                "responseId": "RESP-001",
+                "authority": "B2",
+                "effectsPreset": "docs_task_card_commit",
+                "basisRefs": ["task-card.json"],
+                "locators": [{"kind": "task-card", "id": "TASK-001"}, {"kind": "handoff", "path": "handoff.json"}],
+                "status": "verified-provisional",
+                "claims": ["scoped docs work completed"],
+                "nextActions": ["consume handoff"],
+            },
+        )
+        assert_exit("valid machine summary", run(["--artifact", str(machine_summary_path), "--ruleset", "machine-summary", "--strict"]), 0)
+
+        bad_machine_summary_path = tmp / "bad-machine-summary.json"
+        bad_machine = json.loads(machine_summary_path.read_text(encoding="utf-8"))
+        bad_machine["locators"] = [{"kind": "task-card"}]
+        write_json(bad_machine_summary_path, bad_machine)
+        assert_exit("machine summary locator target required", run(["--artifact", str(bad_machine_summary_path), "--ruleset", "machine-summary", "--strict"]), 1)
 
         bad_frontier_contract_path = tmp / "bad-frontier-contract.md"
         bad_frontier_contract_path.write_text(

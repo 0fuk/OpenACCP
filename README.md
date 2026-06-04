@@ -86,6 +86,9 @@ python tools/openacp_validate.py --artifact examples/single-worker-flow/task-car
 python tools/openacp_validate.py --artifact examples/single-worker-flow/handoff.json --ruleset handoff --task-card examples/single-worker-flow/task-card.json --strict
 python tools/openacp_validate.py --artifact examples/single-worker-flow/review-report.json --ruleset review-report --strict
 python tools/openacp_validate.py --artifact examples/single-worker-flow/status-report.json --ruleset status-report --strict
+python tools/openacp_validate.py --artifact examples/single-worker-flow/machine-summary.json --ruleset machine-summary --strict
+python tools/openacp_validate.py --artifact examples/single-worker-flow/formal-report-example.md --ruleset formal-report --strict
+python tools/openacp_validate.py --artifact examples/primary-orchestrator-flow/final-consume-result.json --ruleset consume-result --strict
 ```
 
 Install local CLI entry points during development:
@@ -168,6 +171,19 @@ Authority levels:
 
 Markdown templates are authoring aids. JSON artifacts are the machine-checkable form used by the validator.
 
+Prompt records and short launchers should be checked together so the copyable chat launcher cannot drift from the full on-disk prompt:
+
+```bash
+python tools/openacp_validate.py --artifact primary-orchestrator.prompt.md --ruleset prompt-record --expect-prompt-id <prompt-id> --strict
+python tools/openacp_validate.py --artifact primary-orchestrator.short.md --ruleset launcher --prompt-record primary-orchestrator.prompt.md --expect-prompt-id <prompt-id> --strict
+```
+
+Frontier prompt records should include the machine-readable `openacp-frontier-orchestration-contract.v1` block and pass the Frontier contract ruleset:
+
+```bash
+python tools/openacp_validate.py --artifact frontier.prompt.md --ruleset frontier-contract --strict
+```
+
 Task-card strict validation should include the source pack:
 
 ```bash
@@ -181,6 +197,13 @@ python tools/openacp_validate.py --artifact handoff.json --ruleset handoff --tas
 ```
 
 For B2/B3 task cards, strict validation requires `authorityCharterRef`. This keeps execution authority and final authority visible instead of implicit.
+
+After consume or child output, validate the machine artifacts:
+
+```bash
+python tools/openacp_validate.py --artifact consume-result.json --ruleset consume-result --strict
+python tools/openacp_validate.py --artifact machine-summary.json --ruleset machine-summary --strict
+```
 
 ## Examples
 
@@ -212,4 +235,4 @@ OpenACP can be used with Claude Workflow, SuperClaude, Aider, OpenHands, SWE-age
 
 ## Minimum Useful Setup
 
-The smallest useful OpenACP setup is one source pack, one scope boundary, one task card, one authority charter for executable work, one worker handoff, one reviewer report, and one final consume decision by the authorized owner.
+The smallest useful OpenACP setup is one source pack, one scope boundary, one task card, one authority charter for executable work, one worker handoff, one reviewer report, one machine summary, and one final consume result by the authorized owner.

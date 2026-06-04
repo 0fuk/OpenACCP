@@ -46,7 +46,8 @@ Every status-like reply must use `formal-report-openacp` structure with stable O
 4. Create or refresh current manifest, source status, invalid or deprecated source list, sequence registry, and CARD/task-card candidates.
 5. Create CARDs before Frontier dispatch. CARDs must be stable, numbered, and specific enough to assign to lanes.
 6. Group CARDs into 1-5 Frontier lanes based on complexity, risk, dependencies, and parallel safety.
-7. Write full Frontier prompt records only for selected lanes, then return short Frontier chat launchers.
+7. Write full Frontier prompt records only for selected lanes. Each Frontier prompt record must include the `openacp-frontier-orchestration-contract.v1` JSON block.
+8. Validate each Frontier prompt record with the `frontier-contract` ruleset before returning its short Frontier chat launcher.
 
 ## Active Closure Rules
 
@@ -102,10 +103,14 @@ Use OpenACP validator when artifacts exist:
 
 ```bash
 openacp-validate --artifact <artifact> --ruleset <ruleset> --strict
-openacp-validate --artifact <prompt-record> --ruleset prompt-record --strict
-openacp-validate --artifact <short-launcher> --ruleset launcher --strict
+openacp-validate --artifact <prompt-record> --ruleset prompt-record --expect-prompt-id <prompt-id> --strict
+openacp-validate --artifact <short-launcher> --ruleset launcher --prompt-record <prompt-record> --expect-prompt-id <prompt-id> --strict
 openacp-validate --artifact <formal-report> --ruleset formal-report --strict
 openacp-validate --artifact <frontier-prompt-record> --ruleset frontier-contract --strict
+openacp-validate --artifact <current-manifest> --ruleset current-manifest --strict
+openacp-validate --artifact <sequence-registry> --ruleset sequence-registry --strict
+openacp-validate --artifact <consume-result> --ruleset consume-result --strict
+openacp-validate --artifact <machine-summary> --ruleset machine-summary --strict
 ```
 
 Task-card validation should include the source pack. Handoff validation should include the task card.

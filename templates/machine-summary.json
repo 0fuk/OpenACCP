@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "openacp-machine-summary.v1",
+  "artifactType": "machine-summary",
+  "summaryId": "SUMMARY-ID",
+  "role": "worker",
+  "promptId": "PROMPT-ID",
+  "responseId": "RESPONSE-ID",
+  "authority": "B2",
+  "effectsPreset": "implementation_local_commit",
+  "basisRefs": ["basis artifact or source id"],
+  "locators": [
+    {
+      "kind": "task-card",
+      "id": "TASK-ID"
+    }
+  ],
+  "status": "provisional",
+  "claims": ["claim made within authority"],
+  "nextActions": ["next action"]
+}

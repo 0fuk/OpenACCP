@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "openacp-consume-result.v1",
+  "artifactType": "consume-result",
+  "consumeId": "CONSUME-PRIMARY-001",
+  "responseId": "RESP-PRIMARY-CONSUME-001",
+  "consumerRole": "primary",
+  "authorityScope": "final",
+  "targetHandoffIds": ["HAND-DOCS-001"],
+  "targetReviewIds": ["REV-DOCS-001"],
+  "decision": "accepted",
+  "basisRefs": [
+    "source-pack.json",
+    "task-card.json",
+    "handoff.json",
+    "review-report.json",
+    "validator-result"
+  ],
+  "evidenceStatus": [
+    "Worker handoff is scoped and verified.",
+    "Reviewer recommendation is approve.",
+    "Validator evidence is structural only."
+  ],
+  "claimsAccepted": [
+    "The scoped documentation task produced the requested artifact."
+  ],
+  "claimsRejected": [
+    "No merge, release, publication, or waiver claim is accepted by this example."
+  ],
+  "remainingRisks": [
+    "Release readiness still depends on the project release checklist."
+  ],
+  "authorityLimits": [
+    "This example records final consume only for the demo evidence; it does not publish or release."
+  ],
+  "nextActions": [
+    "Run the project-specific release or publication gate if publication is desired."
+  ]
+}

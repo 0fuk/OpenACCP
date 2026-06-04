@@ -9,16 +9,21 @@ Report current state, completed work, unverified claims, blockers, next actions,
 
 Use owner-readable language. Do not call validator pass semantic approval or reviewer recommendation final acceptance.
 
-Every formal report must carry a `Response ID`, not `Report ID`. Use the user's preferred language when it is known. If the language is not known, keep the language consistent with the user's current conversation.
+Every formal report must carry a `Response ID`, not `Report ID`. It must also include a `Response log path:` line. If there is no persisted log file, write `Response log path: chat reply` or the project-local status artifact path.
+
+Use the user's preferred language when it is known. If the language is not known, keep the language consistent with the user's current conversation.
 
 ## Chat Table Fit Rule
 
 Formal reports are often rendered in narrow chat panes. Keep the table readable:
 
-- Use short first-column labels: `Changed`, `Progress`, `Gate`, `Area`, `Goal`, `Gaps`, `Next`.
+- Use short first-column labels. Generic reports may use `Changed`, `Progress`, `Gate`, `Area`, `Goal`, `Gaps`, `Next`.
+- Primary Chinese reports should use `做了什么`, `总体进度`, `Checkpoint`, `Frontier`, `目标`, `缺口`, `下一步`.
+- Frontier Chinese reports should use `做了什么`, `总体进度`, `Checkpoint`, `Lane`, `目标`, `缺口`, `下一步`.
 - Keep each table cell to a short summary.
 - Do not put long paths, URLs, commit hashes, full commands, validation logs, or long inline-code snippets inside table cells.
 - Put detailed evidence after the table under `Evidence Details` as normal bullets.
+- For Chinese Primary or Frontier chat reports, pad the first-column labels with full-width ideographic spaces by default so the chat UI does not compress labels into vertical fragments. The visible label stays the same after validator normalization.
 
 ## Post-Install Startup Report
 

@@ -12,7 +12,9 @@
     "prompts",
     "responses",
     "handoffs",
-    "cards"
+    "cards",
+    "consumes",
+    "activeLanes"
   ],
   "properties": {
     "schemaVersion": { "const": "openacp-sequence-registry.v1" },
@@ -35,6 +37,29 @@
     "cards": {
       "type": "array",
       "items": { "type": "object", "required": ["cardId", "status", "ownerRole"], "additionalProperties": true }
+    },
+    "consumes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["consumeId", "responseId", "targetHandoffIds", "decision", "authorityScope"],
+        "properties": {
+          "consumeId": { "type": "string", "minLength": 1 },
+          "responseId": { "type": "string", "minLength": 1 },
+          "targetHandoffIds": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "decision": { "enum": ["accepted", "amend", "split-follow-up", "rejected", "blocked"] },
+          "authorityScope": { "enum": ["provisional", "final"] }
+        },
+        "additionalProperties": true
+      }
+    },
+    "activeLanes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["laneId", "role", "status", "currentPromptId", "authorityLevel"],
+        "additionalProperties": true
+      }
     }
   },
   "additionalProperties": true

@@ -11,7 +11,7 @@ Confirm source pack, task card, authority source, workspace boundary, allowed sc
 
 Every worker reply must use `human-explain-openacp` style in the preferred language. Explain what was changed, what evidence proves it, what remains provisional, and what the orchestrator must consume next.
 
-Every status-like worker reply and final handoff summary must use `formal-report-openacp` structure or include a machine-readable summary with Prompt ID, Response ID, taskId, handoffId, authority, and effects.
+Every status-like worker reply and final handoff summary must use `formal-report-openacp` structure or include a `machine-summary` artifact with Prompt ID, Response ID, taskId, handoffId, authority, effects, basisRefs, and locators.
 
 Rules:
 
@@ -54,5 +54,21 @@ The handoff should record:
 - scope notes,
 - risks and limitations,
 - follow-up recommendations.
+
+## Evidence And Locator Rules
+
+When a repository exists, record the base commit, result commit, branch, worktree, and local CI or focused verification commands. If no repository exists, record `not_applicable` with the reason.
+
+Write or return a `machine-summary` when the orchestrator needs a compact locator. It should include:
+
+- Prompt ID,
+- Response ID,
+- taskId,
+- handoffId,
+- authority,
+- effectsPreset,
+- basisRefs,
+- locators for changed files, task card, handoff, verification output, and branch or worktree when applicable,
+- claims and nextActions.
 
 Keep the handoff factual. Worker results are provisional until consumed by the authorized orchestrator or owner.

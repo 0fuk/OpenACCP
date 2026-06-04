@@ -17,6 +17,32 @@ Response log path:
 | Gaps | |
 | Next | |
 
+## Role-Aware Rows
+
+Use these rows for a Chinese Primary report:
+
+| 项 | 内容 |
+|---|---|
+| 做了什么　 | |
+| 总体进度　 | Include a numeric estimate. |
+| Checkpoint　 | |
+| Frontier　 | |
+| 目标　　 | |
+| 缺口　　 | |
+| 下一步　 | |
+
+Use these rows for a Chinese Frontier report:
+
+| 项 | 内容 |
+|---|---|
+| 做了什么　 | |
+| 总体进度　 | Include a numeric estimate. |
+| Checkpoint　 | |
+| Lane　　　 | |
+| 目标　　 | |
+| 缺口　　 | |
+| 下一步　 | |
+
 ## Evidence Details
 
 - Validation:

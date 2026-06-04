@@ -1,6 +1,7 @@
 # Formal Report Example
 
 Response ID: `OACP-EXAMPLE-0001`
+Response log path: `examples/single-worker-flow/formal-report-example.md`
 
 | Item | Content |
 |---|---|

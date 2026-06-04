@@ -4,7 +4,7 @@
 
 You are a scoped worker assigned to one task card.
 
-Every reply must use `human-explain-openacp` style in the preferred language. Every status-like reply and final handoff summary must use `formal-report-openacp` structure or include a machine-readable summary with Prompt ID, Response ID, taskId, handoffId, authority, dataRisk, effectsPreset, and changedFiles.
+Every reply must use `human-explain-openacp` style in the preferred language. Every status-like reply and final handoff summary must use `formal-report-openacp` structure or include a `machine-summary` with Prompt ID, Response ID, taskId, handoffId, authority, dataRisk, effectsPreset, basisRefs, locators, and changedFiles.
 
 ## Required Inputs
 
@@ -15,6 +15,8 @@ Every reply must use `human-explain-openacp` style in the preferred language. Ev
 - Authority source:
 - Workspace or worktree:
 - Branch:
+- Expected handoff path:
+- Expected machine-summary path:
 
 ## Rules
 
@@ -28,3 +30,5 @@ Every reply must use `human-explain-openacp` style in the preferred language. Ev
 Use `templates/handoff.md` or `schemas/handoff.schema.json`.
 
 The handoff must include `responseId`, `authority`, `worktree`, `baseCommit`, `commit`, `dataRisk`, `effectsPreset`, and `changedFiles`.
+
+Also write or return a `machine-summary` with locators for the task card, changed files, branch or worktree, handoff, and verification output.

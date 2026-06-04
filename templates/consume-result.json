@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "openacp-consume-result.v1",
+  "artifactType": "consume-result",
+  "consumeId": "CONSUME-ID",
+  "responseId": "RESPONSE-ID",
+  "consumerRole": "primary",
+  "authorityScope": "final",
+  "targetHandoffIds": ["HANDOFF-ID"],
+  "targetReviewIds": [],
+  "decision": "accepted",
+  "basisRefs": ["basis artifact or response id"],
+  "evidenceStatus": ["evidence consumed"],
+  "claimsAccepted": ["claim accepted within authority"],
+  "claimsRejected": ["unsupported claim rejected or none"],
+  "remainingRisks": ["residual risk or none"],
+  "authorityLimits": ["authority limit or none"],
+  "nextActions": ["next action"]
+}

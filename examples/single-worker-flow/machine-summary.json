@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "openacp-machine-summary.v1",
+  "artifactType": "machine-summary",
+  "summaryId": "MSUM-DOCS-001",
+  "role": "worker",
+  "promptId": "PROMPT-DOCS-001",
+  "responseId": "RESP-DOCS-001",
+  "authority": "B2",
+  "effectsPreset": "docs_task_card_commit",
+  "basisRefs": ["source-pack.json", "task-card.json", "authority-charter.json"],
+  "locators": [
+    { "kind": "task-card", "id": "TASK-DOCS-001", "path": "task-card.json" },
+    { "kind": "handoff", "id": "HAND-DOCS-001", "path": "handoff.json" },
+    { "kind": "changed-file", "path": "docs/getting-started.md" },
+    { "kind": "verification", "path": "handoff.json#verificationEvidence" }
+  ],
+  "status": "verified-provisional",
+  "claims": [
+    "Created a docs-only getting-started artifact within task-card scope."
+  ],
+  "nextActions": [
+    "Primary or human owner should consume the handoff and reviewer report."
+  ]
+}

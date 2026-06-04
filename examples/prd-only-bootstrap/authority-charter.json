@@ -9,5 +9,11 @@
   "delegationRules": ["The worker cannot delegate side effects or final authority."],
   "finalAuthorityReservedTo": "Primary or human owner",
   "scopeLimits": ["Local sample issue text only.", "Docs and spec artifacts only."],
+  "dataRiskLimit": "low",
+  "resourceUseLimit": ["Local sample files and local validation only."],
+  "allowedInputs": ["Source pack, PRD text, task card, and scope boundary."],
+  "allowedOutputs": ["Starter spec, assumptions ledger, handoff, and machine summary."],
+  "forbiddenSideEffects": ["External tracker updates.", "Credential use.", "Outbound messages.", "Publication."],
+  "stopConditions": ["The sample text is insufficient for a safe draft.", "Runtime implementation is required."],
   "expiresWhen": "The bootstrap task is completed, amended, rejected, or revoked."
 }

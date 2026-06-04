@@ -22,8 +22,18 @@ A handoff can exist while remaining incomplete, unverified, out of scope, or ove
 
 - `accepted`
 - `amend`
-- `split_follow_up`
+- `split-follow-up`
 - `rejected`
 - `blocked`
 
 Only final authority can turn provisional evidence into accepted evidence.
+
+## Machine Result
+
+Each consume should produce a `consume-result` artifact. That artifact separates provisional Frontier consume from final Primary or human-owner consume.
+
+Validate it with:
+
+```bash
+openacp-validate --artifact <consume-result.json> --ruleset consume-result --strict
+```

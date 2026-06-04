@@ -77,6 +77,12 @@ def starter_files(target: Path) -> dict[Path, str]:
                 "delegationRules": ["Final authority cannot be delegated by the worker."],
                 "finalAuthorityReservedTo": "Primary or human owner",
                 "scopeLimits": ["Docs and specs only.", "No external side effects."],
+                "dataRiskLimit": "low",
+                "resourceUseLimit": ["Local filesystem and local verification only."],
+                "allowedInputs": ["Current source pack, scope boundary, task card, and authority charter."],
+                "allowedOutputs": ["Changed docs/spec artifacts, handoff, and machine summary."],
+                "forbiddenSideEffects": ["Network calls.", "Credential use.", "External publication."],
+                "stopConditions": ["Scope expands beyond docs/spec artifacts.", "Data risk exceeds low."],
                 "expiresWhen": "The task is completed, rejected, amended, or revoked.",
             }
         ),

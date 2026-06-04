@@ -174,11 +174,19 @@ Primary must first:
 4. Create or refresh OpenACP current manifest, source status, invalid or deprecated sources, sequence registry, and CARD/task-card candidates.
 5. Group CARDs into 1-5 lanes based on complexity, risk, dependencies, and parallel safety.
 6. Write full Frontier prompt records to disk only for the lanes it decides are useful.
-7. Return short Frontier chat launchers for those lanes.
+7. Validate each full Frontier prompt record with the `frontier-contract` ruleset before returning a short Frontier launcher.
+8. Return short Frontier chat launchers for those lanes.
 
 Frontier lanes should default to B2 lane-local authority. A B2 Frontier may actively run B0 discovery, B1 packaging, B2 scoped worker/reviewer/subagent dispatch, child handoff consume, provisional lane evidence synthesis, and closure proof inside its assigned lane. Frontier must not perform B3 final acceptance, waiver, merge, release, publication, or cross-lane final decisions.
 
 Inside a Frontier lane, worker/reviewer/discovery/validation child work should be dispatched by that Frontier through available subagent or delegation tools. Do not make the human open child worker or reviewer threads by default. If direct dispatch is unavailable or unsafe, the Frontier may return a short `Fallback launcher`, but it must explain why it could not dispatch the child itself and give one exact human next step.
+
+Primary and Frontier should maintain machine-readable coordination state:
+
+- `current-manifest` records current facts, invalid or deprecated sources, active lanes, superseded prompts, cancelled prompts, and latest consume refs.
+- `sequence-registry` records Prompt IDs, Response IDs, handoffs, consume results, active cards, active lanes, and current/latest pointers.
+- `consume-result` records what handoff or review evidence has been provisionally or finally consumed.
+- `machine-summary` gives compact locators for worker, reviewer, discovery, Frontier, or Primary output.
 
 ## Skill Install Notes
 

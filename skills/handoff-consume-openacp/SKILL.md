@@ -9,6 +9,8 @@ Validate structure, check scope against task card, review verification evidence,
 
 Handoff presence is not acceptance.
 
+Every consume should produce or return a `consume-result` artifact. Frontier consume results are provisional unless Primary explicitly granted final authority, which should not be the default. Final consume results belong to Primary or the human owner.
+
 ## Consume Rules
 
 Before consume, check:
@@ -23,3 +25,28 @@ Before consume, check:
 - final-state claims are not made by non-final roles.
 
 Use consume results to drive the next dispatch. If the handoff is incomplete, send it back for amendment or dispatch reviewer/discovery work instead of treating it as done.
+
+## Consume Result Fields
+
+Record:
+
+- consumeId,
+- responseId,
+- consumerRole,
+- authorityScope,
+- targetHandoffIds,
+- targetReviewIds,
+- decision,
+- basisRefs,
+- evidenceStatus,
+- claimsAccepted,
+- claimsRejected,
+- remainingRisks,
+- authorityLimits,
+- nextActions.
+
+Validate with:
+
+```bash
+openacp-validate --artifact <consume-result.json> --ruleset consume-result --strict
+```

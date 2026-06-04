@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openacp.dev/schemas/consume-result.schema.json",
+  "title": "OpenACP Consume Result",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "artifactType",
+    "consumeId",
+    "responseId",
+    "consumerRole",
+    "authorityScope",
+    "targetHandoffIds",
+    "targetReviewIds",
+    "decision",
+    "basisRefs",
+    "evidenceStatus",
+    "claimsAccepted",
+    "claimsRejected",
+    "remainingRisks",
+    "authorityLimits",
+    "nextActions"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "openacp-consume-result.v1" },
+    "artifactType": { "const": "consume-result" },
+    "consumeId": { "type": "string", "minLength": 1 },
+    "responseId": { "type": "string", "minLength": 1 },
+    "consumerRole": { "enum": ["primary", "frontier", "worker", "reviewer", "discovery", "human-owner"] },
+    "authorityScope": { "enum": ["provisional", "final"] },
+    "targetHandoffIds": { "$ref": "#/$defs/nonEmptyStrings" },
+    "targetReviewIds": { "type": "array", "items": { "type": "string" } },
+    "decision": { "enum": ["accepted", "amend", "split-follow-up", "rejected", "blocked"] },
+    "basisRefs": { "$ref": "#/$defs/nonEmptyStrings" },
+    "evidenceStatus": { "$ref": "#/$defs/nonEmptyStrings" },
+    "claimsAccepted": { "$ref": "#/$defs/nonEmptyStrings" },
+    "claimsRejected": { "$ref": "#/$defs/nonEmptyStrings" },
+    "remainingRisks": { "$ref": "#/$defs/nonEmptyStrings" },
+    "authorityLimits": { "$ref": "#/$defs/nonEmptyStrings" },
+    "nextActions": { "$ref": "#/$defs/nonEmptyStrings" }
+  },
+  "$defs": {
+    "nonEmptyStrings": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "additionalProperties": true
+}

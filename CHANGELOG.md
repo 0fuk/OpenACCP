@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `consume-result` and `machine-summary` schemas, templates, examples, and validator rulesets.
+- Machine-readable Frontier contract block `openacp-frontier-orchestration-contract.v1` for B2 lane closure, subagent-first dispatch, child ledger, and branch return gates.
+- Prompt launcher cross-check support with `--prompt-record` and `--expect-prompt-id`.
+
+### Changed
+
+- Formal reports now require `Response ID`, `Response log path`, role-aware rows, numeric progress, and evidence details.
+- Authority charters now include data risk limits, resource-use limits, allowed inputs/outputs, forbidden side effects, and stop conditions.
+- Current manifests and sequence registries now track active lanes, superseded or cancelled prompts, consume records, and latest consume refs.
+
 ## [0.1.0] - 2026-06-03
 
 ### Added

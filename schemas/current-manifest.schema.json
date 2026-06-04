@@ -17,7 +17,11 @@
     "responseRegistryRef",
     "handoffRegistryRef",
     "sequenceRegistryRef",
-    "cardRegistryRef"
+    "cardRegistryRef",
+    "activeLanes",
+    "supersededPromptIds",
+    "cancelledPromptIds",
+    "latestConsumeRefs"
   ],
   "properties": {
     "schemaVersion": { "const": "openacp-current-manifest.v1" },
@@ -33,7 +37,25 @@
     "responseRegistryRef": { "type": "string", "minLength": 1 },
     "handoffRegistryRef": { "type": "string", "minLength": 1 },
     "sequenceRegistryRef": { "type": "string", "minLength": 1 },
-    "cardRegistryRef": { "type": "string", "minLength": 1 }
+    "cardRegistryRef": { "type": "string", "minLength": 1 },
+    "activeLanes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["laneId", "role", "status", "currentPromptId", "authorityLevel"],
+        "properties": {
+          "laneId": { "type": "string", "minLength": 1 },
+          "role": { "enum": ["primary", "frontier", "worker", "reviewer", "discovery", "human-owner"] },
+          "status": { "type": "string", "minLength": 1 },
+          "currentPromptId": { "type": "string", "minLength": 1 },
+          "authorityLevel": { "enum": ["B0", "B1", "B2", "B3"] }
+        },
+        "additionalProperties": true
+      }
+    },
+    "supersededPromptIds": { "type": "array", "items": { "type": "string" } },
+    "cancelledPromptIds": { "type": "array", "items": { "type": "string" } },
+    "latestConsumeRefs": { "type": "array", "items": { "type": "string" } }
   },
   "additionalProperties": true
 }

@@ -11,7 +11,7 @@ Reviewer provides read-only evidence.
 
 Every reviewer reply must use `human-explain-openacp` style in the preferred language. Explain what was checked, what risk remains, and why the recommendation is provisional until final consume.
 
-Every status-like reviewer reply and final review summary must use `formal-report-openacp` structure or include a machine-readable summary with Prompt ID, Response ID, target taskId or handoffId, authority, recommendation, and effects.
+Every status-like reviewer reply and final review summary must use `formal-report-openacp` structure or include a `machine-summary` artifact with Prompt ID, Response ID, target taskId or handoffId, authority, recommendation, effects, basisRefs, and locators.
 
 Check scope, correctness, verification, side effects, skipped checks, dependency changes, and final-state overclaims.
 
@@ -31,3 +31,7 @@ Recommendation must be approve, amend, split-follow-up, or reject.
 Use subagents only to improve independent read-only review, such as a second-pass risk scan, prohibited-scope scan, or verification-gap scan.
 
 The reviewer owns the final recommendation. Subagents do not edit files, expand scope, or replace final authority.
+
+## Evidence And Locator Rules
+
+Reviewer summaries should make downstream consume easy. Include locators for the target task card, handoff, diff or branch, validator output, relevant files or lines, and skipped checks. A reviewer recommendation is provisional review evidence until Primary or the human owner consumes it.
