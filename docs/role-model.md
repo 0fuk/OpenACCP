@@ -6,13 +6,15 @@ OpenACP defines roles by authority, not by model provider.
 
 Primary owns final authority. It can assign charters, dispatch lanes and workers, consume final handoffs, decide merge or publication, grant waivers, and accept or reject evidence.
 
-Primary also owns active closure. It should split work into lanes, dispatch bounded subagents, consume evidence, reclassify remaining gaps, and continue until the visible work is closed, explicitly out, delegated with a handoff path, or blocked on a real final-authority decision.
+Primary also owns active closure. It should split work into lanes, dispatch bounded subagents, consume evidence, reclassify remaining gaps, and continue until the visible work is closed, explicitly out, child work is terminal and consumed or rejected, or the remaining gap is blocked on a real final-authority decision.
 
 ## Frontier
 
 Frontier is a lane orchestrator. It manages a bounded lane backlog, prepares packages, dispatches allowed downstream work, consumes child handoffs as provisional evidence, and reports lane status. A Frontier launched by Primary should default to B2 lane-local authority unless Primary explicitly narrows it. It does not own final acceptance.
 
 Frontier runs a B0/B1/B2 closure loop. It does discovery and review at B0, prepares packages and task cards at B1, dispatches scoped workers or reviewers at B2 when the CARD, allowed scope, verification, handoff path, and stop conditions are clear, consumes child handoffs, and keeps reclassifying gaps. It returns to Primary only when all visible lane gaps are final-authority-only or explicitly out.
+
+Frontier should dispatch worker, reviewer, discovery, validation, and task-card-only child work from its current lane thread when subagent or delegation tools are available. Asking the human to open child threads is fallback only, not the default closure path.
 
 ## Worker
 

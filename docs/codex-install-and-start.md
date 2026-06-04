@@ -178,6 +178,8 @@ Primary must first:
 
 Frontier lanes should default to B2 lane-local authority. A B2 Frontier may actively run B0 discovery, B1 packaging, B2 scoped worker/reviewer/subagent dispatch, child handoff consume, provisional lane evidence synthesis, and closure proof inside its assigned lane. Frontier must not perform B3 final acceptance, waiver, merge, release, publication, or cross-lane final decisions.
 
+Inside a Frontier lane, worker/reviewer/discovery/validation child work should be dispatched by that Frontier through available subagent or delegation tools. Do not make the human open child worker or reviewer threads by default. If direct dispatch is unavailable or unsafe, the Frontier may return a short `Fallback launcher`, but it must explain why it could not dispatch the child itself and give one exact human next step.
+
 ## Skill Install Notes
 
 For Codex, install the directories under `skills/` as local skills if skill installation is available. If native skill installation is unavailable, load the relevant `SKILL.md` files as workflow instructions for the current session.

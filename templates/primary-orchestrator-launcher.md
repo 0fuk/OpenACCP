@@ -79,7 +79,10 @@ Each Frontier prompt record must include:
 - gapDecisionMatrix,
 - branchReturnGate,
 - worktreeDecision,
-- worker/reviewer/subagent dispatch rules,
+- subagent-first worker/reviewer/discovery dispatch rules,
+- a rule that human-managed child launchers are fallback only,
+- child ledger and child handoff consume expectations,
+- human next-step reporting expectations,
 - handoff path and validation expectations.
 
 ## Required Output

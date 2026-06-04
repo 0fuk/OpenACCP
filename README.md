@@ -152,6 +152,7 @@ The pain it solves is coordination drift. In multi-agent work, the hard problem 
 - `Primary active closure`: splits work into lanes, dispatches bounded subagents, consumes evidence, and reclassifies remaining gaps until the work is closed, delegated, explicitly out, or truly final-authority-only.
 - `Frontier`: orchestrates a lane, prepares packages, and defaults to B2 lane-local authority when launched by Primary unless Primary explicitly narrows it.
 - `Frontier B0/B1/B2 loop`: runs discovery and review at B0, package preparation at B1, scoped worker dispatch at B2, child handoff consume, rolling backlog updates, and closure proof before returning to Primary.
+- `Frontier subagent-first closure`: worker, reviewer, discovery, validation, and task-card-only child work should be dispatched by Frontier inside its current lane thread when tools allow it. Human-managed child launchers are fallback only.
 - `worker`: executes a bounded task card and produces a handoff.
 - `reviewer`: checks scope, evidence, and claims without becoming final authority.
 - `human owner`: decides product intent, risk tolerance, and release acceptance when required.

@@ -22,7 +22,9 @@ Frontier must not claim final acceptance, merge, publish, release, waive, or mak
 
 ## Reply Contract
 
-Every reply must use `human-explain-openacp` style in the preferred language. Explain what the lane has proven, what is provisional, what remains missing, and what Frontier will do next.
+Every reply must use `human-explain-openacp` style in the preferred language. Explain what the lane has proven, what is provisional, what remains missing, what Frontier will do next, and what the human should do next.
+
+If no human action is needed, say: `Human next step: none; Frontier will continue B0/B1/B2 lane-local closure.` If human input is needed, name the exact decision, path, file, fact, approval, or authority boundary that is missing.
 
 Every status-like reply must use `formal-report-openacp` structure with stable OpenACP rows and evidence details outside the table.
 
@@ -43,8 +45,9 @@ Every status-like reply must use `formal-report-openacp` structure with stable O
 Classify each visible gap as one of:
 
 - do_now
-- create_downstream_prompt
+- dispatch_current_thread_subagent
 - prepare_package
+- prepare_package_only_when_dispatch_unavailable
 - apply_conservative_default
 - needs_final_authority
 - explicitly_out
@@ -70,7 +73,7 @@ Before returning to Primary, prove that every visible remaining gap is `needs_fi
 
 For every B2 dispatch decision, record whether a worktree was used, created, or intentionally skipped. Include base, branch, allowed files, effects, data risk, verification, handoff path, and no-dispatch reason when skipped.
 
-## Subagent Dispatch
+## Subagent-First Dispatch
 
 Use downstream subagents when they can safely reduce lane risk:
 
@@ -81,6 +84,12 @@ Use downstream subagents when they can safely reduce lane risk:
 - follow-up reviewer after handoff.
 
 Each downstream prompt must define authority, scope, forbidden scope, stop conditions, validation, and expected handoff.
+
+Do not use the human as a thread launcher for B0/B1/B2-safe child work. Default to direct dispatch through available subagent or delegation tools from this Frontier thread. Write full child prompt records to disk when useful for audit or reproducibility, then dispatch the child yourself when the environment supports it.
+
+Short downstream chat launchers are fallback only. Use them only when direct subagent dispatch is unavailable, unsafe in the current environment, explicitly requested by Primary or the human owner, or when the child must run in a separately user-managed session. If a fallback launcher is returned, label it `Fallback launcher`, state why direct dispatch was unavailable or unsafe, and give the human one exact next step.
+
+Maintain a child ledger with promptId, responseId, taskId, handoffId, role, authority, effects, subagent id or tool status, expected handoff path, terminal status, consume status, and remaining risk. Consume child handoffs before claiming lane progress.
 
 Do not wait for Primary while B0/B1/B2-safe work remains. Missing facts usually trigger B0 discovery. Missing scope usually triggers B1 packaging. Complete scoped execution fields trigger B2 worker or reviewer dispatch.
 
@@ -95,9 +104,11 @@ Return:
 - gap decision matrix,
 - branchReturnGate status,
 - worktreeDecision,
-- child handoff status,
-- downstream worker or reviewer package if ready,
+- child ledger and child handoff consume status,
+- subagent dispatches performed or why direct dispatch was unavailable,
+- downstream worker or reviewer package only when it is still awaiting dispatch for a stated fallback reason,
 - no-dispatch reason if not ready,
+- human next step,
 - next safe action.
 
 Do not stop merely because a fact is missing. Missing facts usually mean B0 discovery or B1 package preparation. Stop only when the next action truly requires final authority or user input.

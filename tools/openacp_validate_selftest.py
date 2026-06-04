@@ -163,15 +163,37 @@ def main() -> int:
             1,
         )
 
+        frontier_task = json.loads(paths["task_card"].read_text(encoding="utf-8"))
+        frontier_task["taskId"] = "TASK-FRONTIER-001"
+        frontier_task["objective"] = "Synthesize lane-local orchestration evidence"
+        frontier_task["allowedScope"] = {"filesOrArtifacts": [".openacp/**"], "effects": ["orchestration-local"]}
+        frontier_task["forbiddenScope"] = {"filesOrArtifacts": ["src/**", "docs/**"], "effects": ["implementation", "docs-commit"], "claims": ["accepted", "merged"]}
+        frontier_task_path = tmp / "frontier-task.json"
+        write_json(frontier_task_path, frontier_task)
+
         frontier_actor = json.loads(paths["handoff"].read_text(encoding="utf-8"))
+        frontier_actor["taskId"] = "TASK-FRONTIER-001"
         frontier_actor["actorRole"] = "frontier"
         frontier_actor["effectsPreset"] = "orchestration_local_write"
+        frontier_actor["changedFiles"] = [".openacp/frontier/lane-status.md"]
+        frontier_actor["changedArtifacts"] = [{"path": ".openacp/frontier/lane-status.md", "changeType": "created"}]
+        frontier_actor["claims"] = ["Synthesized provisional lane evidence"]
         frontier_actor_path = tmp / "frontier-actor.json"
         write_json(frontier_actor_path, frontier_actor)
         assert_exit(
             "frontier B2 lane handoff accepted",
-            run(["--artifact", str(frontier_actor_path), "--ruleset", "handoff", "--task-card", str(paths["task_card"]), "--strict"]),
+            run(["--artifact", str(frontier_actor_path), "--ruleset", "handoff", "--task-card", str(frontier_task_path), "--strict"]),
             0,
+        )
+
+        bad_frontier_effects = json.loads(frontier_actor_path.read_text(encoding="utf-8"))
+        bad_frontier_effects["effectsPreset"] = "docs_task_card_commit"
+        bad_frontier_effects_path = tmp / "bad-frontier-effects.json"
+        write_json(bad_frontier_effects_path, bad_frontier_effects)
+        assert_exit(
+            "frontier implementation effects rejected",
+            run(["--artifact", str(bad_frontier_effects_path), "--ruleset", "handoff", "--task-card", str(frontier_task_path), "--strict"]),
+            1,
         )
 
         bad_repro = json.loads(paths["handoff"].read_text(encoding="utf-8"))
@@ -371,6 +393,28 @@ def main() -> int:
         )
         assert_exit("valid short launcher", run(["--artifact", str(launcher_path), "--ruleset", "launcher", "--strict"]), 0)
 
+        bad_child_launcher_path = tmp / "bad-child-launcher.md"
+        bad_child_launcher_path.write_text(
+            "\n".join(
+                [
+                    "Project - Worker - Startup",
+                    "Purpose: start a worker child thread.",
+                    "",
+                    "Read and execute this OpenACP prompt record:",
+                    f"- Prompt Record: {prompt_record_path}",
+                    "- Prompt ID: PROMPT-001",
+                    "- Preferred language: Chinese",
+                    "",
+                    "Hard requirements:",
+                    "1. Read the prompt record explicitly as UTF-8.",
+                    "2. Execute only the named Prompt ID.",
+                    "3. If the file cannot be read cleanly, the Prompt ID is missing, or the text appears corrupted, stop and report launcher-read failure.",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("child launcher requires fallback reason", run(["--artifact", str(bad_child_launcher_path), "--ruleset", "launcher", "--strict"]), 1)
+
         bad_launcher_language_path = tmp / "bad-launcher-language.md"
         bad_launcher_language_path.write_text(
             launcher_path.read_text(encoding="utf-8").replace("- Preferred language: Chinese\n", ""),
@@ -428,12 +472,38 @@ def main() -> int:
                     "gapDecisionMatrix",
                     "branchReturnGate",
                     "worktreeDecision",
-                    "Dispatch bounded worker, reviewer, and subagent work inside the lane.",
+                    "Subagent-first dispatch is required.",
+                    "Use dispatch_current_thread_subagent for child work in the current Frontier thread.",
+                    "Dispatch bounded worker, reviewer, discovery, validation, and subagent work inside the lane.",
+                    "Do not use the human as a thread launcher for B0/B1/B2-safe child work.",
+                    "Human-managed child launchers are fallback only when direct subagent dispatch is unavailable, unsafe, explicitly requested, or requires a separately user-managed session.",
+                    "Maintain a child ledger with promptId, responseId, taskId, handoffId, role, authority, effects, subagent id, terminal status, consume status, and remaining risk.",
+                    "Every reply must include a human next step.",
                 ]
             ),
             encoding="utf-8",
         )
         assert_exit("valid frontier contract", run(["--artifact", str(frontier_contract_path), "--ruleset", "frontier-contract", "--strict"]), 0)
+
+        bad_frontier_contract_path = tmp / "bad-frontier-contract.md"
+        bad_frontier_contract_path.write_text(
+            "\n".join(
+                [
+                    "Prompt ID: FRONTIER-002",
+                    "Role: Frontier",
+                    "Authority level: B2",
+                    "Use human-explain-openacp and formal-report-openacp for every status reply.",
+                    "gapDecisionMatrix",
+                    "branchReturnGate",
+                    "worktreeDecision",
+                    "Dispatch bounded worker, reviewer, and subagent work inside the lane.",
+                    "create_downstream_prompt",
+                    "Return a short downstream launcher to the human.",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("frontier human trampoline rejected", run(["--artifact", str(bad_frontier_contract_path), "--ruleset", "frontier-contract", "--strict"]), 1)
 
         public_pkg = tmp / "public-package"
         (public_pkg / "templates").mkdir(parents=True)

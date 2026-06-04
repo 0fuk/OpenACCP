@@ -108,5 +108,6 @@ When the Primary thread starts from the short launcher, it must:
 6. Group CARDs into 1-5 Frontier lanes based on complexity, risk, dependency, and parallel safety.
 7. Grant Frontier B2 lane-local authority by default, with B3 forbidden.
 8. Write full Frontier prompt records to disk and return short Frontier launchers only for the selected lanes.
+9. Require each Frontier prompt record to use subagent-first child dispatch: worker, reviewer, discovery, validation, and task-card-only child work should be dispatched by the Frontier through available subagent or delegation tools when B0/B1/B2-safe. Human-managed child launchers are fallback only and must explain why direct dispatch was unavailable or unsafe.
 
 Primary should not hard-code exactly two Frontier lanes. If one lane is enough, launch one. If the project is broad, launch up to five. More than five lanes requires explicit user approval.

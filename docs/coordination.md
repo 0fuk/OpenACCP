@@ -28,7 +28,7 @@ Primary and Frontier should repeatedly:
 6. continue B0/B1/B2-safe work,
 7. reserve only true final-authority decisions for B3.
 
-A lane is not closed because a seed checklist is complete. A lane closes only when the current visible gaps are resolved, delegated with handoff paths, explicitly out, or final-authority-only with a Primary-ready packet.
+A lane is not closed because a seed checklist is complete. A lane closes only when the current visible gaps are resolved, child work is terminal and consumed or rejected by the parent orchestrator, explicitly out, or final-authority-only with a Primary-ready packet.
 
 ## Subagents
 
@@ -43,6 +43,8 @@ Use subagents for bounded work:
 Each subagent needs a role, authority boundary, input facts, allowed scope, forbidden scope, stop conditions, and expected output. The parent orchestrator must consume the result before claiming progress.
 
 Primary should create or refresh CARDs before Frontier dispatch. A Primary-launched Frontier should usually receive B2 lane-local authority so it can actively run B0 discovery, B1 packaging, B2 scoped worker or reviewer dispatch, child handoff consume, and closure proof inside the assigned lane.
+
+Frontier should not ask the human to open worker, reviewer, discovery, validation, or task-card-only child threads when direct subagent or delegation tools are available and the work is B0/B1/B2-safe. Full child prompt records may still be written to disk for audit and reproducibility, but the Frontier should dispatch and consume that child work itself. Short child launchers are fallback artifacts only; when used, they must state why direct dispatch was unavailable or unsafe and what the human must do next.
 
 ## Parallel Work
 

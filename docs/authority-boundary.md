@@ -23,8 +23,9 @@ Final authority: merge, release, final acceptance, waiver, checkpoint, publicati
 Classify each gap as:
 
 - `do_now`
-- `create_downstream_prompt`
+- `dispatch_current_thread_subagent`
 - `prepare_package`
+- `prepare_package_only_when_dispatch_unavailable`
 - `apply_conservative_default`
 - `needs_final_authority`
 - `explicitly_out`

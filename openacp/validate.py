@@ -498,6 +498,18 @@ def validate_launcher_text(text: str, report: Report) -> None:
         report.add("FULL_PROMPT_IN_LAUNCHER", "blocking", "fail", "Launcher appears to contain a full prompt body: " + ", ".join(full_hits))
     else:
         report.add("FULL_PROMPT_IN_LAUNCHER", "blocking", "pass", "Launcher does not include configured full-prompt markers.")
+    if re.search(r"(?i)\b(worker|reviewer|discovery|task-card-only|task card only|validation)\b", text):
+        if re.search(r"(?i)fallback launcher|fallback only", text) and re.search(r"(?i)unavailable|unsafe|explicitly requested|separately user-managed", text):
+            report.add("CHILD_LAUNCHER_FALLBACK", "blocking", "pass", "Child-role launcher is explicitly marked as fallback.")
+        else:
+            report.add(
+                "CHILD_LAUNCHER_FALLBACK",
+                "blocking",
+                "fail",
+                "Worker, reviewer, discovery, validation, or task-card-only launchers must be fallback launchers with a direct-dispatch failure reason.",
+            )
+    else:
+        report.add("CHILD_LAUNCHER_FALLBACK", "blocking", "pass", "Launcher is not a child worker/reviewer/discovery launcher.")
 
 
 def validate_formal_report_text(text: str, report: Report) -> None:
@@ -540,14 +552,104 @@ def validate_frontier_contract_text(text: str, report: Report) -> None:
     else:
         report.add("FRONTIER_CLOSURE_FIELDS", "blocking", "pass", "Frontier closure fields are present.")
     lowered = text.lower()
+    if "create_downstream_prompt" in text:
+        report.add("FRONTIER_LEGACY_GAP_DECISION", "blocking", "fail", "Frontier contract must not use create_downstream_prompt as a gap decision; use current-thread dispatch or fallback package decisions.")
+    else:
+        report.add("FRONTIER_LEGACY_GAP_DECISION", "blocking", "pass", "No legacy create_downstream_prompt decision found.")
     if "worker" in lowered and "reviewer" in lowered and ("subagent" in lowered or "sub-agent" in lowered or "dispatch" in lowered):
         report.add("FRONTIER_DISPATCH", "blocking", "pass", "Frontier contract allows bounded downstream dispatch.")
     else:
         report.add("FRONTIER_DISPATCH", "blocking", "fail", "Frontier contract must allow bounded worker/reviewer/subagent dispatch.")
+    if re.search(r"(?i)subagent[- ]first|sub-agent[- ]first", text):
+        report.add("FRONTIER_SUBAGENT_FIRST", "blocking", "pass", "Frontier contract requires subagent-first dispatch.")
+    else:
+        report.add("FRONTIER_SUBAGENT_FIRST", "blocking", "fail", "Frontier contract must require subagent-first dispatch.")
+    if "dispatch_current_thread_subagent" in text or re.search(r"(?i)current\s+Frontier\s+thread", text):
+        report.add("FRONTIER_CURRENT_THREAD_DISPATCH", "blocking", "pass", "Frontier contract anchors child dispatch in the current Frontier thread.")
+    else:
+        report.add("FRONTIER_CURRENT_THREAD_DISPATCH", "blocking", "fail", "Frontier contract must require current-thread child subagent dispatch.")
+    if (
+        re.search(r"(?i)human.*(?:thread launcher|open .*thread|managed child launcher|child thread)", text)
+        and re.search(r"(?i)fallback launcher|fallback only", text)
+        and re.search(r"(?i)unavailable|unsafe|explicitly requested|separately user-managed", text)
+    ):
+        report.add("FRONTIER_NO_HUMAN_TRAMPOLINE", "blocking", "pass", "Frontier contract makes human-managed child launchers fallback-only.")
+    else:
+        report.add(
+            "FRONTIER_NO_HUMAN_TRAMPOLINE",
+            "blocking",
+            "fail",
+            "Frontier contract must say human-managed child launchers are fallback-only and explain when fallback is allowed.",
+        )
+    bad_child_launcher_lines = find_child_launcher_antipatterns(text)
+    if bad_child_launcher_lines:
+        report.add(
+            "FRONTIER_CHILD_LAUNCHER_ANTIPATTERN",
+            "blocking",
+            "fail",
+            "Child launcher anti-pattern found outside fallback context: " + " | ".join(bad_child_launcher_lines[:3]),
+        )
+    else:
+        report.add("FRONTIER_CHILD_LAUNCHER_ANTIPATTERN", "blocking", "pass", "No non-fallback child launcher anti-pattern found.")
+    if re.search(r"(?i)child ledger", text) and all(term in text for term in ["promptId", "responseId", "handoffId"]):
+        report.add("FRONTIER_CHILD_LEDGER", "blocking", "pass", "Frontier contract requires child ledger identifiers.")
+    else:
+        report.add("FRONTIER_CHILD_LEDGER", "blocking", "fail", "Frontier contract must require a child ledger with promptId, responseId, and handoffId.")
+    if re.search(r"(?i)human next step|what the human should do next", text):
+        report.add("FRONTIER_HUMAN_NEXT_STEP", "blocking", "pass", "Frontier contract requires an explicit human next step.")
+    else:
+        report.add("FRONTIER_HUMAN_NEXT_STEP", "blocking", "fail", "Frontier contract must require an explicit human next step.")
     if "human-explain-openacp" in text and "formal-report-openacp" in text:
         report.add("FRONTIER_REPORTING", "blocking", "pass", "Frontier contract requires human explanation and formal reports.")
     else:
         report.add("FRONTIER_REPORTING", "blocking", "fail", "Frontier contract must require human-explain-openacp and formal-report-openacp.")
+
+
+def find_child_launcher_antipatterns(text: str) -> list[str]:
+    child_markers = [
+        "downstream",
+        "child",
+        "worker",
+        "reviewer",
+        "discovery",
+        "validation",
+        "task-card-only",
+        "task card",
+    ]
+    launcher_markers = [
+        "short launcher",
+        "chat launcher",
+        "create a new thread",
+        "open a new thread",
+        "left sidebar",
+        "paste the launcher",
+        "return a launcher",
+        "return only a launcher",
+        "return only a short launcher",
+        "return short",
+    ]
+    fallback_markers = [
+        "fallback",
+        "fallback-only",
+        "unavailable",
+        "unsafe",
+        "explicitly requested",
+        "separately user-managed",
+        "do not",
+        "must not",
+        "not return",
+        "only when",
+    ]
+    hits: list[str] = []
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        lowered = line.lower()
+        if not line:
+            continue
+        if any(child in lowered for child in child_markers) and any(marker in lowered for marker in launcher_markers):
+            if not any(marker in lowered for marker in fallback_markers):
+                hits.append(line[:160])
+    return hits
 
 
 def validate_source_pack(data: dict[str, Any], report: Report) -> None:
@@ -966,6 +1068,18 @@ def validate_handoff_actor_authority(data: dict[str, Any], task_card: dict[str, 
         report.add("HANDOFF_ACTOR_AUTHORITY", "blocking", "fail", f"actorRole {actor} is not compatible with handoff authority {handoff_level}.")
     else:
         report.add("HANDOFF_ACTOR_AUTHORITY", "blocking", "pass", "actorRole is compatible with handoff authority.")
+    if actor == "frontier":
+        if data.get("effectsPreset") == "orchestration_local_write":
+            report.add("FRONTIER_HANDOFF_EFFECTS", "blocking", "pass", "Frontier handoff uses orchestration-local effects.")
+        else:
+            report.add(
+                "FRONTIER_HANDOFF_EFFECTS",
+                "blocking",
+                "fail",
+                "Frontier handoffs must use orchestration_local_write; implementation or docs commit evidence must come from scoped workers.",
+            )
+    else:
+        report.add("FRONTIER_HANDOFF_EFFECTS", "blocking", "pass", "Actor is not a Frontier handoff.")
     if task_level != handoff_level:
         report.add("HANDOFF_TASK_AUTHORITY_MATCH", "blocking", "fail", f"handoff authority {handoff_level} must match task authorityRequired {task_level}.")
     else:

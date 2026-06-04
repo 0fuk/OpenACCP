@@ -23,9 +23,9 @@ The validator is not a full JSON Schema engine. It uses hardcoded rules that mat
 - `status-report`: current state, unverified claims, blockers, next actions, and authority limits.
 - `assumption-ledger`: assumptions, evidence, risk, and confirmation flags.
 - `prompt-record`: full on-disk orchestrator or worker prompt record with Prompt ID, role, authority, preferred language, and human-readable reply contract.
-- `launcher`: short chat launcher that points to an on-disk prompt record, requires explicit UTF-8 reading, and does not paste the full prompt body into chat.
+- `launcher`: short chat launcher that points to an on-disk prompt record, requires explicit UTF-8 reading, and does not paste the full prompt body into chat. Worker, reviewer, discovery, validation, and task-card-only launchers are rejected unless they are explicitly marked as fallback launchers with a direct-dispatch failure reason.
 - `formal-report`: readable status report with `Response ID`, stable table rows, numeric progress, basis, and evidence details.
-- `frontier-contract`: Frontier prompt or report text with B2 lane-local authority, active B0/B1/B2 closure rules, gap decision matrix, branch return gate, worktree decision, and dispatch rules.
+- `frontier-contract`: Frontier prompt or report text with B2 lane-local authority, active B0/B1/B2 closure rules, gap decision matrix, branch return gate, worktree decision, subagent-first current-thread dispatch, child ledger, human next step, and fallback-only child launcher rules.
 - `current-manifest`: current fact anchor that records preferred language, facts input, current source pack, invalid sources, deprecated sources, sequence registry, active cards, and active lanes.
 - `sequence-registry`: registry of prompt records, responses, handoffs, active cards, and current/latest pointers.
 - `public-package`: UTF-8, common mojibake, local paths, internal identifier markers, lightweight secret markers, and internal formal reports placed in public report paths.
@@ -47,6 +47,12 @@ Handoff validation should include the task card:
 
 ```bash
 python tools/openacp_validate.py --artifact examples/single-worker-flow/handoff.json --ruleset handoff --task-card examples/single-worker-flow/task-card.json --strict
+```
+
+Frontier contracts can be checked directly:
+
+```bash
+python tools/openacp_validate.py --artifact templates/frontier-orchestrator-launcher.md --ruleset frontier-contract --strict
 ```
 
 Prompt records, short launchers, and formal reports can be checked before dispatch or status publication:
