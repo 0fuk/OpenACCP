@@ -34,6 +34,8 @@ Use `card-registry` before Frontier dispatch. It checks that CARDs were cut from
 
 Use `launcher-output` when a response is supposed to give the human a Primary or Frontier launcher. It rejects responses that only link `.short.md` files or give `Get-Content` commands instead of copyable fenced `prompt` blocks.
 
+Use `formal-report` before publishing a report-like chat output or response log. It rejects nonstandard table headers, free-form install rows such as `Skill` or `CLI`, legacy row labels, missing progress percentages, long English-dominant Chinese reports, and shell command dumps.
+
 Use `public-package` before release packaging. It checks UTF-8, mojibake, local path leaks, internal identifier markers, lightweight secret markers, English-only root README, and public report hygiene.
 
 Validator pass is not work completion.

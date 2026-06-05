@@ -30,6 +30,18 @@ Use these rows for a Chinese Primary report:
 | 缺口　　 | |
 | 下一步　 | |
 
+Use these rows for a Chinese post-install or generic startup report:
+
+| 项 | 内容 |
+|---|---|
+| 做了什么　 | |
+| 总体进度　 | Include a numeric estimate. |
+| 验证　　 | 验证通过 / 验证失败。 |
+| 范围　　 | |
+| 目标　　 | |
+| 缺口　　 | |
+| 下一步　 | |
+
 Use these rows for a Chinese Frontier report:
 
 | 项 | 内容 |
@@ -45,12 +57,13 @@ Use these rows for a Chinese Frontier report:
 
 - Validation:
 - Artifacts:
-- Commands:
-- Paths:
+- Notes:
 
 Do not claim final states without final-authority evidence.
 
-Keep the table cells short. Put long commands, paths, URLs, commit hashes, validation output, and evidence lists in `Evidence Details` instead of the table.
+Keep the table cells short. Put long paths, URLs, commit hashes, validation output, and evidence lists in `Evidence Details` instead of the table.
+
+Do not include shell command blocks, PowerShell blocks, bash blocks, command dumps, executable paths, or local install paths in a chat formal report. For validation, write only a short status such as `验证通过` or `Validation passed`.
 
 ## Post-Install Startup Note
 

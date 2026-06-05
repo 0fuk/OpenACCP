@@ -20,12 +20,16 @@ When the preferred language is Chinese, use Chinese as the main language for hea
 Formal reports are often rendered in narrow chat panes. Keep the table readable:
 
 - Use short first-column labels. Generic reports may use `Changed`, `Progress`, `Gate`, `Area`, `Goal`, `Gaps`, `Next`.
+- Chinese post-install and generic startup reports should use `做了什么`, `总体进度`, `验证`, `范围`, `目标`, `缺口`, `下一步`.
 - Primary Chinese reports should use `做了什么`, `总体进度`, `Frontier`, `目标`, `缺口`, `下一步`.
 - Frontier Chinese reports should use `做了什么`, `总体进度`, `Lane`, `目标`, `缺口`, `下一步`.
 - Keep each table cell to a short summary.
-- Do not put long paths, URLs, commit hashes, full commands, validation logs, or long inline-code snippets inside table cells.
-- Put detailed evidence after the table under `Evidence Details` as normal bullets.
-- For Chinese Primary or Frontier chat reports, pad the first-column labels with full-width ideographic spaces by default so the chat UI does not compress labels into vertical fragments. The visible label stays the same after validator normalization.
+- Do not use free-form row labels such as `安装`, `Skill`, `CLI`, `项目`, `状态`, `What changed`, `Lane or area`, `Next step`, `Validation`, or `Checkpoint`.
+- Do not put long paths, URLs, commit hashes, full commands, validation logs, executable paths, local install paths, or long inline-code snippets inside table cells.
+- Do not include PowerShell blocks, bash blocks, shell command blocks, command lists, or command dumps anywhere in a chat formal report. Validation evidence should be a short status only, such as `验证通过` or `Validation passed`.
+- Put only short evidence notes after the table under `Evidence Details` as normal bullets.
+- For all Chinese chat reports, pad the first-column labels with full-width ideographic spaces by default so the chat UI does not compress labels into vertical fragments. The visible label stays the same after validator normalization.
+- Always use the exact table header `| 项 | 内容 |` for Chinese reports or `| Item | Content |` for English reports. Do not use `| 项目 | 状态 |`, `| 字段 | 内容 |`, or custom headers.
 
 ## Post-Install Startup Report
 
@@ -34,12 +38,14 @@ After installing OpenACP as a skill + workflow kit, produce a formal report auto
 The startup formal report should state:
 
 - what was installed or loaded,
-- which validation commands passed or failed,
+- whether validation passed or failed,
 - whether the OpenACP skills are available,
 - whether `openacp` and `openacp-validate` are available,
 - current startup state,
 - gaps,
 - next step.
+
+The startup report must not show validation commands, shell snippets, PowerShell snippets, local executable paths, skill install paths, or temporary install directories. The `验证` or `Gate` row should only say whether validation passed or failed. If details are needed, use one short sentence outside the table, not a command block.
 
 The next step must ask for:
 

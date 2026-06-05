@@ -42,6 +42,8 @@ The startup agent should:
 2. Install the Python workflow kit and run basic validation.
 3. Produce a formal report automatically. The user should not need to ask for it separately.
 
+The post-install formal report should be short and human-readable. It should say whether validation passed, but it should not print PowerShell blocks, command lists, executable paths, local install paths, or temporary directories in chat.
+
 After installation and validation, the agent should ask you for:
 
 - **Working directory**: required. Launchers need a concrete project workspace where the agent is allowed to work.

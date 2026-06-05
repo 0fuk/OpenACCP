@@ -295,9 +295,20 @@ ZH_BASIS = "\u4f9d\u636e"
 ZH_LEFT_SIDEBAR = "\u5de6\u4fa7"
 ZH_NEW_THREAD = "\u65b0\u5efa"
 ZH_PASTE = "\u7c98\u8d34"
+ZH_VALIDATION = "\u9a8c\u8bc1"
+ZH_AREA = "\u8303\u56f4"
 
 FORMAL_ROW_SETS = [
     {"Changed", "Progress", "Gate", "Area", "Goal", "Gaps", "Next"},
+    {
+        "\u505a\u4e86\u4ec0\u4e48",
+        "\u603b\u4f53\u8fdb\u5ea6",
+        "\u9a8c\u8bc1",
+        "\u8303\u56f4",
+        "\u76ee\u6807",
+        "\u7f3a\u53e3",
+        "\u4e0b\u4e00\u6b65",
+    },
     {
         "\u505a\u4e86\u4ec0\u4e48",
         "\u603b\u4f53\u8fdb\u5ea6",
@@ -518,6 +529,22 @@ def extract_table_rows(text: str) -> list[tuple[str, str]]:
             continue
         rows.append((left, right))
     return rows
+
+
+def has_valid_formal_header(text: str) -> bool:
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|") or not stripped.endswith("|"):
+            continue
+        cells = [normalize_table_label(cell) for cell in stripped.strip("|").split("|")]
+        if len(cells) < 2:
+            continue
+        first, second = cells[0], cells[1]
+        if (first, second) in {("Item", "Content"), (ZH_ITEM, "\u5185\u5bb9")}:
+            return True
+        if first in {"---", ""}:
+            continue
+    return False
 
 
 def extract_json_fence_objects(text: str) -> list[dict[str, Any]]:
@@ -844,13 +871,17 @@ def validate_formal_report_text(text: str, report: Report) -> None:
         report.add("RESPONSE_LOG_PATH", "blocking", "pass", "Formal report names a response log path.")
     else:
         report.add("RESPONSE_LOG_PATH", "blocking", "fail", "Formal report must include a Response log path line.")
+    if has_valid_formal_header(text):
+        report.add("FORMAL_HEADER", "blocking", "pass", "Formal report uses the standard Item/Content or 项/内容 header.")
+    else:
+        report.add("FORMAL_HEADER", "blocking", "fail", "Formal report must use the standard `| Item | Content |` or `| 项 | 内容 |` header.")
     rows = extract_table_rows(text)
     labels = {label for label, _ in rows}
     if any(required.issubset(labels) for required in FORMAL_ROW_SETS):
         report.add("FORMAL_ROWS", "blocking", "pass", "Formal report has a known role-aware row set.")
     else:
         report.add("FORMAL_ROWS", "blocking", "fail", "Formal report rows must match a known OpenACP row set.")
-    bad_labels = labels.intersection({"What changed", "Lane or area", "Next step", "Validation", "Checkpoint"})
+    bad_labels = labels.intersection({"What changed", "Lane or area", "Next step", "Validation", "Checkpoint", "Skill", "CLI", "\u5b89\u88c5"})
     if bad_labels:
         report.add("LEGACY_ROW_LABELS", "blocking", "fail", "Legacy or overlong row labels found: " + ", ".join(sorted(bad_labels)))
     else:
@@ -864,6 +895,14 @@ def validate_formal_report_text(text: str, report: Report) -> None:
         report.add("EVIDENCE_DETAILS", "blocking", "pass", "Formal report includes evidence or basis details outside the table.")
     else:
         report.add("EVIDENCE_DETAILS", "blocking", "fail", "Formal report must include Evidence Details or basis outside the table.")
+    if (
+        re.search(r"```(?:powershell|pwsh|bash|sh|shell|cmd)\b", text, re.IGNORECASE)
+        or re.search(r"(?i)\bPowerShell\b|\bcommands?\s+(?:include|passed)\b|\u9a8c\u8bc1\u901a\u8fc7\u7684\u547d\u4ee4", text)
+        or re.search(r"(?im)^\s*(?:[-*]\s*)?(?:python|openacp|openacp-validate|pip|git)\s+[-A-Za-z0-9_.\\/]", text)
+    ):
+        report.add("FORMAL_REPORT_NO_COMMAND_DUMP", "blocking", "fail", "Formal reports must not include shell command blocks or command dumps; summarize validation status instead.")
+    else:
+        report.add("FORMAL_REPORT_NO_COMMAND_DUMP", "blocking", "pass", "No shell command dump found in formal report.")
     if any(_has_cjk(label) for label in labels):
         english_offenders = _long_english_dominant_lines(text)
         if english_offenders:

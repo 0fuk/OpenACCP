@@ -19,7 +19,7 @@ def write_json(path: Path, data: dict) -> None:
 
 
 def run(args: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run([sys.executable, str(VALIDATOR), *args], text=True, capture_output=True)
+    return subprocess.run([sys.executable, str(VALIDATOR), *args], text=True, encoding="utf-8", errors="replace", capture_output=True)
 
 
 def assert_exit(name: str, proc: subprocess.CompletedProcess[str], expected: int) -> None:
@@ -636,6 +636,85 @@ def main() -> int:
             encoding="utf-8",
         )
         assert_exit("valid Chinese Frontier formal report", run(["--artifact", str(zh_frontier_report_path), "--ruleset", "formal-report", "--strict"]), 0)
+
+        zh_install_report_path = tmp / "zh-install-formal-report.md"
+        zh_install_report_path.write_text(
+            "\n".join(
+                [
+                    "Response ID: RESP-ZH-INSTALL-001",
+                    "Response log path: chat reply",
+                    "",
+                    "| 项 | 内容 |",
+                    "|---|---|",
+                    "| 做了什么　 | 已安装并加载 OpenACP。 |",
+                    "| 总体进度　 | 80%。安装和验证完成，还缺真实项目输入。 |",
+                    "| 验证　　 | 验证通过。 |",
+                    "| 范围　　 | OpenACP install startup。 |",
+                    "| 目标　　 | 准备生成 Primary launcher。 |",
+                    "| 缺口　　 | 还需要工作目录、事实材料和首选语言。 |",
+                    "| 下一步　 | 请提供工作目录、事实材料路径或上传材料，并说明首选语言。 |",
+                    "",
+                    "## 依据",
+                    "- 安装后启动报告样例。",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("valid Chinese install formal report", run(["--artifact", str(zh_install_report_path), "--ruleset", "formal-report", "--strict"]), 0)
+
+        bad_install_report_path = tmp / "bad-install-formal-report.md"
+        bad_install_report_path.write_text(
+            "\n".join(
+                [
+                    "Response ID: RESP-ZH-INSTALL-BAD",
+                    "Response log path: chat reply",
+                    "",
+                    "| 项目 | 状态 |",
+                    "|---|---|",
+                    "| 安装 | 已完成。 |",
+                    "| Skill | 11 个 skill 已安装。 |",
+                    "| CLI | openacp 可用。 |",
+                    "| 验证 | 验证通过。 |",
+                    "| 缺口 | 还需要工作目录。 |",
+                    "| 下一步 | 请提供路径。 |",
+                    "",
+                    "## 依据",
+                    "- Bad free-form install report fixture.",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("formal report rejects free-form install table", run(["--artifact", str(bad_install_report_path), "--ruleset", "formal-report", "--strict"]), 1)
+
+        bad_command_report_path = tmp / "bad-command-formal-report.md"
+        bad_command_report_path.write_text(
+            "\n".join(
+                [
+                    zh_install_report_path.read_text(encoding="utf-8"),
+                    "",
+                    "```powershell",
+                    "python -m pip install -e .",
+                    "openacp --version",
+                    "```",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("formal report rejects command dumps", run(["--artifact", str(bad_command_report_path), "--ruleset", "formal-report", "--strict"]), 1)
+
+        bad_command_list_report_path = tmp / "bad-command-list-formal-report.md"
+        bad_command_list_report_path.write_text(
+            "\n".join(
+                [
+                    zh_install_report_path.read_text(encoding="utf-8"),
+                    "",
+                    "验证通过的命令包括:",
+                    "- openacp --version",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("formal report rejects plain command lists", run(["--artifact", str(bad_command_list_report_path), "--ruleset", "formal-report", "--strict"]), 1)
 
         bad_checkpoint_report_path = tmp / "bad-checkpoint-formal-report.md"
         bad_checkpoint_report_path.write_text(

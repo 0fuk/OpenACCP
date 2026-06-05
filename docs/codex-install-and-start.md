@@ -57,14 +57,32 @@ The formal report is not a separate user command. It is the required post-instal
 The report should include:
 
 - what was installed or loaded,
-- which validation commands passed or failed,
+- whether validation passed or failed,
 - whether OpenACP skills are available,
 - whether the CLI is available,
 - current startup state,
 - gaps,
 - next step.
 
-For chat readability, keep the report table short. Long paths, commands, commit hashes, URLs, and validation logs should go below the table in `Evidence Details`, not inside table cells.
+For chat readability, keep the report table short. Long paths, commit hashes, URLs, and validation logs should not appear in table cells.
+
+The startup report must use `formal-report-openacp` rows. For a Chinese post-install report, use this exact table shape:
+
+```text
+| 项 | 内容 |
+|---|---|
+| 做了什么　 | |
+| 总体进度　 | |
+| 验证　　 | 验证通过 / 验证失败。 |
+| 范围　　 | |
+| 目标　　 | |
+| 缺口　　 | |
+| 下一步　 | |
+```
+
+Do not use `| 项目 | 状态 |`, `| 字段 | 内容 |`, `安装`, `Skill`, or `CLI` as formal-report table rows. They render poorly in narrow chat panes and do not match the OpenACP report contract.
+
+Do not print PowerShell blocks, bash blocks, command lists, executable paths, local install paths, or temporary install directories in the user-facing post-install report. The `验证` row should simply say `验证通过` or `验证失败`; if a note is useful, write one short natural-language sentence after the table.
 
 The next step must ask for:
 
