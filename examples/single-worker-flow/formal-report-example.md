@@ -3,7 +3,7 @@
 Response ID: `OACP-EXAMPLE-0001`
 Response log path: `examples/single-worker-flow/formal-report-example.md`
 
-| Item | Content |
+| Item/Status | Content |
 |---|---|
 | Changed | A docs-only worker handoff and reviewer report are ready for final consume. |
 | Progress | 75%. The scoped work is verified, but final authority has not accepted it. |

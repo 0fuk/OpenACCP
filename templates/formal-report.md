@@ -7,7 +7,7 @@ status: draft
 Response ID:
 Response log path:
 
-| Item | Content |
+| Item/Status | Content |
 |---|---|
 | Changed | |
 | Progress | Include a numeric estimate. |
@@ -21,37 +21,37 @@ Response log path:
 
 Use these rows for a Chinese Primary report:
 
-| 报告项 | 内容 |
+| 类型/状态 | 内容 |
 |---|---|
-| 做了什么 | |
-| 总体进度 | Include a numeric estimate. |
+| 做了什么　　 | |
+| 总体进度　　 | Include a numeric estimate. |
 | Frontier | |
-| 目标 | |
-| 缺口 | |
-| 下一步 | |
+| 目标　　　　 | |
+| 缺口　　　　 | |
+| 下一步　　　 | |
 
 Use these rows for a Chinese post-install or generic startup report:
 
-| 报告项 | 内容 |
+| 类型/状态 | 内容 |
 |---|---|
-| 做了什么 | |
-| 总体进度 | Include a numeric estimate. |
-| 验证 | 验证通过 / 验证失败。 |
-| 范围 | |
-| 目标 | |
-| 缺口 | |
-| 下一步 | |
+| 做了什么　　 | |
+| 总体进度　　 | Include a numeric estimate. |
+| 验证　　　　 | 验证通过 / 验证失败。 |
+| 范围　　　　 | |
+| 目标　　　　 | |
+| 缺口　　　　 | |
+| 下一步　　　 | |
 
 Use these rows for a Chinese Frontier report:
 
-| 报告项 | 内容 |
+| 类型/状态 | 内容 |
 |---|---|
-| 做了什么 | |
-| 总体进度 | Include a numeric estimate. |
+| 做了什么　　 | |
+| 总体进度　　 | Include a numeric estimate. |
 | Lane | |
-| 目标 | |
-| 缺口 | |
-| 下一步 | |
+| 目标　　　　 | |
+| 缺口　　　　 | |
+| 下一步　　　 | |
 
 ## Evidence and Validation
 
@@ -71,13 +71,15 @@ Do not include shell command blocks, PowerShell blocks, bash blocks, command dum
 
 For Chinese reports, name the evidence section `依据与验证` and the final section `下一步建议`. For English reports, use `Evidence and Validation` and `Recommended Next Step`.
 
+For Chinese chat reports, keep the header `类型/状态` and append full-width ideographic spaces to Chinese row labels in the first column. This preserves the requested visible labels while preventing the chat UI from compressing the left column.
+
 ## Post-Install Startup Note
 
 When this report is used immediately after installing OpenACP, the `Next` cell must ask for a required working directory, a facts input, and the user's preferred language. The facts input can be a source pack, PRD, spec, design document, facts path, or uploaded project materials. Do not end with only "send paths"; explain that the working directory is required because launchers need a concrete project workspace, that the facts input is needed so the launcher can start from current evidence, and that the language choice keeps all later Primary, Frontier, worker, reviewer, and discovery replies consistent.
 
 ## Mini Example
 
-| Item | Content |
+| Item/Status | Content |
 |---|---|
 | Changed | A worker handoff and reviewer report are ready for final consume. |
 | Progress | 70%. The work is implemented and reviewed, but final authority has not accepted it. |

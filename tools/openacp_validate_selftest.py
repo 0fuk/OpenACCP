@@ -656,7 +656,7 @@ def assert_text_rules(tmp: Path) -> None:
                 "Response ID: RESP-001",
                 "Response log path: chat reply",
                 "",
-                "| Item | Content |",
+                "| Item/Status | Content |",
                 "|---|---|",
                 "| Changed | Primary created startup artifacts. |",
                 "| Progress | 80%. Startup is ready but final acceptance is pending. |",
@@ -684,14 +684,14 @@ def assert_text_rules(tmp: Path) -> None:
                 "Response ID: RESP-ZH-001",
                 "Response log path: chat reply",
                 "",
-                "| 报告项 | 内容 |",
+                "| 类型/状态 | 内容 |",
                 "|---|---|",
-                "| 做了什么 | Frontier 刷新了 lane backlog。 |",
-                "| 总体进度 | 60%。仍有 B2 子任务未 consume。 |",
+                "| 做了什么　　 | Frontier 刷新了 lane backlog。 |",
+                "| 总体进度　　 | 60%。仍有 B2 子任务未 consume。 |",
                 "| Lane | docs lane。 |",
-                "| 目标 | 收口当前 lane 的 B0/B1/B2 工作。 |",
-                "| 缺口 | 需要继续 consume worker handoff。 |",
-                "| 下一步 | Frontier 继续派发 reviewer 并 consume 结果。 |",
+                "| 目标　　　　 | 收口当前 lane 的 B0/B1/B2 工作。 |",
+                "| 缺口　　　　 | 需要继续 consume worker handoff。 |",
+                "| 下一步　　　 | Frontier 继续派发 reviewer 并 consume 结果。 |",
                 "",
                 "## 依据与验证",
                 "- 本报告来自中文 selftest 样例。",
@@ -704,6 +704,18 @@ def assert_text_rules(tmp: Path) -> None:
     )
     assert_exit("valid Chinese Frontier formal report", run(["--artifact", str(zh_frontier_report_path), "--ruleset", "formal-report", "--preferred-language", "Chinese", "--strict"]), 0)
 
+    bad_no_padding_report_path = tmp / "bad-no-padding-formal-report.md"
+    bad_no_padding_report_path.write_text(
+        zh_frontier_report_path.read_text(encoding="utf-8")
+        .replace("做了什么　　", "做了什么")
+        .replace("总体进度　　", "总体进度")
+        .replace("目标　　　　", "目标")
+        .replace("缺口　　　　", "缺口")
+        .replace("下一步　　　", "下一步"),
+        encoding="utf-8",
+    )
+    assert_exit("Chinese formal report rejects missing label padding", run(["--artifact", str(bad_no_padding_report_path), "--ruleset", "formal-report", "--preferred-language", "Chinese", "--strict"]), 1)
+
     bad_checkpoint_report_path = tmp / "bad-checkpoint-formal-report.md"
     bad_checkpoint_report_path.write_text(
         zh_frontier_report_path.read_text(encoding="utf-8").replace("| Lane | docs lane。 |", "| Checkpoint | lane-local closure。 |\n| Lane | docs lane。 |"),
@@ -711,12 +723,12 @@ def assert_text_rules(tmp: Path) -> None:
     )
     assert_exit("formal report rejects checkpoint row", run(["--artifact", str(bad_checkpoint_report_path), "--ruleset", "formal-report", "--preferred-language", "Chinese", "--strict"]), 1)
 
-    bad_legacy_header_report_path = tmp / "bad-legacy-header-formal-report.md"
-    bad_legacy_header_report_path.write_text(
-        zh_frontier_report_path.read_text(encoding="utf-8").replace("| 报告项 | 内容 |", "| 类型/状态 | 内容 |"),
+    bad_report_item_header_path = tmp / "bad-report-item-header-formal-report.md"
+    bad_report_item_header_path.write_text(
+        zh_frontier_report_path.read_text(encoding="utf-8").replace("| 类型/状态 | 内容 |", "| 报告项 | 内容 |"),
         encoding="utf-8",
     )
-    assert_exit("Chinese formal report rejects legacy header", run(["--artifact", str(bad_legacy_header_report_path), "--ruleset", "formal-report", "--preferred-language", "Chinese", "--strict"]), 1)
+    assert_exit("Chinese formal report rejects report-item header", run(["--artifact", str(bad_report_item_header_path), "--ruleset", "formal-report", "--preferred-language", "Chinese", "--strict"]), 1)
 
     bad_legacy_evidence_report_path = tmp / "bad-legacy-evidence-formal-report.md"
     bad_legacy_evidence_report_path.write_text(

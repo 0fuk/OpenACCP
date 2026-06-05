@@ -23,13 +23,14 @@ Formal reports are often rendered in narrow chat panes. Keep the table readable:
 - Chinese post-install and generic startup reports should use `做了什么`, `总体进度`, `验证`, `范围`, `目标`, `缺口`, `下一步`.
 - Primary Chinese reports should use `做了什么`, `总体进度`, `Frontier`, `目标`, `缺口`, `下一步`.
 - Frontier Chinese reports should use `做了什么`, `总体进度`, `Lane`, `目标`, `缺口`, `下一步`.
+- In chat reports, append full-width ideographic spaces (`U+3000`) to Chinese first-column row labels so Codex keeps the left column wide enough. The visible label remains the same, for example `做了什么　　`, `总体进度　　`, `目标　　　　`, `缺口　　　　`, `下一步　　　`.
 - Keep each table cell to a short summary.
 - Do not use free-form row labels such as `安装`, `Skill`, `CLI`, `项目`, `状态`, `What changed`, `Lane or area`, `Next step`, `Validation`, or `Checkpoint`.
 - Do not put long paths, URLs, commit hashes, full commands, validation logs, executable paths, local install paths, or long inline-code snippets inside table cells.
 - Do not include PowerShell blocks, bash blocks, shell command blocks, command lists, or command dumps anywhere in a chat formal report. Validation evidence should be a short status only, such as `验证通过` or `Validation passed`.
 - Put only short evidence notes after the table. Chinese reports use `依据与验证`; English reports use `Evidence and Validation`.
-- Always use the exact table header `| 报告项 | 内容 |` for Chinese reports or `| Item | Content |` for English reports. Legacy short Chinese headers, mixed status headers, field/content headers, and custom headers are invalid.
-- Do not pad first-column labels with ideographic spaces. The wider `报告项` / `Item` header keeps the left column readable in Codex chat.
+- Always use the exact table header `| 类型/状态 | 内容 |` for Chinese reports or `| Item/Status | Content |` for English reports. Legacy short Chinese headers, mixed status headers, field/content headers, and custom headers are invalid.
+- Keep `类型/状态` as the Chinese header. Solve wrapping with first-column label padding, not by renaming the header.
 - Keep validation, gate, or checkpoint-like information in the `验证` / `Gate` row for generic reports or in the evidence section outside the table. The table row set excludes `Checkpoint`.
 
 ## Post-Install Startup Report

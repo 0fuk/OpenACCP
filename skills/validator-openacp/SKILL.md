@@ -52,7 +52,7 @@ Use `card-registry` before Frontier dispatch. It checks that CARDs were cut from
 
 Use `launcher-output` when a response is supposed to give the human a Primary or Frontier launcher. It rejects responses that only link `.short.md` files or give `Get-Content` commands instead of copyable fenced `prompt` blocks.
 
-Use `formal-report` before publishing a report-like chat output or response log. It requires `Response ID`, `Response log path`, the header `| 报告项 | 内容 |` or `| Item | Content |`, role-aware rows, evidence outside the table, and a `Recommended Next Step` / `下一步建议` ending. It rejects `Checkpoint`, free-form install rows such as `Skill` or `CLI`, legacy row labels, missing progress percentages, long English-dominant Chinese reports, and shell command dumps.
+Use `formal-report` before publishing a report-like chat output or response log. It requires `Response ID`, `Response log path`, the header `| 类型/状态 | 内容 |` or `| Item/Status | Content |`, role-aware rows, evidence outside the table, and a `Recommended Next Step` / `下一步建议` ending. Chinese reports should keep `类型/状态` and use full-width first-column label padding so the header stays on one line in Codex chat. It rejects `Checkpoint`, free-form install rows such as `Skill` or `CLI`, legacy row labels, missing progress percentages, long English-dominant Chinese reports, and shell command dumps.
 
 Use `public-package` before release packaging. It checks UTF-8, mojibake, local path leaks, internal identifier markers, lightweight secret markers, English-only root README, and public report hygiene.
 
