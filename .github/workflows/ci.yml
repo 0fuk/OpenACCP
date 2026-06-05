@@ -4,24 +4,30 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.12"]
+        python-version: ["3.10", "3.11", "3.13"]
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install package with dependencies
+        run: python -m pip install -e .
       - name: Run validator self-tests
         run: python tools/openaccp_validate_selftest.py
       - name: Scan public package
         run: python tools/openaccp_validate.py --artifact . --ruleset public-package --strict
-      - name: Install package and check CLI
+      - name: Check CLI
         run: |
-          python -m pip install . --no-deps
           openaccp --help
           openaccp --version
           openaccp-validate --help
@@ -41,3 +47,46 @@ jobs:
           python tools/openaccp_validate.py --artifact examples/prd-only-bootstrap/assumptions.json --ruleset assumption-ledger --strict
           python tools/openaccp_validate.py --artifact examples/prd-only-bootstrap/authority-charter.json --ruleset authority-charter --strict
           python tools/openaccp_validate.py --artifact examples/prd-only-bootstrap/task-card.json --ruleset task-card --source-pack examples/prd-only-bootstrap/source-pack.json --strict
+      - name: Validate multi-frontier closure flow
+        run: |
+          python tools/openaccp_validate.py --artifact examples/multi-frontier-closure/source-pack.json --ruleset source-pack --strict
+          python tools/openaccp_validate.py --artifact examples/multi-frontier-closure/runtime-boundary.json --ruleset runtime-boundary --strict
+          python tools/openaccp_validate.py --artifact examples/multi-frontier-closure/current-manifest.json --ruleset current-manifest --strict
+          python tools/openaccp_validate.py --artifact examples/multi-frontier-closure/sequence-registry.json --ruleset sequence-registry --strict
+          python tools/openaccp_validate.py --artifact examples/multi-frontier-closure/lane-registry.json --ruleset lane-registry --strict
+          python tools/openaccp_validate.py --artifact examples/multi-frontier-closure/child-ledgers/frontier-docs.json --ruleset child-ledger --strict
+          python tools/openaccp_validate.py --artifact examples/multi-frontier-closure/source-status-registry.json --ruleset source-status-registry --strict
+          python tools/openaccp_validate.py --artifact examples/multi-frontier-closure/decision-registry.json --ruleset decision-registry --strict
+          python tools/openaccp_validate.py --artifact examples/multi-frontier-closure/frontier-closures/frontier-docs.json --ruleset frontier-closure --strict
+      - name: Build package artifacts
+        run: |
+          python -m pip install build twine
+          python -m build
+          python -m twine check dist/*
+      - name: Smoke install built wheel
+        run: |
+          python -m venv "${RUNNER_TEMP}/openaccp-wheel"
+          "${RUNNER_TEMP}/openaccp-wheel/bin/python" -m pip install dist/*.whl
+          cd "${RUNNER_TEMP}"
+          cat > source-pack.json <<'JSON'
+          {
+            "schemaVersion": "openaccp-source-pack.v1",
+            "artifactType": "source-pack",
+            "currentSources": [{"sourceId": "SRC-001", "title": "Current PRD", "status": "current"}],
+            "referenceSources": [],
+            "deprecatedSources": [],
+            "readingOrder": ["source-pack.json"],
+            "conflictPolicy": ["Current sources define the baseline."],
+            "scopeBoundaryRef": "scope-boundary.json",
+            "openQuestionsRef": "open-questions.md",
+            "assumptionsRef": "assumptions.json"
+          }
+          JSON
+          "${RUNNER_TEMP}/openaccp-wheel/bin/openaccp-validate" --artifact source-pack.json --ruleset source-pack --strict
+      - name: Smoke install built sdist
+        run: |
+          python -m venv "${RUNNER_TEMP}/openaccp-sdist"
+          "${RUNNER_TEMP}/openaccp-sdist/bin/python" -m pip install dist/*.tar.gz
+          cd "${RUNNER_TEMP}"
+          "${RUNNER_TEMP}/openaccp-sdist/bin/openaccp" --version
+          "${RUNNER_TEMP}/openaccp-sdist/bin/openaccp-validate" --artifact source-pack.json --ruleset source-pack --strict

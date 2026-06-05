@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openaccp.dev/schemas/current-manifest.schema.json",
+  "title": "OpenACCP Current Manifest",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "artifactType",
+    "manifestId",
+    "preferredLanguage",
+    "workingDirectory",
+    "factsInput",
+    "currentSourcePackRef",
+    "invalidSourceRefs",
+    "deprecatedSourceRefs",
+    "sequenceRegistryRef",
+    "laneRegistryRef",
+    "runtimeBoundaryRef",
+    "sourceStatusRegistryRef",
+    "cardRegistryRef",
+    "activeLanes",
+    "supersededPromptIds",
+    "cancelledPromptIds",
+    "latestConsumeRefs"
+  ],
+  "properties": {
+    "schemaVersion": { "enum": ["openaccp-current-manifest.v1", "openaccp-current-manifest.v1.1"] },
+    "artifactType": { "const": "current-manifest" },
+    "manifestId": { "type": "string", "minLength": 1 },
+    "preferredLanguage": { "type": "string", "minLength": 1 },
+    "workingDirectory": { "type": "string", "minLength": 1 },
+    "factsInput": {},
+    "currentSourcePackRef": { "type": "string", "minLength": 1 },
+    "invalidSourceRefs": { "type": "array", "items": { "type": "string" } },
+    "deprecatedSourceRefs": { "type": "array", "items": { "type": "string" } },
+    "sequenceRegistryRef": { "type": "string", "minLength": 1 },
+    "laneRegistryRef": { "type": "string", "minLength": 1 },
+    "runtimeBoundaryRef": { "type": "string", "minLength": 1 },
+    "sourceStatusRegistryRef": { "type": "string", "minLength": 1 },
+    "cardRegistryRef": { "type": "string", "minLength": 1 },
+    "activeLanes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["laneId", "role", "status", "currentPromptId", "authorityLevel"],
+        "properties": {
+          "laneId": { "type": "string", "minLength": 1 },
+          "role": { "enum": ["primary", "frontier", "worker", "reviewer", "discovery", "human-owner"] },
+          "status": { "type": "string", "minLength": 1 },
+          "currentPromptId": { "type": "string", "minLength": 1 },
+          "authorityLevel": { "enum": ["B0", "B1", "B2", "B3"] }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "role": { "const": "frontier" } } },
+            "then": { "properties": { "authorityLevel": { "enum": ["B0", "B1", "B2"] } } }
+          },
+          {
+            "if": { "properties": { "role": { "enum": ["worker", "reviewer", "discovery"] } } },
+            "then": { "properties": { "authorityLevel": { "enum": ["B0", "B1", "B2"] } } }
+          }
+        ],
+        "additionalProperties": true
+      }
+    },
+    "supersededPromptIds": { "type": "array", "items": { "type": "string" } },
+    "cancelledPromptIds": { "type": "array", "items": { "type": "string" } },
+    "latestConsumeRefs": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

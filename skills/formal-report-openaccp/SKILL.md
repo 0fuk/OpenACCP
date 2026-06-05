@@ -37,7 +37,7 @@ Formal reports are often rendered in narrow chat panes. Keep the table readable:
 
 After installing OpenACCP as a skill + workflow kit, produce a formal report automatically as part of startup.
 
-The startup formal report should state:
+The startup formal report states:
 
 - what was installed or loaded,
 - whether validation passed or failed,
@@ -47,7 +47,7 @@ The startup formal report should state:
 - gaps,
 - next step.
 
-The startup report must not show validation commands, shell snippets, PowerShell snippets, local executable paths, skill install paths, or temporary install directories. The `验证` or `Gate` row should only say whether validation passed or failed. If details are needed, use one short sentence outside the table, not a command block.
+The startup report keeps validation commands, shell snippets, PowerShell snippets, local executable paths, skill install paths, and temporary install directories out of chat. The `验证` or `Gate` row says only whether validation passed or failed. If details are needed, use one short sentence outside the table, not a command block.
 
 The next step must ask for:
 
@@ -57,10 +57,10 @@ The next step must ask for:
 
 If no prepared facts path exists, ask the user to upload or attach the project materials. Uploaded materials become candidate facts; the working directory is still required.
 
-End the post-install report with human-readable wording, not a vague checklist. The meaning should be:
+End the post-install report with human-readable wording, not a vague checklist. The meaning is:
 
 ```text
-I have installed and validated OpenACCP, but I cannot build a useful Primary launcher yet because I do not know where your project work should happen, which materials count as current facts, or which language future agents should use. Please send me one clear working directory. This is required. Also send your source pack, PRD, spec, design document, or facts path. If you do not have a clean facts path yet, you can upload the project materials instead and I will treat them as candidate facts, but I still need the working directory. Please also tell me your preferred language; if you omit it, I will keep using your current language.
+OpenACCP is installed and validated. To build a useful Primary launcher, send one clear working directory. This is required. Also send your source pack, PRD, spec, design document, or facts path. If you have rough project materials instead of a clean facts path, upload or attach them and I will treat them as candidate facts while organizing the source pack. Please also tell me your preferred language; if you omit it, I will keep using your current language.
 ```
 
 ## Next Step Rule

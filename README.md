@@ -38,30 +38,30 @@ Ask Codex or Claude Code:
 Install https://github.com/0fuk/OpenACCP as a skill + workflow kit, then follow the README startup flow.
 ```
 
-The startup agent should:
+Startup performs three setup steps:
 
 1. Install or load every OpenACCP skill under `skills/`.
 2. Install the Python workflow kit and run basic validation.
 3. Produce a formal report automatically as part of startup.
 
-The post-install formal report should be short and human-readable. It should summarize validation in words and keep command output, executable paths, local install paths, and temporary directories out of chat.
+The post-install formal report stays short and human-readable. It summarizes validation in words and keeps command output, executable paths, local install paths, and temporary directories out of chat.
 
-After installation and validation, the agent should ask you for:
+After installation and validation, the agent asks you for:
 
 - **Working directory**: required. Launchers need a concrete project workspace where the agent is allowed to work.
 - **Facts input**: a source pack, PRD, spec, design document, facts path, or uploaded project materials.
-- **Preferred language**: the language that every Primary, Frontier, worker, reviewer, and discovery reply should use consistently.
+- **Preferred language**: the language that every Primary, Frontier, worker, reviewer, and discovery reply uses consistently.
 
-When the facts path is still rough, upload or attach the project materials. The agent should treat them as candidate facts until it organizes and validates them. A working directory is still required.
+When the facts path is still rough, upload or attach the project materials. The agent treats them as candidate facts until it organizes and validates them. A working directory is still required.
 
-After you provide those inputs, the startup agent should:
+After you provide those inputs:
 
-1. Write one full Primary prompt record to your working directory.
-2. Write one short Primary launcher file beside it.
-3. Return one copyable short Primary launcher in the current chat as a fenced `prompt` block.
-4. Tell you, in natural language, to create a new thread from the left sidebar and paste only that short launcher there.
+1. Startup writes one full Primary prompt record to your working directory.
+2. Startup writes one short Primary launcher file beside it.
+3. Startup returns one copyable short Primary launcher in the current chat as a fenced `prompt` block.
+4. Startup tells you, in natural language, to create a new thread from the left sidebar and paste only that short launcher there.
 
-The full prompt body belongs on disk. Chat should contain the copyable short launcher itself, with file links or attachments used only as supporting references.
+The full prompt body belongs on disk. Chat contains the copyable short launcher itself, with file links or attachments used only as supporting references.
 
 ## What Happens After Startup
 
@@ -69,7 +69,7 @@ GitHub install startup creates **one Primary launcher first**. Primary creates F
 
 The Primary thread starts after you paste the short Primary launcher into a new thread. Primary then reviews the real workspace and facts before deciding how much parallel coordination is useful.
 
-Primary should:
+Primary does the coordination work:
 
 1. Read the working directory and facts input.
 2. Classify sources as `current`, `reference`, `deprecated`, or `invalid`.
@@ -80,7 +80,7 @@ Primary should:
 7. Write full Frontier prompt records and short Frontier launchers for selected lanes.
 8. Print each selected Frontier launcher in chat as a copyable fenced `prompt` block.
 
-Primary should default to **at least two Frontier lanes** for normal or medium-complexity projects when two safe independent CARD clusters exist. It may launch one Frontier only when the project is clearly small, only one safe lane exists, or the user explicitly asks for a single lane. Broad or medium-high-complexity projects should normally receive two to five Frontier lanes. More than five requires explicit user approval.
+Primary defaults to **at least two Frontier lanes** for normal or medium-complexity projects when two safe independent CARD clusters exist. It launches one Frontier only when the project is clearly small, only one safe lane exists, or the user explicitly asks for a single lane. Broad or medium-high-complexity projects normally receive two to five Frontier lanes. More than five requires explicit user approval.
 
 ## Manual Primary And Frontier Startup
 
@@ -103,7 +103,7 @@ Manual Frontier launcher:
 ```prompt
 Use frontier-orchestrator-openaccp for this lane.
 
-Lane objective: <what this lane should close>
+Lane objective: <what this lane closes>
 Authority: B2 lane-local unless explicitly narrowed
 Working directory: <project path>
 Facts/source pack: <path or artifact>
@@ -186,15 +186,15 @@ These levels answer one practical question: **how much authority does this agent
 | `B2` | Scoped execution under an authority charter. | Worker dispatch, worktree setup, bounded implementation, focused verification, child handoff consume. |
 | `B3` | Final authority. | Final acceptance, PR/CI/merge, release, publication, final waiver, cross-lane final decisions. |
 
-The key rule: **a B3 blocker still leaves B0/B1/B2 work available.** If agents can still discover facts, narrow scope, prepare packages, dispatch scoped workers, or add review evidence, they should keep moving.
+The key rule: **a B3 blocker still leaves B0/B1/B2 work available.** If agents can still discover facts, narrow scope, prepare packages, dispatch scoped workers, or add review evidence, they keep moving.
 
 ## CARD Decomposition
 
 Good CARDs are the difference between one overloaded Frontier and several useful lanes.
 
-For a normal product or medium-high-complexity project, Primary should usually create **10-20 project-level CARDs**, and those CARDs may later expand into dozens or hundreds of concrete task cards. That gives Frontier lanes enough independent surface area to work in parallel.
+For a normal product or medium-high-complexity project, Primary usually creates **10-20 project-level CARDs**, and those CARDs may later expand into dozens or hundreds of concrete task cards. That gives Frontier lanes enough independent surface area to work in parallel.
 
-Primary should scan the facts for product domains before cutting CARDs. Examples include:
+Primary scans the facts for product domains before cutting CARDs. Examples include:
 
 - product workflow and user journeys,
 - backend/API and service contracts,
@@ -208,7 +208,7 @@ Primary should scan the facts for product domains before cutting CARDs. Examples
 
 Create frontend, UI, Electron, mobile, or compliance lanes when the project facts name those surfaces. If the PRD, spec, or source pack explicitly names Electron, UI, frontend, desktop shell, mobile, or another surface, Primary should create CARD coverage for that surface instead of treating the project as backend-only.
 
-CARDs should then be grouped into Frontier lanes. A lane can own several related CARDs, but each lane should have a clear objective and enough independence to make parallel work useful.
+CARDs are then grouped into Frontier lanes. A lane can own several related CARDs, and each lane has a clear objective plus enough independence to make parallel work useful.
 
 ## Skills
 
@@ -230,9 +230,9 @@ OpenACCP skills are installable agent workflow instructions. Each skill maps to 
 
 ## Language Contract
 
-If the user chooses a preferred language, all Primary, Frontier, worker, reviewer, discovery, and formal report replies should use that language as the main language.
+If the user chooses a preferred language, all Primary, Frontier, worker, reviewer, discovery, and formal report replies use that language as the main language.
 
-For example, if the preferred language is Chinese, the reply should be Chinese-first. Keep fixed technical terms in English only when they are useful as terms: `Primary`, `Frontier`, `worker`, `reviewer`, `handoff`, `validator`, `source pack`, `authority boundary`, `Prompt ID`, `Response ID`, `CARD`, `task-card`, `B0/B1/B2/B3`, `CI`, `README`, `CLI`, `JSON`, `schema`, `Electron`, or exact file names. A Chinese report should keep long explanatory paragraphs in Chinese.
+For example, if the preferred language is Chinese, the reply is Chinese-first. Keep fixed technical terms in English only when they are useful as terms: `Primary`, `Frontier`, `worker`, `reviewer`, `handoff`, `validator`, `source pack`, `authority boundary`, `Prompt ID`, `Response ID`, `CARD`, `task-card`, `B0/B1/B2/B3`, `CI`, `README`, `CLI`, `JSON`, `schema`, `Electron`, or exact file names. A Chinese report keeps long explanatory paragraphs in Chinese.
 
 ## Core Technology
 
@@ -253,14 +253,14 @@ Worker output, reviewer recommendations, Frontier synthesis, and validator pass 
 
 ### Active Closure
 
-Primary and Frontier should turn blockers into the next safe B0/B1/B2 action whenever possible:
+Primary and Frontier turn blockers into the next safe B0/B1/B2 action whenever possible:
 
 - Can this gap be reduced by B0 discovery?
 - Can it be turned into a B1 package?
 - Can a scoped B2 worker or reviewer handle it?
 - Is the remaining issue truly B3 final authority?
 
-Only when all visible remaining gaps are final-authority-only or explicitly out should Frontier return the lane to Primary.
+Frontier returns the lane to Primary only when all visible remaining gaps are final-authority-only or explicitly out.
 
 ### Handoff Consume
 
@@ -270,7 +270,7 @@ A handoff is evidence that becomes completion only after consume and acceptance.
 
 OpenACCP rejects machine-log replies as the main user-facing answer. A useful status says what changed, what is proven, what is provisional, what is missing, and what happens next.
 
-Every Primary, Frontier, worker, reviewer, discovery, bootstrap, and validation reply should use `human-explain-openaccp` style. Status-like replies must end with a practical recommended next step. If the agent can continue, the answer should say so and name the next Primary-owned or Frontier-owned action. If human input is needed, it should name the exact path, fact, repo boundary, branch, source root, test entrypoint, approval, or decision.
+Every Primary, Frontier, worker, reviewer, discovery, bootstrap, and validation reply uses `human-explain-openaccp` style. Status-like replies end with a practical recommended next step. If the agent can continue, the answer names the next Primary-owned or Frontier-owned action. If human input is needed, it names the exact path, fact, repo boundary, branch, source root, test entrypoint, approval, or decision.
 
 ## Minimum Useful Setup
 
@@ -356,13 +356,15 @@ One layer executes work. The other coordinates project truth.
 
 ## Public Package Hygiene
 
-The public repository should contain public-safe docs, templates, schemas, examples, CLI, and validator code. Keep private response logs, private source packs, local absolute paths, customer material, credentials, and production logs in ignored local paths such as `.openaccp-local/` or your team's private workspace.
+The public repository contains public-safe docs, templates, schemas, examples, CLI, and validator code. Keep private response logs, private source packs, local absolute paths, customer material, credentials, and production logs in ignored local paths such as `.openaccp-local/` or your team's private workspace.
 
 Before release, run:
 
 ```bash
 python tools/openaccp_validate_selftest.py
 python tools/openaccp_validate.py --artifact . --ruleset public-package --strict
+python -m build
+python -m twine check dist/*
 ```
 
-The validator checks structure, common leakage patterns, and common overclaims. Pair it with a dedicated secret scanner and human review before a formal release.
+Then install the built wheel or sdist in a clean environment and run a small validator smoke test. The validator checks structure, common leakage patterns, and common overclaims. Pair it with a dedicated secret scanner and human review before a formal release.

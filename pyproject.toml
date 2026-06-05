@@ -8,24 +8,27 @@ version = "0.1.0"
 description = "OpenACCP is an open workflow protocol for coordinating multi-agent software work."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 authors = [{ name = "Vyqo AI" }]
 keywords = ["agents", "workflow", "coordination", "handoff", "validator"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Software Development :: Quality Assurance",
 ]
-dependencies = []
+dependencies = ["jsonschema>=4.18"]
 
 [project.scripts]
 openaccp = "openaccp.cli:main"
 openaccp-validate = "openaccp.validate:main"
 
 [tool.setuptools]
-packages = ["openaccp"]
+packages = ["openaccp", "openaccp.schemas"]
+
+[tool.setuptools.package-data]
+"openaccp.schemas" = ["*.schema.json"]

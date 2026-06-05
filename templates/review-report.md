@@ -42,4 +42,4 @@ status: draft
 }
 ```
 
-Reviewer approval is review evidence. It is not final acceptance.
+Reviewer approval is review evidence. Final acceptance remains with Primary or the human owner.

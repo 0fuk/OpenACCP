@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openaccp.dev/schemas/task-card.schema.json",
+  "title": "OpenACCP Task Card",
+  "type": "object",
+  "required": ["schemaVersion", "artifactType", "taskId", "domain", "objective", "inputRefs", "sourceStatusNote", "allowedScope", "forbiddenScope", "acceptanceCriteria", "verificationPlan", "stopConditions", "expectedHandoff", "authorityRequired", "riskLevel"],
+  "properties": {
+    "schemaVersion": { "const": "openaccp-task-card.v1" },
+    "artifactType": { "const": "task-card" },
+    "taskId": { "type": "string", "minLength": 1 },
+    "parentCardId": { "type": "string", "minLength": 1 },
+    "cardRefs": { "$ref": "#/$defs/nonEmptyStrings" },
+    "domain": { "type": "string", "minLength": 1 },
+    "objective": { "type": "string", "minLength": 1 },
+    "inputRefs": { "$ref": "#/$defs/nonEmptyStrings" },
+    "sourceStatusNote": { "type": "string", "minLength": 1 },
+    "allowedScope": { "$ref": "#/$defs/scope" },
+    "forbiddenScope": { "type": "object", "required": ["filesOrArtifacts", "effects", "claims"], "additionalProperties": true },
+    "acceptanceCriteria": { "$ref": "#/$defs/nonEmptyStrings" },
+    "verificationPlan": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["check", "method", "required"], "additionalProperties": true } },
+    "stopConditions": { "$ref": "#/$defs/nonEmptyStrings" },
+    "expectedHandoff": { "type": "object", "required": ["artifactType", "requiredFields"], "additionalProperties": true },
+    "authorityRequired": { "enum": ["B0", "B1", "B2", "B3"] },
+    "authorityCharterRef": { "type": "string", "minLength": 1, "description": "Required by the validator for B2/B3 task cards." },
+    "riskLevel": { "enum": ["low", "medium", "high"] }
+  },
+  "$defs": {
+    "nonEmptyStrings": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "scope": { "type": "object", "required": ["filesOrArtifacts", "effects"], "additionalProperties": true }
+  },
+  "anyOf": [
+    { "required": ["parentCardId"] },
+    { "required": ["cardRefs"] }
+  ],
+  "additionalProperties": true
+}

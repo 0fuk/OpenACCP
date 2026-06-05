@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openaccp.dev/schemas/assumption-ledger.schema.json",
+  "title": "OpenACCP Assumption Ledger",
+  "type": "object",
+  "required": ["schemaVersion", "artifactType", "assumptions"],
+  "properties": {
+    "schemaVersion": { "const": "openaccp-assumption-ledger.v1" },
+    "artifactType": { "const": "assumption-ledger" },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["assumptionId", "statement", "evidence", "riskIfWrong", "canProceed", "needsHumanConfirmation", "expiresWhen"],
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

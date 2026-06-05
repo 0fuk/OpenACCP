@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openaccp.dev/schemas/runtime-boundary.schema.json",
+  "title": "OpenACCP Runtime Boundary",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "artifactType",
+    "boundaryId",
+    "workingDirectory",
+    "productRepoStatus",
+    "productRepoPath",
+    "baseBranch",
+    "sourceRoots",
+    "testEntrypoints",
+    "worktreePolicy",
+    "allowedWritablePaths",
+    "readOnlyPaths",
+    "forbiddenPaths",
+    "externalSideEffects",
+    "dataRisk",
+    "unresolvedOwnerInputs",
+    "b2DispatchGate"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "openaccp-runtime-boundary.v1" },
+    "artifactType": { "const": "runtime-boundary" },
+    "boundaryId": { "type": "string", "minLength": 1 },
+    "workingDirectory": { "type": "string", "minLength": 1 },
+    "productRepoStatus": { "enum": ["found", "provided", "missing", "not_applicable"] },
+    "productRepoPath": { "type": "string" },
+    "baseBranch": { "type": "string" },
+    "sourceRoots": { "type": "array", "items": { "type": "string" } },
+    "testEntrypoints": { "type": "array", "items": { "type": "string" } },
+    "worktreePolicy": { "enum": ["allowed", "forbidden", "unknown"] },
+    "allowedWritablePaths": { "type": "array", "items": { "type": "string" } },
+    "readOnlyPaths": { "type": "array", "items": { "type": "string" } },
+    "forbiddenPaths": { "type": "array", "items": { "type": "string" } },
+    "externalSideEffects": { "enum": ["none", "local_only", "requires_approval"] },
+    "dataRisk": { "enum": ["none", "low", "medium", "high", "sensitive"] },
+    "unresolvedOwnerInputs": { "type": "array", "items": { "type": "string" } },
+    "b2DispatchGate": {
+      "type": "object",
+      "required": ["state", "allowsProductWrite", "reason", "missingInputs"],
+      "properties": {
+        "state": { "enum": ["ready", "coordination_only", "blocked", "not_applicable"] },
+        "allowsProductWrite": { "type": "boolean" },
+        "reason": { "type": "string", "minLength": 1 },
+        "missingInputs": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

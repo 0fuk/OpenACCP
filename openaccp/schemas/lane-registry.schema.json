@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openaccp.dev/schemas/lane-registry.schema.json",
+  "title": "OpenACCP Lane Registry",
+  "type": "object",
+  "required": ["schemaVersion", "artifactType", "registryId", "projectComplexity", "frontierDispatchMode", "frontierDispatchReason", "lanes"],
+  "properties": {
+    "schemaVersion": { "const": "openaccp-lane-registry.v1" },
+    "artifactType": { "const": "lane-registry" },
+    "registryId": { "type": "string", "minLength": 1 },
+    "projectComplexity": { "enum": ["bootstrap", "small", "normal", "medium", "medium-high", "high", "unknown"] },
+    "frontierDispatchMode": { "enum": ["pre_frontier", "single_frontier", "multi_frontier"] },
+    "frontierDispatchReason": { "type": "string", "minLength": 1 },
+    "lanes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "laneId",
+          "objective",
+          "role",
+          "status",
+          "currentPromptId",
+          "authorityLevel",
+          "assignedCardIds",
+          "runtimeBoundaryRef",
+          "childLedgerRef",
+          "latestConsumeRefs",
+          "returnGateStatus",
+          "b2DispatchGate"
+        ],
+        "properties": {
+          "laneId": { "type": "string", "minLength": 1 },
+          "objective": { "type": "string", "minLength": 1 },
+          "role": { "enum": ["primary", "frontier"] },
+          "status": { "enum": ["prepared", "active", "open", "closed", "blocked_on_primary", "blocked_on_human", "cancelled"] },
+          "currentPromptId": { "type": "string", "minLength": 1 },
+          "authorityLevel": { "enum": ["B0", "B1", "B2", "B3"] },
+          "assignedCardIds": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "runtimeBoundaryRef": { "type": "string", "minLength": 1 },
+          "childLedgerRef": { "type": "string", "minLength": 1 },
+          "latestConsumeRefs": { "type": "array", "items": { "type": "string" } },
+          "b2DispatchGate": {
+            "type": "object",
+            "required": ["mode", "state", "reason"],
+            "properties": {
+              "mode": { "enum": ["coordination_only", "read_only_review", "product_write"] },
+              "state": { "enum": ["ready", "not_ready", "not_applicable"] },
+              "reason": { "type": "string", "minLength": 1 }
+            },
+            "additionalProperties": true
+          },
+          "returnGateStatus": {
+            "type": "object",
+            "required": [
+              "state",
+              "safeWorkRemainingCount",
+              "finalAuthorityGapCount",
+              "explicitlyOutCount",
+              "frontierClosureRef",
+              "latestChildLedgerRef",
+              "latestConsumeRefs"
+            ],
+            "properties": {
+              "state": { "enum": ["not_applicable", "not_ready", "ready_for_primary", "closed", "blocked_on_human"] },
+              "safeWorkRemainingCount": { "type": "integer", "minimum": 0 },
+              "finalAuthorityGapCount": { "type": "integer", "minimum": 0 },
+              "explicitlyOutCount": { "type": "integer", "minimum": 0 },
+              "frontierClosureRef": { "type": "string" },
+              "latestChildLedgerRef": { "type": "string" },
+              "latestConsumeRefs": { "type": "array", "items": { "type": "string" } }
+            },
+            "additionalProperties": true
+          }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "role": { "const": "frontier" } } },
+            "then": { "properties": { "authorityLevel": { "enum": ["B0", "B1", "B2"] } } }
+          }
+        ],
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

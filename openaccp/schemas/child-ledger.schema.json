@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openaccp.dev/schemas/child-ledger.schema.json",
+  "title": "OpenACCP Child Ledger",
+  "type": "object",
+  "required": ["schemaVersion", "artifactType", "ledgerId", "laneId", "children"],
+  "properties": {
+    "schemaVersion": { "const": "openaccp-child-ledger.v1" },
+    "artifactType": { "const": "child-ledger" },
+    "ledgerId": { "type": "string", "minLength": 1 },
+    "laneId": { "type": "string", "minLength": 1 },
+    "children": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "promptId",
+          "taskId",
+          "role",
+          "authority",
+          "effects",
+          "subagentIdOrToolStatus",
+          "expectedHandoffPath",
+          "dispatchStatus",
+          "handoffStatus",
+          "consumeStatus",
+          "remainingRisk"
+        ],
+        "properties": {
+          "promptId": { "type": "string", "minLength": 1 },
+          "responseId": { "type": "string", "minLength": 1 },
+          "taskId": { "type": "string", "minLength": 1 },
+          "handoffId": { "type": "string", "minLength": 1 },
+          "role": { "enum": ["worker", "reviewer", "discovery", "validation", "task-card-only"] },
+          "authority": { "enum": ["B0", "B1", "B2"] },
+          "effects": { "type": "array", "items": { "type": "string" } },
+          "subagentIdOrToolStatus": { "type": "string", "minLength": 1 },
+          "expectedHandoffPath": { "type": "string", "minLength": 1 },
+          "dispatchStatus": { "enum": ["not_started", "startup_provided", "dispatched", "running", "returned", "failed", "cancelled"] },
+          "handoffStatus": { "enum": ["not_expected", "not_started", "expected", "present", "missing", "invalid"] },
+          "parentConsumeRef": { "type": "string" },
+          "fallbackLauncherReason": { "type": "string" },
+          "consumeStatus": { "enum": ["not_applicable", "not_consumed", "consumed", "rejected"] },
+          "remainingRisk": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

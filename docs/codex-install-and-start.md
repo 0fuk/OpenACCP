@@ -12,7 +12,7 @@ Install https://github.com/0fuk/OpenACCP as a skill + workflow kit, then follow 
 
 ## Agent Startup Contract
 
-The agent should:
+The startup agent performs this setup:
 
 1. Clone or open `https://github.com/0fuk/OpenACCP`.
 2. Install or load all OpenACCP skills from `skills/`.
@@ -54,7 +54,7 @@ The agent should:
 
 The formal report is not a separate user command. It is the required post-install output.
 
-The report should include:
+The report includes:
 
 - what was installed or loaded,
 - whether validation passed or failed,
@@ -64,7 +64,7 @@ The report should include:
 - gaps,
 - next step.
 
-For chat readability, keep the report table short. Long paths, commit hashes, URLs, and validation logs should not appear in table cells.
+For chat readability, keep the report table short. Put long paths, commit hashes, URLs, and validation logs outside table cells.
 
 The startup report must use `formal-report-openaccp` rows. For a Chinese post-install report, use this exact table shape:
 
@@ -82,7 +82,7 @@ The startup report must use `formal-report-openaccp` rows. For a Chinese post-in
 
 Use only the OpenACCP report header: `| 类型和状态 | 内容 |` for Chinese or `| Item/Status | Content |` for English. Keep row labels to the standard OpenACCP set: `做了什么`, `总体进度`, `验证`, `范围`, `目标`, `缺口`, `下一步` for Chinese startup reports. Do not use `<nobr>`, HTML wrappers, invisible characters, or spacing tricks.
 
-Do not print PowerShell blocks, bash blocks, command lists, executable paths, local install paths, or temporary install directories in the user-facing post-install report. The `验证` row should simply say `验证通过` or `验证失败`; if a note is useful, write one short natural-language sentence after the table.
+Keep PowerShell blocks, bash blocks, command lists, executable paths, local install paths, and temporary install directories out of the user-facing post-install report. The `验证` row simply says `验证通过` or `验证失败`; if a note is useful, write one short natural-language sentence after the table.
 
 The next step must ask for:
 
@@ -95,12 +95,12 @@ If the user does not have a prepared facts path, the agent may ask the user to u
 Use plain human-readable wording for the final ask. For example:
 
 ```text
-I have installed and validated OpenACCP, but I cannot build a useful Primary launcher yet because I do not know where your project work should happen, which materials count as current facts, or which language you want future agents to use. Please send me one clear working directory. This is required. Also send your source pack, PRD, spec, design document, or facts path. If you do not have a clean facts path yet, you can upload the project materials instead and I will treat them as candidate facts, but I still need the working directory. Please also tell me your preferred language; if you do not specify one, I will keep using your current language.
+OpenACCP is installed and validated. To build a useful Primary launcher, send one clear working directory. This is required. Also send your source pack, PRD, spec, design document, or facts path. If you have rough project materials instead of a clean facts path, upload or attach them and I will treat them as candidate facts while organizing the source pack. Please also tell me your preferred language; if you omit it, I will keep using your current language.
 ```
 
 ## After The User Provides Project Inputs
 
-After the user provides a working directory, facts input, and preferred language or language fallback, the agent should return:
+After the user provides a working directory, facts input, and preferred language or language fallback, the agent returns:
 
 - one Primary Orchestrator launcher.
 
@@ -129,14 +129,14 @@ The launchers must name:
 
 The Primary prompt record must also include active closure rules:
 
-- Primary should dispatch bounded subagents and consume evidence until only final-authority or explicitly-out gaps remain.
+- Primary dispatches bounded subagents and consumes evidence until only final-authority or explicitly-out gaps remain.
 - Primary must inspect the working directory and facts input before dispatching Frontier.
 - Primary must create or refresh `.openaccp/coordination/runtime-boundary.json` before dispatching Frontier. It must resolve or explicitly mark product repo path, base branch, source roots, test entrypoints, worktree policy, writable paths, read-only paths, forbidden paths, data risk, side-effect policy, and `b2DispatchGate`.
 - Primary must create or refresh current manifest, source status registry, lane registry, decision registry, sequence registry, and CARD/task-card candidates.
-- If product repo path, base branch, source roots, test entrypoints, or worktree policy are missing, Primary should ask the user in the Primary report and continue B0/B1 packaging only. It should not push those unresolved runtime questions into Frontier as immediate blockers. Frontier lanes launched before product-write readiness must be `coordination_only` or `read_only_review`, not `product_write`.
+- If product repo path, base branch, source roots, test entrypoints, or worktree policy are missing, Primary asks the user in the Primary report and continues B0/B1 packaging only. Primary keeps unresolved runtime questions out of Frontier immediate blockers. Frontier lanes launched before product-write readiness use `coordination_only` or `read_only_review`.
 - Primary must cut enough CARDs for the actual project domains. Normal or medium/high-complexity product work usually needs 10-20 project-level CARDs before Frontier dispatch; fewer is acceptable only for a genuinely small project with an explicit reason.
 - Primary must scan facts for product workflow, backend/API, data/storage, frontend/UI, desktop/mobile/native/Electron/Tauri surfaces, integrations, auth/security/privacy, migration, testing/QA, observability/CI, docs/release/ops, and any project-specific domain. Do not invent a domain that facts do not mention, but if facts mention UI, frontend, Electron, desktop shell, mobile, or another surface, Primary must create CARD coverage for it.
-- Primary must decide Frontier lanes dynamically based on project complexity, CARD grouping, risk, and parallel safety. Default to at least two Frontier lanes when two safe independent CARD clusters exist; one Frontier requires a small-project, single-safe-lane, or explicit-user-request reason. Medium/high projects should normally receive two to five Frontiers. More than five requires explicit user approval.
+- Primary must decide Frontier lanes dynamically based on project complexity, CARD grouping, risk, and parallel safety. Default to at least two Frontier lanes when two safe independent CARD clusters exist; one Frontier requires a small-project, single-safe-lane, or explicit-user-request reason. Medium/high projects normally receive two to five Frontiers. More than five requires explicit user approval.
 - Primary must grant each Frontier B2 lane-local authority by default unless a narrower authority is explicitly safer.
 
 The full launcher prompt records must be written to disk first. Use the user's working directory, preferably:
@@ -164,7 +164,7 @@ Use this interaction shape:
 2. Tell the user: `Create a new thread from the left sidebar, paste the short Primary launcher below, and start that thread.`
 3. Print the exact short Primary launcher in a fenced `prompt` block.
 
-The short chat launcher should contain only:
+The short chat launcher contains only:
 
 - a short title and purpose,
 - the full prompt record path,
@@ -172,6 +172,15 @@ The short chat launcher should contain only:
 - the preferred language or language fallback,
 - an explicit UTF-8 read requirement,
 - a stop rule if the file cannot be read cleanly, the Prompt ID is missing, or the text appears corrupted.
+
+Launcher titles use one stable grammar. The first non-empty line is plain text, not a Markdown heading:
+
+- `<Project> - Primary Orchestrator - <Short Task>`
+- `<Project> - Frontier 01 - <Short Task>` through `<Project> - Frontier 05 - <Short Task>`
+- `<Project> - F01 Worker - <Short Task>` through `<Project> - F05 Worker - <Short Task>` for child fallback launchers owned by a Frontier lane
+- `<Project> - PO Worker - <Short Task>` for child fallback launchers owned by Primary
+
+Use numeric Frontier slots. Do not use `Frontier A`, `Frontier B`, or a generic `Frontier Launcher` heading.
 
 Example short chat launcher:
 
@@ -210,13 +219,13 @@ Primary must first:
 10. Validate each full Frontier prompt record with the `frontier-contract` ruleset before returning a short Frontier launcher.
 11. Write each short Frontier launcher to disk for audit, then print each selected Frontier launcher in its own fenced `prompt` block in chat.
 
-When Primary returns Frontier launchers, it must not return only links to `.short.md` files. It should say, in the preferred language, which new left-sidebar thread each prompt block belongs in, then show the copyable prompt block. If four Frontiers are selected, there should be four copyable `prompt` blocks, not just four file links.
+When Primary returns Frontier launchers, chat includes the preferred-language left-sidebar thread instruction and one copyable `prompt` block for each selected Frontier. If four Frontiers are selected, chat shows four copyable `prompt` blocks.
 
-Frontier lanes should default to B2 lane-local authority. A B2 Frontier may actively run B0 discovery, B1 packaging, B2 scoped worker/reviewer/subagent dispatch, child handoff consume, provisional lane evidence synthesis, and closure proof inside its assigned lane. Frontier must not perform B3 final acceptance, waiver, merge, release, publication, or cross-lane final decisions.
+Frontier lanes default to B2 lane-local authority. A B2 Frontier may actively run B0 discovery, B1 packaging, B2 scoped worker/reviewer/subagent dispatch, child handoff consume, provisional lane evidence synthesis, and closure proof inside its assigned lane. B3 final acceptance, waiver, merge, release, publication, and cross-lane final decisions remain with Primary or the human owner.
 
-Inside a Frontier lane, worker/reviewer/discovery/validation child work should be dispatched by that Frontier through available subagent or delegation tools. Do not make the human open child worker or reviewer threads by default. If direct dispatch is unavailable or unsafe, the Frontier may return a short `Fallback launcher`, but it must write that launcher to disk, print it in chat as a fenced `prompt` block, explain why it could not dispatch the child itself, and give one exact recommended next step.
+Inside a Frontier lane, worker/reviewer/discovery/validation child work is dispatched by that Frontier through available subagent or delegation tools. Human-opened child worker or reviewer threads are fallback paths. If direct dispatch is unavailable or unsafe, the Frontier may return a short `Fallback launcher`, but it must write that launcher to disk, print it in chat as a fenced `prompt` block, explain why direct dispatch was unavailable or unsafe, and give one exact recommended next step.
 
-Primary and Frontier should maintain machine-readable coordination state:
+Primary and Frontier maintain machine-readable coordination state:
 
 - `runtime-boundary` records repo path, base branch, source roots, test entrypoints, worktree policy, writable/read-only/forbidden paths, side effects, data risk, and `b2DispatchGate`.
 - `current-manifest` records current facts, invalid or deprecated sources, active lanes, superseded prompts, cancelled prompts, registry refs, and latest consume refs.

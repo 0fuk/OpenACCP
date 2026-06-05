@@ -1,6 +1,6 @@
 # Release Checklist
 
-This checklist is for maintainers before tagging a public release. It is not a user setup checklist.
+This maintainer checklist is for the final pass before tagging a public release.
 
 Confirmed release metadata for the first public candidate:
 
@@ -14,6 +14,11 @@ Confirmed release metadata for the first public candidate:
 - [ ] Confirm the MIT License is the intended release license.
 - [ ] Run validator self-tests.
 - [ ] Run public-package scan.
+- [ ] Build wheel and sdist artifacts.
+- [ ] Run `twine check` on built artifacts.
+- [ ] Install the built wheel in a clean environment and run a validator smoke test.
+- [ ] Install the built sdist in a clean environment and run a validator smoke test.
+- [ ] Confirm packaged schemas mirror the root `schemas/` directory.
 - [ ] Check no local paths or private identifiers appear.
 - [ ] Check examples are project-neutral.
 - [ ] Check README presents Bootstrap and Coordination paths.

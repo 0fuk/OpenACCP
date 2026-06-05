@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openaccp.dev/schemas/review-report.schema.json",
+  "title": "OpenACCP Review Report",
+  "type": "object",
+  "required": ["schemaVersion", "artifactType", "reviewId", "targetHandoffId", "reviewedArtifacts", "scopeAssessment", "testAssessment", "claimAssessment", "findings", "recommendation", "residualRisk"],
+  "properties": {
+    "schemaVersion": { "const": "openaccp-review-report.v1" },
+    "artifactType": { "const": "review-report" },
+    "reviewId": { "type": "string", "minLength": 1 },
+    "targetHandoffId": { "type": "string", "minLength": 1 },
+    "reviewedArtifacts": { "$ref": "#/$defs/nonEmptyStrings" },
+    "scopeAssessment": { "type": "string", "minLength": 1 },
+    "testAssessment": { "type": "string", "minLength": 1 },
+    "claimAssessment": { "type": "string", "minLength": 1 },
+    "findings": { "type": "array" },
+    "recommendation": { "enum": ["approve", "amend", "split-follow-up", "reject"] },
+    "residualRisk": { "type": "string", "minLength": 1 }
+  },
+  "$defs": { "nonEmptyStrings": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } } },
+  "additionalProperties": true
+}

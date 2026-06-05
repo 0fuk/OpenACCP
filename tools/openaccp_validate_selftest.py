@@ -363,6 +363,14 @@ def write_coordination_fixtures(tmp: Path, source_path: Path) -> dict[str, Path]
 
 def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     assert_exit("valid source pack", run(["--artifact", str(paths["source_pack"]), "--ruleset", "source-pack", "--strict"]), 0)
+
+    bad_schema_source = json.loads(paths["source_pack"].read_text(encoding="utf-8"))
+    bad_schema_source["schemaVersion"] = "wrong-version"
+    bad_schema_source["currentSources"] = [{"status": "current"}]
+    bad_schema_source_path = tmp / "bad-source-pack-schema.json"
+    write_json(bad_schema_source_path, bad_schema_source)
+    assert_exit("source pack JSON Schema rejects wrong version and missing source fields", run(["--artifact", str(bad_schema_source_path), "--ruleset", "source-pack", "--strict"]), 1)
+
     assert_exit(
         "valid task card",
         run(["--artifact", str(paths["task_card"]), "--ruleset", "task-card", "--source-pack", str(paths["source_pack"]), "--strict"]),
@@ -579,6 +587,127 @@ def assert_text_rules(tmp: Path) -> None:
         encoding="utf-8",
     )
     assert_exit("valid launcher", run(["--artifact", str(launcher_path), "--ruleset", "launcher", "--prompt-record", str(primary_prompt_path), "--expect-prompt-id", "PROMPT-001", "--strict"]), 0)
+
+    def write_launcher(path: Path, title: str, prompt_id: str, extra_lines: list[str] | None = None) -> None:
+        path.write_text(
+            "\n".join(
+                [
+                    title,
+                    "Purpose: start a bounded OpenACCP thread.",
+                    "",
+                    "Read and execute this OpenACCP prompt record:",
+                    f"- Prompt Record: {tmp / '.openaccp' / 'launchers' / (prompt_id + '.prompt.md')}",
+                    f"- Prompt ID: {prompt_id}",
+                    "- Preferred language: Chinese",
+                    "",
+                    *(extra_lines or []),
+                    "",
+                    "Hard requirements:",
+                    "1. Read the prompt record explicitly as UTF-8.",
+                    "2. Execute only the named Prompt ID.",
+                    "3. If the file cannot be read cleanly, the Prompt ID is missing, or the text appears corrupted, stop and report launcher-read failure.",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+    frontier_01_launcher = tmp / "frontier-01.short.md"
+    write_launcher(frontier_01_launcher, "Project - Frontier 01 - Source Pack Lane", "openaccp-frontier-01")
+    assert_exit("valid Frontier 01 launcher", run(["--artifact", str(frontier_01_launcher), "--ruleset", "launcher", "--strict"]), 0)
+
+    frontier_05_launcher = tmp / "frontier-05.short.md"
+    write_launcher(frontier_05_launcher, "Project - Frontier 05 - Release Lane", "openaccp-frontier-05")
+    assert_exit("valid Frontier 05 launcher", run(["--artifact", str(frontier_05_launcher), "--ruleset", "launcher", "--strict"]), 0)
+
+    f01_worker_launcher = tmp / "f01-worker.short.md"
+    write_launcher(
+        f01_worker_launcher,
+        "Project - F01 Worker - Scoped Fix",
+        "openaccp-f01-worker",
+        ["Fallback launcher: direct subagent dispatch is unavailable."],
+    )
+    assert_exit("valid F01 worker fallback launcher", run(["--artifact", str(f01_worker_launcher), "--ruleset", "launcher", "--strict"]), 0)
+
+    po_reviewer_launcher = tmp / "po-reviewer.short.md"
+    write_launcher(
+        po_reviewer_launcher,
+        "Project - PO Reviewer - Scope Review",
+        "openaccp-po-reviewer",
+        ["Fallback launcher: direct subagent dispatch is explicitly requested to be separately user-managed."],
+    )
+    assert_exit("valid PO reviewer fallback launcher", run(["--artifact", str(po_reviewer_launcher), "--ruleset", "launcher", "--strict"]), 0)
+
+    invalid_launcher_cases = {
+        "reject markdown heading launcher": "# Frontier Launcher",
+        "reject generic Frontier launcher": "Project - Frontier Launcher - Source Pack Lane",
+        "reject Frontier A launcher": "Project - Frontier A - Source Pack Lane",
+        "reject Frontier 1 launcher": "Project - Frontier 1 - Source Pack Lane",
+        "reject Frontier 06 launcher": "Project - Frontier 06 - Source Pack Lane",
+        "reject F1 child launcher": "Project - F1 Worker - Scoped Fix",
+        "reject F06 child launcher": "Project - F06 Worker - Scoped Fix",
+    }
+    for case_name, title in invalid_launcher_cases.items():
+        bad_launcher = tmp / (case_name.replace(" ", "-") + ".short.md")
+        write_launcher(bad_launcher, title, "openaccp-bad-launcher")
+        assert_exit(case_name, run(["--artifact", str(bad_launcher), "--ruleset", "launcher", "--strict"]), 1)
+
+    legacy_project = "Open" + "ACP"
+    legacy_dir = "." + "open" + "acp"
+    legacy_prompt_prefix = "open" + "acp-"
+    legacy_namespace_launcher = tmp / "legacy-namespace.short.md"
+    legacy_namespace_launcher.write_text(
+        "\n".join(
+            [
+                "Project - Frontier 02 - Data Lane",
+                "",
+                f"Read and execute this {legacy_project} prompt record:",
+                f"- Prompt Record: {tmp / legacy_dir / 'launchers' / 'frontier-lane-02.prompt.md'}",
+                f"- Prompt ID: {legacy_prompt_prefix}frontier-demo-lane-02",
+                "- Preferred language: Chinese",
+                "",
+                "Hard requirements:",
+                "1. Read the prompt record explicitly as UTF-8.",
+                "2. Execute only the named Prompt ID.",
+                "3. If the file cannot be read cleanly, the Prompt ID is missing, or the text appears corrupted, stop and report launcher-read failure.",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    assert_exit("launcher rejects legacy namespace", run(["--artifact", str(legacy_namespace_launcher), "--ruleset", "launcher", "--strict"]), 1)
+
+    launcher_output_path = tmp / "launcher-output.md"
+    launcher_output_path.write_text(
+        "\n".join(
+            [
+                "Create a new thread from the left sidebar, paste each short launcher below, and start that thread.",
+                "",
+                "```prompt",
+                frontier_01_launcher.read_text(encoding="utf-8"),
+                "```",
+                "",
+                "```prompt",
+                frontier_05_launcher.read_text(encoding="utf-8"),
+                "```",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    assert_exit("valid launcher output blocks", run(["--artifact", str(launcher_output_path), "--ruleset", "launcher-output", "--strict"]), 0)
+
+    bad_launcher_output_path = tmp / "bad-launcher-output.md"
+    bad_launcher_output_path.write_text(
+        "\n".join(
+            [
+                "Create a new thread from the left sidebar, paste the short launcher below, and start that thread.",
+                "",
+                "```prompt",
+                (tmp / "reject-Frontier-A-launcher.short.md").read_text(encoding="utf-8"),
+                "```",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    assert_exit("launcher output rejects invalid prompt block title", run(["--artifact", str(bad_launcher_output_path), "--ruleset", "launcher-output", "--strict"]), 1)
 
     card_registry_path = tmp / "card-registry.md"
     card_rows = [
@@ -916,6 +1045,70 @@ def assert_cli_entrypoints(tmp: Path) -> None:
         raise SystemExit(1)
     print("PASS python -m openaccp init lists coordination artifacts")
 
+    write_target = tmp / "starter-write"
+    write_proc = subprocess.run(
+        [sys.executable, "-m", "openaccp", "init", str(write_target), "--write"],
+        cwd=ROOT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        capture_output=True,
+    )
+    assert_exit("python -m openaccp init write", write_proc, 0)
+    init_artifacts = [
+        ("source-pack.json", "source-pack", []),
+        ("scope-boundary.json", "scope-boundary", []),
+        ("assumptions.json", "assumption-ledger", []),
+        ("authority-charter.json", "authority-charter", []),
+        ("task-card.json", "task-card", ["--source-pack", str(write_target / "source-pack.json")]),
+        ("card-registry.md", "card-registry", []),
+        ("coordination/runtime-boundary.json", "runtime-boundary", []),
+        ("coordination/source-status-registry.json", "source-status-registry", []),
+        ("coordination/sequence-registry.json", "sequence-registry", []),
+        ("coordination/lane-registry.json", "lane-registry", []),
+        ("coordination/child-ledgers/primary.json", "child-ledger", []),
+        ("coordination/decision-registry.json", "decision-registry", []),
+        ("coordination/current-manifest.json", "current-manifest", []),
+    ]
+    for rel_path, ruleset, extra_args in init_artifacts:
+        assert_exit(
+            f"init write artifact validates: {rel_path}",
+            run(["--artifact", str(write_target / rel_path), "--ruleset", ruleset, *extra_args, "--strict"]),
+            0,
+        )
+    overwrite_proc = subprocess.run(
+        [sys.executable, "-m", "openaccp", "init", str(write_target), "--write"],
+        cwd=ROOT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        capture_output=True,
+    )
+    assert_exit("python -m openaccp init refuses overwrite", overwrite_proc, 1)
+
+
+def assert_packaged_schemas_mirror_root() -> None:
+    root_schema_dir = ROOT / "schemas"
+    package_schema_dir = ROOT / "openaccp" / "schemas"
+    missing: list[str] = []
+    mismatched: list[str] = []
+    for root_schema in sorted(root_schema_dir.glob("*.schema.json")):
+        packaged_schema = package_schema_dir / root_schema.name
+        if not packaged_schema.exists():
+            missing.append(root_schema.name)
+            continue
+        root_text = root_schema.read_text(encoding="utf-8")
+        packaged_text = packaged_schema.read_text(encoding="utf-8")
+        if root_text != packaged_text:
+            mismatched.append(root_schema.name)
+    if missing or mismatched:
+        if missing:
+            print("FAIL packaged schemas missing: " + ", ".join(missing))
+        if mismatched:
+            print("FAIL packaged schemas drifted: " + ", ".join(mismatched))
+        raise SystemExit(1)
+    print("PASS packaged schemas mirror root schemas")
+
 
 def main() -> int:
     with tempfile.TemporaryDirectory() as raw:
@@ -925,6 +1118,7 @@ def main() -> int:
         assert_text_rules(tmp)
         assert_public_package_rules(tmp)
         assert_cli_entrypoints(tmp)
+        assert_packaged_schemas_mirror_root()
     return 0
 
 

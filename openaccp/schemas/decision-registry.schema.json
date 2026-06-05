@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openaccp.dev/schemas/decision-registry.schema.json",
+  "title": "OpenACCP Decision Registry",
+  "type": "object",
+  "required": ["schemaVersion", "artifactType", "registryId", "decisions"],
+  "properties": {
+    "schemaVersion": { "const": "openaccp-decision-registry.v1" },
+    "artifactType": { "const": "decision-registry" },
+    "registryId": { "type": "string", "minLength": 1 },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["decisionId", "type", "status", "question", "basisRefs", "blocks", "safeDefault", "authorityRequired"],
+        "properties": {
+          "decisionId": { "type": "string", "minLength": 1 },
+          "type": { "enum": ["owner-question", "primary-decision", "waiver", "out-of-scope"] },
+          "status": { "enum": ["open", "answered", "superseded", "rejected"] },
+          "question": { "type": "string", "minLength": 1 },
+          "basisRefs": { "type": "array", "items": { "type": "string" } },
+          "blocks": { "type": "array", "items": { "type": "string" } },
+          "safeDefault": { "type": "string" },
+          "authorityRequired": { "enum": ["B0", "B1", "B2", "B3"] }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

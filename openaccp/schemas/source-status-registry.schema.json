@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openaccp.dev/schemas/source-status-registry.schema.json",
+  "title": "OpenACCP Source Status Registry",
+  "type": "object",
+  "required": ["schemaVersion", "artifactType", "registryId", "sources"],
+  "properties": {
+    "schemaVersion": { "const": "openaccp-source-status-registry.v1" },
+    "artifactType": { "const": "source-status-registry" },
+    "registryId": { "type": "string", "minLength": 1 },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sourceId", "status", "reason", "authority", "locator", "lastReviewedAt"],
+        "properties": {
+          "sourceId": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["current", "reference", "deprecated", "invalid", "unknown"] },
+          "reason": { "type": "string" },
+          "authority": { "type": "string", "minLength": 1 },
+          "supersededBy": { "type": "string" },
+          "locator": { "type": "string", "minLength": 1 },
+          "lastReviewedAt": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

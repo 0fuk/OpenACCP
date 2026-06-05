@@ -1,6 +1,6 @@
-# ACCP Coordination
+# OpenACCP Coordination
 
-ACCP Coordination manages multi-agent work once a project has enough local facts.
+OpenACCP Coordination manages multi-agent work once a project has enough local facts.
 
 ## Flow
 
@@ -16,9 +16,9 @@ ACCP Coordination manages multi-agent work once a project has enough local facts
 
 ## Active Closure
 
-OpenACCP coordination is an active closure loop, not a passive status chain.
+OpenACCP coordination is an active closure loop that keeps safe work moving until the lane reaches closure proof or a true final-authority boundary.
 
-Primary and Frontier should repeatedly:
+Primary and Frontier repeatedly:
 
 1. refresh facts,
 2. classify gaps,
@@ -28,7 +28,7 @@ Primary and Frontier should repeatedly:
 6. continue B0/B1/B2-safe work,
 7. reserve only true final-authority decisions for B3.
 
-A lane is not closed because a seed checklist is complete. A lane closes only when the current visible gaps are resolved, child dispatches have returned, failed, or been cancelled, present child handoffs are consumed or rejected by the parent orchestrator, remaining gaps are explicitly out, or the only remaining work is final-authority-only with a Primary-ready packet.
+A lane closes when the current visible gaps are resolved, child dispatches have returned, failed, or been cancelled, present child handoffs are consumed or rejected by the parent orchestrator, remaining gaps are explicitly out, or the only remaining work is final-authority-only with a Primary-ready packet.
 
 ## Coordination Control Plane
 
@@ -45,7 +45,7 @@ Core artifacts:
 - `decision-registry.json`: owner questions, Primary decisions, waivers, out-of-scope decisions, blockers, and safe defaults.
 - `frontier-closures/<lane-id>.json`: proof that a Frontier lane can continue, close, or return to Primary.
 
-Primary should establish the runtime boundary before B2 Frontier dispatch. If product repo path, base branch, source roots, test entrypoints, or worktree policy are missing, Primary should ask the user and continue safe B0/B1 packaging instead of making each Frontier rediscover the same blocker. A Frontier can still run coordination-only or read-only B2 work, but product-write B2 dispatch requires both runtime `b2DispatchGate` and lane `b2DispatchGate` to be ready for product-write work.
+Primary establishes the runtime boundary before B2 Frontier dispatch. If product repo path, base branch, source roots, test entrypoints, or worktree policy are missing, Primary asks the user and continues safe B0/B1 packaging instead of making each Frontier rediscover the same blocker. A Frontier can still run coordination-only or read-only B2 work, while product-write B2 dispatch requires both runtime `b2DispatchGate` and lane `b2DispatchGate` to be ready for product-write work.
 
 ## Subagents
 
@@ -59,9 +59,9 @@ Use subagents for bounded work:
 
 Each subagent needs a role, authority boundary, input facts, allowed scope, forbidden scope, stop conditions, and expected output. The parent orchestrator must consume the result before claiming progress.
 
-Primary should create or refresh CARDs before Frontier dispatch. A Primary-launched Frontier should usually receive B2 lane-local authority so it can actively run B0 discovery, B1 packaging, B2 scoped worker or reviewer dispatch, child handoff consume, and closure proof inside the assigned lane.
+Primary creates or refreshes CARDs before Frontier dispatch. A Primary-launched Frontier usually receives B2 lane-local authority so it can actively run B0 discovery, B1 packaging, B2 scoped worker or reviewer dispatch, child handoff consume, and closure proof inside the assigned lane.
 
-Frontier should not ask the human to open worker, reviewer, discovery, validation, or task-card-only child threads when direct subagent or delegation tools are available and the work is B0/B1/B2-safe. Full child prompt records may still be written to disk for audit and reproducibility, but the Frontier should dispatch and consume that child work itself. Short child launchers are fallback artifacts only; when used, they must state why direct dispatch was unavailable or unsafe and what the human must do next.
+Frontier keeps worker, reviewer, discovery, validation, and task-card-only child work inside its current lane thread when direct subagent or delegation tools are available and the work is B0/B1/B2-safe. Full child prompt records may still be written to disk for audit and reproducibility, while the Frontier dispatches and consumes that child work itself. Short child launchers are fallback artifacts only; when used, they state why direct dispatch was unavailable or unsafe and what the human must do next.
 
 ## Parallel Work
 

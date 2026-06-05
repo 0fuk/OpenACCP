@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openaccp.dev/schemas/authority-charter.schema.json",
+  "title": "OpenACCP Authority Charter",
+  "type": "object",
+  "required": ["schemaVersion", "artifactType", "charterId", "grantedRole", "authorityLevel", "allowedActions", "forbiddenActions", "delegationRules", "finalAuthorityReservedTo", "scopeLimits", "dataRiskLimit", "resourceUseLimit", "allowedInputs", "allowedOutputs", "forbiddenSideEffects", "stopConditions", "expiresWhen"],
+  "properties": {
+    "schemaVersion": { "const": "openaccp-authority-charter.v1" },
+    "artifactType": { "const": "authority-charter" },
+    "charterId": { "type": "string", "minLength": 1 },
+    "grantedRole": { "enum": ["primary", "frontier", "worker", "reviewer", "discovery", "human-owner"] },
+    "authorityLevel": { "enum": ["B0", "B1", "B2", "B3"] },
+    "allowedActions": { "$ref": "#/$defs/nonEmptyStrings" },
+    "forbiddenActions": { "$ref": "#/$defs/nonEmptyStrings" },
+    "delegationRules": { "$ref": "#/$defs/nonEmptyStrings" },
+    "finalAuthorityReservedTo": { "type": "string", "minLength": 1 },
+    "scopeLimits": { "$ref": "#/$defs/nonEmptyStrings" },
+    "dataRiskLimit": { "enum": ["none", "low", "medium", "high", "sensitive"] },
+    "resourceUseLimit": { "$ref": "#/$defs/nonEmptyStrings" },
+    "allowedInputs": { "$ref": "#/$defs/nonEmptyStrings" },
+    "allowedOutputs": { "$ref": "#/$defs/nonEmptyStrings" },
+    "forbiddenSideEffects": { "$ref": "#/$defs/nonEmptyStrings" },
+    "stopConditions": { "$ref": "#/$defs/nonEmptyStrings" },
+    "expiresWhen": { "type": "string", "minLength": 1 }
+  },
+  "$defs": { "nonEmptyStrings": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } } },
+  "additionalProperties": true
+}

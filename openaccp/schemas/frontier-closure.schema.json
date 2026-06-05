@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openaccp.dev/schemas/frontier-closure.schema.json",
+  "title": "OpenACCP Frontier Closure",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "artifactType",
+    "closureId",
+    "laneId",
+    "responseId",
+    "authorityLevel",
+    "branchState",
+    "gapDecisionMatrix",
+    "childLedgerRef",
+    "allChildrenTerminal",
+    "allChildHandoffsConsumedOrRejected",
+    "primaryReadyPacketRef",
+    "remainingB0B1B2SafeWork",
+    "remainingFinalAuthorityGaps",
+    "explicitlyOutGaps",
+    "worktreeDecision",
+    "humanNextStep"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "openaccp-frontier-closure.v1" },
+    "artifactType": { "const": "frontier-closure" },
+    "closureId": { "type": "string", "minLength": 1 },
+    "laneId": { "type": "string", "minLength": 1 },
+    "responseId": { "type": "string", "minLength": 1 },
+    "authorityLevel": { "const": "B2" },
+    "branchState": { "enum": ["open", "closed", "blocked_on_primary", "blocked_on_human"] },
+    "gapDecisionMatrix": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["gap", "decision", "nextSafeAction"],
+        "properties": {
+          "gap": { "type": "string", "minLength": 1 },
+          "decision": {
+            "enum": [
+              "do_now",
+              "dispatch_current_thread_subagent",
+              "prepare_package",
+              "prepare_package_only_when_dispatch_unavailable",
+              "apply_conservative_default",
+              "needs_final_authority",
+              "explicitly_out"
+            ]
+          },
+          "nextSafeAction": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": true
+      }
+    },
+    "childLedgerRef": { "type": "string", "minLength": 1 },
+    "allChildrenTerminal": { "type": "boolean" },
+    "allChildHandoffsConsumedOrRejected": { "type": "boolean" },
+    "primaryReadyPacketRef": { "type": "string" },
+    "blockedOnHumanReason": { "type": "string" },
+    "remainingB0B1B2SafeWork": { "type": "array", "items": { "type": "string" } },
+    "remainingFinalAuthorityGaps": { "type": "array", "items": { "type": "string" } },
+    "explicitlyOutGaps": { "type": "array", "items": { "type": "string" } },
+    "worktreeDecision": {
+      "type": "object",
+      "required": ["base", "worktree", "branch", "allowedFiles", "verification", "handoffPath", "dataRisk", "resourceUse", "noDispatchReason"],
+      "properties": {
+        "base": { "type": "string", "minLength": 1 },
+        "worktree": { "type": "string", "minLength": 1 },
+        "branch": { "type": "string", "minLength": 1 },
+        "allowedFiles": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "verification": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "handoffPath": { "type": "string", "minLength": 1 },
+        "dataRisk": { "enum": ["none", "low", "medium", "high", "sensitive"] },
+        "resourceUse": { "type": "string", "minLength": 1 },
+        "noDispatchReason": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "humanNextStep": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": true
+}

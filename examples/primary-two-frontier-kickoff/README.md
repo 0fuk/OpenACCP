@@ -2,7 +2,7 @@
 
 This example shows the expected output shape after a Primary thread has inspected a real working directory, reviewed the facts input, created CARDs, and decided that two Frontier lanes are useful.
 
-It is not the default GitHub install startup. Install startup should return only one short Primary launcher. Frontier launchers are created later by Primary after CARD and lane analysis.
+GitHub install startup returns one short Primary launcher. Frontier launchers are created later by Primary after CARD and lane analysis.
 
 ## Required Primary Inputs
 
@@ -27,8 +27,8 @@ Optional but useful:
 
 After Primary decides that two Frontier lanes are useful, return:
 
-1. One Frontier A launcher.
-2. One Frontier B launcher.
+1. One `Frontier 01` launcher.
+2. One `Frontier 02` launcher.
 
 Write the full launcher prompt records to disk first, preferably under:
 
@@ -46,17 +46,17 @@ Before each short launcher block, tell the user where to use it:
 Create a new thread from the left sidebar, paste the short Frontier launcher below, and start that thread.
 ```
 
-Then print the short launcher in a fenced `prompt` block. Repeat the same pattern for Frontier A and Frontier B.
+Then print the short launcher in a fenced `prompt` block. Repeat the same pattern for `Frontier 01` and `Frontier 02`.
 
 Example short chat launcher:
 
 ```prompt
-<Project> - Frontier A - Source Pack Lane
+<Project> - Frontier 01 - Source Pack Lane
 Purpose: start the source-pack and scope-baseline lane.
 
 Read and execute this OpenACCP prompt record:
-- Prompt Record: <working-directory>/.openaccp/launchers/frontier-a.prompt.md
-- Prompt ID: openaccp-frontier-a-source-pack
+- Prompt Record: <working-directory>/.openaccp/launchers/frontier-01.prompt.md
+- Prompt ID: openaccp-frontier-01-source-pack
 - Preferred language: <user-preferred-or-current-language>
 
 Hard requirements:
@@ -85,28 +85,28 @@ Goal: decide source status, authority boundaries, and lane split.
 Next action: dispatch the selected B2 Frontier lanes and consume their provisional evidence.
 ```
 
-## Example Frontier A Launcher Summary
+## Example Frontier 01 Launcher Summary
 
 ```text
 Role: Frontier Orchestrator
 Authority: B2 lane-local
-Lane: <lane A objective>
+Lane: <lane 01 objective>
 Working directory: <user-provided path>
 Facts input: <user-provided source pack, PRD, spec, facts path, or uploaded materials>
 Assigned CARDs: <CARD ids>
-Goal: discover gaps, prepare task cards, and identify safe worker packages for lane A.
+Goal: discover gaps, prepare task cards, and identify safe worker packages for lane 01.
 ```
 
-## Example Frontier B Launcher Summary
+## Example Frontier 02 Launcher Summary
 
 ```text
 Role: Frontier Orchestrator
 Authority: B2 lane-local
-Lane: <lane B objective>
+Lane: <lane 02 objective>
 Working directory: <user-provided path>
 Facts input: <user-provided source pack, PRD, spec, facts path, or uploaded materials>
 Assigned CARDs: <CARD ids>
-Goal: discover gaps, prepare task cards, and identify safe worker packages for lane B.
+Goal: discover gaps, prepare task cards, and identify safe worker packages for lane 02.
 ```
 
 If the facts input is not enough to define two lanes, the Primary launcher should say so and ask for the missing decision instead of inventing lanes.

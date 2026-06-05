@@ -2,13 +2,13 @@
 
 OpenACCP is a coordination protocol and workflow kit for multi-agent engineering.
 
-It is not:
+It works as the coordination layer around:
 
 - an agent runtime,
 - an IDE assistant,
 - a prompt collection,
 - a project management app,
-- a replacement for tests, CI, review, or human ownership.
+- tests, CI, review, and human ownership.
 
 ## Compared With Coding Assistants
 

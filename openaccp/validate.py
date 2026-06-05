@@ -13,6 +13,7 @@ import json
 import re
 import sys
 from dataclasses import dataclass, field
+from importlib import resources
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,13 @@ try:
     from .version import VERSION
 except ImportError:  # pragma: no cover - supports direct script execution
     from version import VERSION
+
+try:
+    from jsonschema import Draft202012Validator
+    from jsonschema.exceptions import SchemaError, ValidationError
+except ImportError:  # pragma: no cover - fallback covers source checkouts without installed deps
+    Draft202012Validator = None  # type: ignore[assignment]
+    SchemaError = ValidationError = Exception  # type: ignore[assignment]
 
 RULESETS = {
     "authority-charter",
@@ -57,6 +65,8 @@ TEXT_RULESETS = {
     "launcher-output",
     "card-registry",
 }
+
+JSON_SCHEMA_RULESETS = RULESETS - TEXT_RULESETS - {"public-package"}
 
 REQUIRED_FIELDS: dict[str, list[str]] = {
     "source-pack": [
@@ -374,6 +384,10 @@ RESPONSE_ID_RE = re.compile(r"(?im)^\s*(?:-\s*)?Response ID\s*:\s*`?([A-Za-z0-9]
 PROMPT_RECORD_RE = re.compile(r"(?im)^\s*-\s*Prompt Record\s*:\s*(.+?)\s*$")
 JSON_FENCE_RE = re.compile(r"```(?:json|JSON)?\s*(\{.*?\})\s*```", re.DOTALL)
 PROMPT_FENCE_RE = re.compile(r"```prompt\s*(.*?)```", re.DOTALL | re.IGNORECASE)
+LAUNCHER_TITLE_RE = re.compile(
+    r"^(?P<project>[^#\r\n][^-`\r\n]{1,80}?)\s+-\s+(?P<slot>Primary Orchestrator|Frontier 0[1-5]|PO\s+(?:Worker|Reviewer|Discovery|Validation|Task-Card Packager|Task-Card Worker)|F0[1-5]\s+(?:Worker|Reviewer|Discovery|Validation|Task-Card Packager|Task-Card Worker))\s+-\s+(?P<title>[^`\r\n]{3,120})$",
+    re.IGNORECASE,
+)
 ZH_ITEM = "\u9879"
 ZH_TYPE_STATUS = "\u7c7b\u578b\u548c\u72b6\u6001"
 ZH_FIELD = "\u5b57\u6bb5"
@@ -418,6 +432,10 @@ FORMAL_ROW_SEQUENCES = [
     ],
 ]
 
+LEGACY_PROJECT_NAME = "Open" + "ACP"
+LEGACY_HIDDEN_DIR = "." + "open" + "acp"
+LEGACY_PROMPT_PREFIX = "open" + "acp-"
+
 FULL_PROMPT_MARKERS = [
     "## Active Closure Rules",
     "## B0/B1/B2 Closure Loop",
@@ -437,7 +455,7 @@ MOJIBAKE_MARKERS = [
 ]
 
 PRIVATE_LEAK_PATTERNS = [
-    re.compile(r"[A-Za-z]:\\"),
+    re.compile(r"(?<![A-Za-z0-9_])[A-Za-z]:\\"),
     re.compile(r"/(?:Users|home|var|tmp)/[^\s]+"),
     re.compile(r"\b[A-Z][A-Za-z0-9_-]+_(?:Prompt|Response|Coordination|Handoff|Log|Registry)s?\b"),
     re.compile(r"\b(?:internal|private|customer|production)[_-](?:log|handoff|registry|prompt|record)\b", re.IGNORECASE),
@@ -534,6 +552,159 @@ def load_json(path: Path, report: Report) -> Any | None:
         return None
     report.add("JSON_PARSE", "blocking", "pass", "JSON parsed.")
     return data
+
+
+def schema_path_for_ruleset(ruleset: str) -> Path | None:
+    if ruleset not in JSON_SCHEMA_RULESETS:
+        return None
+    package_schema = resources.files("openaccp").joinpath("schemas", f"{ruleset}.schema.json")
+    if package_schema.is_file():
+        return Path(str(package_schema))
+    root = Path(__file__).resolve().parents[1]
+    candidates = [
+        root / "schemas" / f"{ruleset}.schema.json",
+        Path.cwd() / "schemas" / f"{ruleset}.schema.json",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
+
+
+def resolve_schema_ref(ref: str, root_schema: dict[str, Any]) -> dict[str, Any] | None:
+    if not ref.startswith("#/"):
+        return None
+    node: Any = root_schema
+    for raw_part in ref[2:].split("/"):
+        part = raw_part.replace("~1", "/").replace("~0", "~")
+        if not isinstance(node, dict) or part not in node:
+            return None
+        node = node[part]
+    return node if isinstance(node, dict) else None
+
+
+def json_schema_type_matches(value: Any, expected: str) -> bool:
+    if expected == "object":
+        return isinstance(value, dict)
+    if expected == "array":
+        return isinstance(value, list)
+    if expected == "string":
+        return isinstance(value, str)
+    if expected == "boolean":
+        return isinstance(value, bool)
+    if expected == "integer":
+        return isinstance(value, int) and not isinstance(value, bool)
+    if expected == "number":
+        return (isinstance(value, int) or isinstance(value, float)) and not isinstance(value, bool)
+    if expected == "null":
+        return value is None
+    return True
+
+
+def json_schema_errors(value: Any, schema: dict[str, Any], root_schema: dict[str, Any], path: str = "$") -> list[str]:
+    errors: list[str] = []
+    ref = schema.get("$ref")
+    if isinstance(ref, str):
+        target = resolve_schema_ref(ref, root_schema)
+        if target is None:
+            return [f"{path}: unsupported or missing $ref {ref}"]
+        return json_schema_errors(value, target, root_schema, path)
+
+    if "anyOf" in schema:
+        variants = schema.get("anyOf")
+        if isinstance(variants, list):
+            variant_errors = [json_schema_errors(value, item, root_schema, path) for item in variants if isinstance(item, dict)]
+            if variant_errors and not any(not item_errors for item_errors in variant_errors):
+                errors.append(f"{path}: does not match any anyOf branch")
+
+    if "allOf" in schema and isinstance(schema.get("allOf"), list):
+        for idx, sub_schema in enumerate(schema["allOf"]):
+            if isinstance(sub_schema, dict):
+                errors.extend(json_schema_errors(value, sub_schema, root_schema, f"{path}.allOf[{idx}]"))
+
+    if "if" in schema and isinstance(schema.get("if"), dict):
+        condition_errors = json_schema_errors(value, schema["if"], root_schema, path)
+        if not condition_errors and isinstance(schema.get("then"), dict):
+            errors.extend(json_schema_errors(value, schema["then"], root_schema, path))
+
+    expected_type = schema.get("type")
+    if isinstance(expected_type, str) and not json_schema_type_matches(value, expected_type):
+        errors.append(f"{path}: expected {expected_type}")
+        return errors
+    if isinstance(expected_type, list) and not any(json_schema_type_matches(value, item) for item in expected_type if isinstance(item, str)):
+        errors.append(f"{path}: expected one of {', '.join(str(item) for item in expected_type)}")
+        return errors
+
+    if "const" in schema and value != schema.get("const"):
+        errors.append(f"{path}: must equal {schema.get('const')!r}")
+    if "enum" in schema and isinstance(schema.get("enum"), list) and value not in schema["enum"]:
+        errors.append(f"{path}: must be one of {schema['enum']!r}")
+    if isinstance(value, str):
+        min_length = schema.get("minLength")
+        if isinstance(min_length, int) and len(value) < min_length:
+            errors.append(f"{path}: string length must be >= {min_length}")
+        pattern = schema.get("pattern")
+        if isinstance(pattern, str) and not re.search(pattern, value):
+            errors.append(f"{path}: string does not match pattern {pattern!r}")
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        minimum = schema.get("minimum")
+        if isinstance(minimum, (int, float)) and value < minimum:
+            errors.append(f"{path}: value must be >= {minimum}")
+    if isinstance(value, list):
+        min_items = schema.get("minItems")
+        if isinstance(min_items, int) and len(value) < min_items:
+            errors.append(f"{path}: array length must be >= {min_items}")
+        item_schema = schema.get("items")
+        if isinstance(item_schema, dict):
+            for idx, item in enumerate(value):
+                errors.extend(json_schema_errors(item, item_schema, root_schema, f"{path}[{idx}]"))
+    if isinstance(value, dict):
+        required = schema.get("required")
+        if isinstance(required, list):
+            for field_name in required:
+                if isinstance(field_name, str) and field_name not in value:
+                    errors.append(f"{path}: missing required field {field_name}")
+        properties = schema.get("properties")
+        if isinstance(properties, dict):
+            for field_name, field_schema in properties.items():
+                if field_name in value and isinstance(field_schema, dict):
+                    errors.extend(json_schema_errors(value[field_name], field_schema, root_schema, f"{path}.{field_name}"))
+        if schema.get("additionalProperties") is False and isinstance(properties, dict):
+            extra_fields = sorted(set(value) - set(properties))
+            for field_name in extra_fields:
+                errors.append(f"{path}: additional property {field_name} is not allowed")
+    return errors
+
+
+def validate_json_schema_contract(ruleset: str, data: dict[str, Any], report: Report) -> None:
+    schema_path = schema_path_for_ruleset(ruleset)
+    if schema_path is None:
+        report.add("JSON_SCHEMA", "warning", "pass", "No JSON Schema is configured for this ruleset.")
+        return
+    if not schema_path.exists():
+        report.add("JSON_SCHEMA_FILE", "blocking", "fail", "JSON Schema file is missing.", str(schema_path))
+        return
+    schema_report = Report(str(schema_path), "schema")
+    schema = load_json(schema_path, schema_report)
+    if not isinstance(schema, dict):
+        report.add("JSON_SCHEMA_FILE", "blocking", "fail", "JSON Schema file could not be parsed.", str(schema_path))
+        return
+    if Draft202012Validator is not None:
+        try:
+            validator = Draft202012Validator(schema)
+            errors = [
+                f"{'.'.join(str(part) for part in error.absolute_path) or '$'}: {error.message}"
+                for error in sorted(validator.iter_errors(data), key=lambda item: list(item.absolute_path))
+            ]
+        except SchemaError as exc:
+            report.add("JSON_SCHEMA_FILE", "blocking", "fail", f"JSON Schema itself is invalid: {exc}", str(schema_path))
+            return
+    else:
+        errors = json_schema_errors(data, schema, schema)
+    if errors:
+        report.add("JSON_SCHEMA", "blocking", "fail", "Schema validation failed: " + "; ".join(errors[:8]), str(schema_path))
+    else:
+        report.add("JSON_SCHEMA", "blocking", "pass", "Artifact conforms to its JSON Schema.", str(schema_path))
 
 
 def scan_mojibake(text: str, report: Report, location: str) -> None:
@@ -1022,12 +1193,59 @@ def validate_card_domain_coverage(text: str, report: Report) -> None:
         report.add("CARD_REGISTRY_DOMAIN_SCAN", "blocking", "fail", "Domain Coverage table has no resolved rows.")
 
 
+def launcher_non_empty_lines(text: str) -> list[str]:
+    return [line.strip() for line in text.splitlines() if line.strip()]
+
+
+def is_child_launcher_slot(slot: str | None) -> bool:
+    if not slot:
+        return False
+    return bool(re.match(r"(?i)^(?:F0[1-5]|PO)\s+", slot.strip()))
+
+
+def validate_launcher_contract_text(text: str, report: Report, location: str = "") -> re.Match[str] | None:
+    lines = launcher_non_empty_lines(text)
+    first_line = lines[0] if lines else ""
+    title_match = LAUNCHER_TITLE_RE.match(first_line)
+    if not first_line:
+        report.add("LAUNCHER_TITLE", "blocking", "fail", "Launcher must start with a title line.", location)
+    elif first_line.startswith("#"):
+        report.add("LAUNCHER_TITLE", "blocking", "fail", "Launcher title must be plain text, not a Markdown heading.", location)
+    elif title_match:
+        report.add("LAUNCHER_TITLE", "blocking", "pass", "Launcher title follows the OpenACCP slot contract.", location)
+    else:
+        report.add(
+            "LAUNCHER_TITLE",
+            "blocking",
+            "fail",
+            "Launcher title must be `<Project> - Primary Orchestrator - <Title>`, `<Project> - Frontier 01..05 - <Title>`, `F01..F05 Worker/Reviewer/Discovery/Validation/Task-Card Worker - <Title>`, or `PO Worker/Reviewer/Discovery/Validation/Task-Card Worker - <Title>`.",
+            location,
+        )
+    legacy_hits: list[str] = []
+    if re.search(r"(?<!C)" + re.escape(LEGACY_PROJECT_NAME) + r"(?!C)", text):
+        legacy_hits.append(LEGACY_PROJECT_NAME)
+    if re.search(re.escape(LEGACY_HIDDEN_DIR) + r"(?!p)", text, re.IGNORECASE):
+        legacy_hits.append(LEGACY_HIDDEN_DIR)
+    if re.search(r"\b" + re.escape(LEGACY_PROMPT_PREFIX), text, re.IGNORECASE):
+        legacy_hits.append(LEGACY_PROMPT_PREFIX)
+    if legacy_hits:
+        report.add("LAUNCHER_NAMESPACE", "blocking", "fail", "Legacy pre-ACCP namespace found: " + ", ".join(sorted(set(legacy_hits))), location)
+    else:
+        report.add("LAUNCHER_NAMESPACE", "blocking", "pass", "Launcher uses OpenACCP namespace.", location)
+    if re.search(r"(?m)^Read and execute this OpenACCP prompt record:\s*$", text):
+        report.add("LAUNCHER_PROMPT_RECORD_PHRASE", "blocking", "pass", "Launcher uses the standard prompt-record instruction.", location)
+    else:
+        report.add("LAUNCHER_PROMPT_RECORD_PHRASE", "blocking", "fail", "Launcher must include `Read and execute this OpenACCP prompt record:`.", location)
+    return title_match
+
+
 def validate_launcher_text(
     text: str,
     report: Report,
     prompt_record_text: str | None = None,
     expected_prompt_id: str | None = None,
 ) -> None:
+    title_match = validate_launcher_contract_text(text, report)
     line_count = len([line for line in text.splitlines() if line.strip()])
     if line_count > 40:
         report.add("SHORT_LAUNCHER_LENGTH", "blocking", "fail", "Launcher must be short; full prompt records belong on disk.")
@@ -1061,7 +1279,8 @@ def validate_launcher_text(
         report.add("FULL_PROMPT_IN_LAUNCHER", "blocking", "fail", "Launcher appears to contain a full prompt body: " + ", ".join(full_hits))
     else:
         report.add("FULL_PROMPT_IN_LAUNCHER", "blocking", "pass", "Launcher does not include configured full-prompt markers.")
-    if re.search(r"(?i)\b(worker|reviewer|discovery|task-card-only|task card only|validation)\b", text):
+    slot = title_match.group("slot") if title_match else ""
+    if is_child_launcher_slot(slot):
         if re.search(r"(?i)fallback launcher|fallback only", text) and re.search(r"(?i)unavailable|unsafe|explicitly requested|separately user-managed", text):
             report.add("CHILD_LAUNCHER_FALLBACK", "blocking", "pass", "Child-role launcher is explicitly marked as fallback.")
         else:
@@ -1122,6 +1341,7 @@ def validate_launcher_output_text(text: str, report: Report) -> None:
         report.add("FILE_LINK_ONLY", "blocking", "pass", "Output is not file-link-only.")
     for idx, block in enumerate(prompt_blocks):
         loc = f"promptBlock[{idx}]"
+        block_title_match = validate_launcher_contract_text(block, report, loc)
         line_count = len([line for line in block.splitlines() if line.strip()])
         if line_count > 40:
             report.add("PROMPT_BLOCK_SHORT", "blocking", "fail", "Prompt block is too long; full prompt records belong on disk.", loc)
@@ -1148,6 +1368,18 @@ def validate_launcher_output_text(text: str, report: Report) -> None:
             report.add("PROMPT_BLOCK_STOP_RULE", "blocking", "pass", "Prompt block has a read-failure stop rule.", loc)
         else:
             report.add("PROMPT_BLOCK_STOP_RULE", "blocking", "fail", "Prompt block must stop on read failure, missing Prompt ID, or corruption.", loc)
+        slot = block_title_match.group("slot") if block_title_match else ""
+        if is_child_launcher_slot(slot):
+            if re.search(r"(?i)fallback launcher|fallback only", block) and re.search(r"(?i)unavailable|unsafe|explicitly requested|separately user-managed", block):
+                report.add("PROMPT_BLOCK_CHILD_FALLBACK", "blocking", "pass", "Child-role prompt block is explicitly marked as fallback.", loc)
+            else:
+                report.add(
+                    "PROMPT_BLOCK_CHILD_FALLBACK",
+                    "blocking",
+                    "fail",
+                    "Child worker/reviewer/discovery/validation prompt blocks must be fallback launchers with a direct-dispatch failure reason.",
+                    loc,
+                )
 
 
 def _non_code_lines(text: str) -> list[str]:
@@ -2865,6 +3097,7 @@ def validate_json_artifact(args: argparse.Namespace) -> Report:
     data = load_json(artifact_path, report)
     if not isinstance(data, dict):
         return report
+    validate_json_schema_contract(args.ruleset, data, report)
     if not require_fields(data, REQUIRED_FIELDS[args.ruleset], report):
         return report
     expected_type = ARTIFACT_TYPE_BY_RULESET.get(args.ruleset)

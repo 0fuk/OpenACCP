@@ -8,7 +8,7 @@ For normal or medium-complexity projects, Primary should usually create enough C
 
 ## Path A: I Only Have A PRD
 
-Use ACCP Bootstrap when the project starts from a rough PRD, product note, or vague design.
+Use OpenACCP Bootstrap when the project starts from a rough PRD, product note, or vague design.
 
 1. Fill `templates/prd-intake.md`.
 2. Create `source-pack.json` from the current note or PRD.
@@ -23,7 +23,7 @@ The Bootstrap path prevents agents from inventing a spec or treating old brainst
 
 ## Path B: I Already Have A Work Package
 
-Use ACCP Coordination when the project already has enough facts to dispatch agents.
+Use OpenACCP Coordination when the project already has enough facts to dispatch agents.
 
 1. Confirm the current source pack.
 2. Define roles and authority boundaries.

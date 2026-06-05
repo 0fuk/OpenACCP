@@ -2,15 +2,13 @@
 
 The OpenACCP validator is a structural and hygiene gate. It checks whether an artifact has the minimum shape needed for coordination, whether common unsafe claims appear, and whether a public package contains obvious private material.
 
-It is deliberately small and dependency-free. It does not replace semantic review, code tests, CI, security review, legal review, or final owner acceptance.
+The validator runs JSON Schema checks first, then applies OpenACCP semantic, cross-artifact, and public-package hygiene rules. Semantic review, code tests, CI, security review, legal review, and final owner acceptance remain visible owner decisions around that validator gate.
 
 ## Schemas, Templates, And Rules
 
 - `schemas/*.schema.json` describe the machine-readable JSON artifact shape.
 - `templates/*.md` help humans and agents draft the content.
-- `tools/openaccp_validate.py` applies schema-like required fields plus cross-artifact checks and public-package hygiene checks.
-
-The validator is not a full JSON Schema engine. It uses hardcoded rules that match the current OpenACCP v1 artifact contracts.
+- `tools/openaccp_validate.py` applies JSON Schema validation, cross-artifact checks, authority rules, launcher rules, report-format rules, and public-package hygiene checks.
 
 ## Rulesets
 
@@ -94,8 +92,8 @@ python tools/openaccp_validate.py --artifact .openaccp/coordination/decision-reg
 Frontier lifecycle artifacts can be checked before a lane reports blocked, closed, or ready for Primary:
 
 ```bash
-python tools/openaccp_validate.py --artifact .openaccp/coordination/child-ledgers/frontier-a.json --ruleset child-ledger --strict
-python tools/openaccp_validate.py --artifact .openaccp/coordination/frontier-closures/frontier-a.json --ruleset frontier-closure --strict
+python tools/openaccp_validate.py --artifact .openaccp/coordination/child-ledgers/frontier-01.json --ruleset child-ledger --strict
+python tools/openaccp_validate.py --artifact .openaccp/coordination/frontier-closures/frontier-01.json --ruleset frontier-closure --strict
 ```
 
 Consume results and compact machine summaries can be checked after handoff consume, worker output, reviewer output, or discovery output:

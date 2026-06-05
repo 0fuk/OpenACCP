@@ -16,8 +16,8 @@ Some teams have mature work packages. Many developers have only rough PRDs, issu
 
 OpenACCP v1 exposes two paths:
 
-- ACCP Bootstrap for rough intent to source pack, scope boundary, assumptions, starter spec, and task cards.
-- ACCP Coordination for role boundaries, task cards, handoffs, reviews, validator gates, and final consume.
+- OpenACCP Bootstrap for rough intent to source pack, scope boundary, assumptions, starter spec, and task cards.
+- OpenACCP Coordination for role boundaries, task cards, handoffs, reviews, validator gates, and final consume.
 
 ## Consequences
 

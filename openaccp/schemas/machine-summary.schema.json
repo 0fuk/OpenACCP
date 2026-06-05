@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openaccp.dev/schemas/machine-summary.schema.json",
+  "title": "OpenACCP Machine Summary",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "artifactType",
+    "summaryId",
+    "role",
+    "promptId",
+    "responseId",
+    "authority",
+    "effectsPreset",
+    "basisRefs",
+    "locators",
+    "status",
+    "claims",
+    "nextActions"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "openaccp-machine-summary.v1" },
+    "artifactType": { "const": "machine-summary" },
+    "summaryId": { "type": "string", "minLength": 1 },
+    "role": { "enum": ["primary", "frontier", "worker", "reviewer", "discovery", "human-owner"] },
+    "promptId": { "type": "string", "minLength": 1 },
+    "responseId": { "type": "string", "minLength": 1 },
+    "authority": { "enum": ["B0", "B1", "B2", "B3"] },
+    "effectsPreset": {
+      "enum": [
+        "read_only_handoff",
+        "review_handoff",
+        "orchestration_local_write",
+        "docs_task_card_commit",
+        "implementation_local_commit",
+        "primary_only",
+        "custom_expanded"
+      ]
+    },
+    "basisRefs": { "$ref": "#/$defs/nonEmptyStrings" },
+    "locators": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["kind"],
+        "anyOf": [
+          { "required": ["id"] },
+          { "required": ["path"] }
+        ],
+        "additionalProperties": true
+      }
+    },
+    "status": { "type": "string", "minLength": 1 },
+    "claims": { "$ref": "#/$defs/nonEmptyStrings" },
+    "nextActions": { "$ref": "#/$defs/nonEmptyStrings" }
+  },
+  "$defs": {
+    "nonEmptyStrings": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "additionalProperties": true
+}
