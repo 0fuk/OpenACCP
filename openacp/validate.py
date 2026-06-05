@@ -24,6 +24,7 @@ except ImportError:  # pragma: no cover - supports direct script execution
 RULESETS = {
     "authority-charter",
     "assumption-ledger",
+    "card-registry",
     "consume-result",
     "current-manifest",
     "formal-report",
@@ -48,6 +49,7 @@ TEXT_RULESETS = {
     "formal-report",
     "frontier-contract",
     "launcher-output",
+    "card-registry",
 }
 
 REQUIRED_FIELDS: dict[str, list[str]] = {
@@ -299,7 +301,6 @@ FORMAL_ROW_SETS = [
     {
         "\u505a\u4e86\u4ec0\u4e48",
         "\u603b\u4f53\u8fdb\u5ea6",
-        "Checkpoint",
         "Frontier",
         "\u76ee\u6807",
         "\u7f3a\u53e3",
@@ -308,7 +309,6 @@ FORMAL_ROW_SETS = [
     {
         "\u505a\u4e86\u4ec0\u4e48",
         "\u603b\u4f53\u8fdb\u5ea6",
-        "Checkpoint",
         "Lane",
         "\u76ee\u6807",
         "\u7f3a\u53e3",
@@ -567,6 +567,122 @@ def validate_prompt_record_text(text: str, report: Report, expected_prompt_id: s
         report.add("HUMAN_EXPLAIN_REQUIRED", "blocking", "pass", "Prompt record requires human-explain-openacp.")
     else:
         report.add("HUMAN_EXPLAIN_REQUIRED", "blocking", "fail", "Prompt record must require human-explain-openacp for replies.")
+    if is_primary_prompt_record(text):
+        validate_primary_prompt_contract_text(text, report)
+
+
+def is_primary_prompt_record(text: str) -> bool:
+    return bool(
+        re.search(r"(?im)^\s*(Role|角色)\s*:\s*Primary\b", text)
+        or re.search(r"(?i)\bPrimary\s+Orchestrator\b", text)
+    )
+
+
+def validate_primary_prompt_contract_text(text: str, report: Report) -> None:
+    lowered = text.lower()
+    if re.search(r"10\s*[-\u2010-\u2015]\s*20|10\s+to\s+20", text):
+        report.add("PRIMARY_CARD_COUNT_RULE", "blocking", "pass", "Primary prompt requires 10-20 CARDs for normal or medium/high complexity.")
+    else:
+        report.add(
+            "PRIMARY_CARD_COUNT_RULE",
+            "blocking",
+            "fail",
+            "Primary prompt must require 10-20 project-level CARDs for normal or medium/high complexity, with a small-project exception.",
+        )
+    domain_terms = [
+        "product workflow",
+        "backend",
+        "data",
+        "frontend",
+        "ui",
+        "electron",
+        "integrations",
+        "security",
+        "testing",
+        "ci",
+        "release",
+    ]
+    missing_domain_terms = [term for term in domain_terms if term not in lowered]
+    if len(missing_domain_terms) <= 2:
+        report.add("PRIMARY_DOMAIN_SCAN", "blocking", "pass", "Primary prompt requires broad product-domain scan before CARD finalization.")
+    else:
+        report.add(
+            "PRIMARY_DOMAIN_SCAN",
+            "blocking",
+            "fail",
+            "Primary prompt must scan product domains before CARD finalization; missing examples: " + ", ".join(missing_domain_terms[:5]),
+        )
+    if re.search(r"(?i)at\s+least\s+two\s+Frontier|2\s*[-\u2010-\u2015]\s*5\s+Frontier|two\s+to\s+five\s+Frontier", text):
+        report.add("PRIMARY_FRONTIER_MIN_RULE", "blocking", "pass", "Primary prompt defaults to multiple Frontier lanes when safe.")
+    else:
+        report.add(
+            "PRIMARY_FRONTIER_MIN_RULE",
+            "blocking",
+            "fail",
+            "Primary prompt must default to at least two Frontier lanes when two safe independent CARD clusters exist.",
+        )
+    if re.search(r"(?is)one\s+Frontier.*(?:small|single|user)", text) or re.search(r"(?i)single[- ]safe[- ]lane|single safe lane", text):
+        report.add("PRIMARY_SINGLE_FRONTIER_EXCEPTION", "blocking", "pass", "Primary prompt records when one Frontier is allowed.")
+    else:
+        report.add(
+            "PRIMARY_SINGLE_FRONTIER_EXCEPTION",
+            "blocking",
+            "fail",
+            "Primary prompt must allow one Frontier only for a small project, single safe lane, or explicit user request, with a recorded reason.",
+        )
+
+
+def validate_card_registry_text(text: str, report: Report) -> None:
+    if re.search(r"(?im)^\s*schemaVersion\s*:\s*openacp-card-registry\.v1\s*$", text):
+        report.add("CARD_REGISTRY_SCHEMA", "blocking", "pass", "CARD registry schemaVersion is present.")
+    else:
+        report.add("CARD_REGISTRY_SCHEMA", "blocking", "fail", "CARD registry must include schemaVersion: openacp-card-registry.v1.")
+    if re.search(r"(?im)^\s*artifactType\s*:\s*card-registry\s*$", text):
+        report.add("CARD_REGISTRY_TYPE", "blocking", "pass", "CARD registry artifactType is present.")
+    else:
+        report.add("CARD_REGISTRY_TYPE", "blocking", "fail", "CARD registry must include artifactType: card-registry.")
+    required_sections = ["Domain Coverage", "CARD List", "Lane Grouping"]
+    missing_sections = [section for section in required_sections if section.lower() not in text.lower()]
+    if missing_sections:
+        report.add("CARD_REGISTRY_SECTIONS", "blocking", "fail", "CARD registry missing sections: " + ", ".join(missing_sections))
+    else:
+        report.add("CARD_REGISTRY_SECTIONS", "blocking", "pass", "CARD registry has required sections.")
+    card_ids = sorted(set(re.findall(r"\bCARD-\d{3,}\b", text)))
+    has_small_exception = bool(
+        re.search(r"(?im)^\s*-\s*(small-project-reason|single-lane-reason|explicit-user-request)\s*:\s*\S", text)
+        or re.search(r"(?i)\b(small project|single safe lane|explicit user request)\b.{0,120}\bCARD", text)
+    )
+    if len(card_ids) >= 10:
+        report.add("CARD_REGISTRY_CARD_COUNT", "blocking", "pass", f"CARD registry includes {len(card_ids)} CARD ids.")
+    elif has_small_exception:
+        report.add("CARD_REGISTRY_CARD_COUNT", "blocking", "pass", "CARD registry uses fewer than 10 CARDs with an explicit small/single-lane/user-request reason.")
+    else:
+        report.add(
+            "CARD_REGISTRY_CARD_COUNT",
+            "blocking",
+            "fail",
+            f"CARD registry has only {len(card_ids)} CARD ids; normal projects need 10-20 or an explicit small/single-lane/user-request reason.",
+        )
+    lowered = text.lower()
+    coverage_terms = ["frontend", "ui", "electron", "backend", "api", "data", "testing", "release"]
+    missing_terms = [term for term in coverage_terms if term not in lowered]
+    if len(missing_terms) <= 1:
+        report.add("CARD_REGISTRY_DOMAIN_SCAN", "blocking", "pass", "CARD registry records broad domain-scan coverage.")
+    else:
+        report.add(
+            "CARD_REGISTRY_DOMAIN_SCAN",
+            "blocking",
+            "fail",
+            "CARD registry must show domain-scan coverage before lane dispatch; missing examples: " + ", ".join(missing_terms[:4]),
+        )
+    if re.search(r"(?i)task[- ]card", text):
+        report.add("CARD_REGISTRY_TASK_CARD_CANDIDATES", "blocking", "pass", "CARD registry links CARDs to task-card candidates.")
+    else:
+        report.add("CARD_REGISTRY_TASK_CARD_CANDIDATES", "blocking", "fail", "CARD registry must include task-card candidates.")
+    if re.search(r"(?i)Frontier|lane candidate|candidate lane", text):
+        report.add("CARD_REGISTRY_LANE_GROUPING", "blocking", "pass", "CARD registry supports Frontier lane grouping.")
+    else:
+        report.add("CARD_REGISTRY_LANE_GROUPING", "blocking", "fail", "CARD registry must support Frontier lane grouping.")
 
 
 def validate_launcher_text(
@@ -697,6 +813,27 @@ def validate_launcher_output_text(text: str, report: Report) -> None:
             report.add("PROMPT_BLOCK_STOP_RULE", "blocking", "fail", "Prompt block must stop on read failure, missing Prompt ID, or corruption.", loc)
 
 
+def _non_code_lines(text: str) -> list[str]:
+    without_fences = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+    return [line.strip() for line in without_fences.splitlines() if line.strip()]
+
+
+def _has_cjk(text: str) -> bool:
+    return bool(re.search(r"[\u4e00-\u9fff]", text))
+
+
+def _long_english_dominant_lines(text: str) -> list[str]:
+    offenders: list[str] = []
+    for line in _non_code_lines(text):
+        if line.startswith("|") or re.match(r"^[-*]\s*`?[\w.-]+`?\s*:", line):
+            continue
+        english_words = re.findall(r"\b[A-Za-z][A-Za-z0-9_-]*\b", line)
+        cjk_chars = re.findall(r"[\u4e00-\u9fff]", line)
+        if len(english_words) >= 10 and len(english_words) > len(cjk_chars):
+            offenders.append(line[:120])
+    return offenders
+
+
 def validate_formal_report_text(text: str, report: Report) -> None:
     response_ids = RESPONSE_ID_RE.findall(text)
     if not response_ids:
@@ -713,7 +850,7 @@ def validate_formal_report_text(text: str, report: Report) -> None:
         report.add("FORMAL_ROWS", "blocking", "pass", "Formal report has a known role-aware row set.")
     else:
         report.add("FORMAL_ROWS", "blocking", "fail", "Formal report rows must match a known OpenACP row set.")
-    bad_labels = labels.intersection({"What changed", "Lane or area", "Next step", "Validation"})
+    bad_labels = labels.intersection({"What changed", "Lane or area", "Next step", "Validation", "Checkpoint"})
     if bad_labels:
         report.add("LEGACY_ROW_LABELS", "blocking", "fail", "Legacy or overlong row labels found: " + ", ".join(sorted(bad_labels)))
     else:
@@ -727,6 +864,17 @@ def validate_formal_report_text(text: str, report: Report) -> None:
         report.add("EVIDENCE_DETAILS", "blocking", "pass", "Formal report includes evidence or basis details outside the table.")
     else:
         report.add("EVIDENCE_DETAILS", "blocking", "fail", "Formal report must include Evidence Details or basis outside the table.")
+    if any(_has_cjk(label) for label in labels):
+        english_offenders = _long_english_dominant_lines(text)
+        if english_offenders:
+            report.add(
+                "PREFERRED_LANGUAGE_CONTRACT",
+                "blocking",
+                "fail",
+                "Chinese formal reports must not contain long English-dominant prose lines: " + " | ".join(english_offenders[:3]),
+            )
+        else:
+            report.add("PREFERRED_LANGUAGE_CONTRACT", "blocking", "pass", "Chinese formal report is not dominated by long English prose.")
 
 
 def validate_frontier_contract_text(text: str, report: Report) -> None:
@@ -788,6 +936,19 @@ def validate_frontier_contract_text(text: str, report: Report) -> None:
         report.add("FRONTIER_HUMAN_NEXT_STEP", "blocking", "pass", "Frontier contract requires an explicit human next step.")
     else:
         report.add("FRONTIER_HUMAN_NEXT_STEP", "blocking", "fail", "Frontier contract must require an explicit human next step.")
+    if re.search(r"(?i)not\s+return\s+to\s+Primary\s+merely\s+because", text) and re.search(r"(?i)provisional\s+packet|source\s+baseline|consume-result|handoff", text):
+        report.add("FRONTIER_NO_PACKET_RETURN", "blocking", "pass", "Frontier contract forbids returning to Primary merely after writing intermediate lane evidence.")
+    else:
+        report.add(
+            "FRONTIER_NO_PACKET_RETURN",
+            "blocking",
+            "fail",
+            "Frontier contract must forbid returning to Primary merely because a provisional packet, handoff, source baseline, or consume-result was written.",
+        )
+    if re.search(r"(?i)`?blocked on Primary`?.*branchReturnGate", text, re.DOTALL):
+        report.add("FRONTIER_BLOCKED_GATE", "blocking", "pass", "Frontier contract gates blocked-on-Primary claims behind branchReturnGate.")
+    else:
+        report.add("FRONTIER_BLOCKED_GATE", "blocking", "fail", "Frontier contract must gate blocked-on-Primary claims behind branchReturnGate.")
     if "human-explain-openacp" in text and "formal-report-openacp" in text:
         report.add("FRONTIER_REPORTING", "blocking", "pass", "Frontier contract requires human explanation and formal reports.")
     else:
@@ -1697,6 +1858,8 @@ def validate_text_artifact(args: argparse.Namespace) -> Report:
         validate_formal_report_text(text, report)
     elif args.ruleset == "frontier-contract":
         validate_frontier_contract_text(text, report)
+    elif args.ruleset == "card-registry":
+        validate_card_registry_text(text, report)
     return report
 
 
@@ -1726,6 +1889,15 @@ def scan_public_package(root: Path) -> Report:
         scan_private_leaks(text, report, str(path))
         scan_secret_markers(text, report, str(path))
         scan_internal_report_markers(text, report, path, root)
+        try:
+            relative = path.relative_to(root)
+        except ValueError:
+            relative = path
+        if relative == Path("README.md"):
+            if _has_cjk(text):
+                report.add("ROOT_README_LANGUAGE", "blocking", "fail", "Root README.md must be English. Put localized onboarding in docs or examples.", str(path))
+            else:
+                report.add("ROOT_README_LANGUAGE", "blocking", "pass", "Root README.md is English-only.", str(path))
     report.add("PUBLIC_FILES_SCANNED", "blocking", "pass", f"Scanned {scanned} public text artifacts.")
     return report
 

@@ -5,6 +5,8 @@ description: Explain OpenACP project, lane, handoff, review, blocker, authority,
 
 # Human Explain OpenACP
 
+Use the user's preferred language when it is known. If the preferred language is Chinese, use Chinese as the main language and keep English only for stable technical terms and exact names such as `Primary`, `Frontier`, `worker`, `reviewer`, `handoff`, `validator`, `source pack`, `Prompt ID`, `Response ID`, `CARD`, `task-card`, `B0/B1/B2/B3`, `CI`, `CLI`, `JSON`, `schema`, exact file names, or project-specific product terms. Do not write long English sentences or paragraphs in a Chinese explanation.
+
 Explain:
 
 1. plain conclusion,

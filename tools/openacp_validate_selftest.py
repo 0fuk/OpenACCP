@@ -371,11 +371,80 @@ def main() -> int:
                     "Authority level: B3",
                     "Preferred language: Chinese",
                     "Use human-explain-openacp for every reply.",
+                    "Create 10-20 project-level CARDs for normal or medium/high-complexity work before Frontier dispatch.",
+                    "Scan product workflow, backend/API, data/storage, frontend/UI, desktop/mobile/native/Electron/Tauri surfaces, integrations, security, testing, CI, release, and ops before finalizing CARDs.",
+                    "Default to at least two Frontier lanes when two safe independent CARD clusters exist.",
+                    "Use one Frontier only for a small project, a single safe lane, or an explicit user request, and record the reason.",
                 ]
             ),
             encoding="utf-8",
         )
         assert_exit("valid prompt record", run(["--artifact", str(prompt_record_path), "--ruleset", "prompt-record", "--strict"]), 0)
+
+        bad_primary_prompt_record_path = tmp / "bad-primary.prompt.md"
+        bad_primary_prompt_record_path.write_text(
+            "\n".join(
+                [
+                    "Prompt ID: PROMPT-BAD-PRIMARY",
+                    "Role: Primary",
+                    "Authority level: B3",
+                    "Preferred language: Chinese",
+                    "Use human-explain-openacp for every reply.",
+                    "Review the workspace and start one Frontier when useful.",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("primary prompt requires CARD and lane contract", run(["--artifact", str(bad_primary_prompt_record_path), "--ruleset", "prompt-record", "--strict"]), 1)
+
+        card_registry_path = tmp / "CARD-registry.md"
+        card_registry_path.write_text(
+            "\n".join(
+                [
+                    "schemaVersion: openacp-card-registry.v1",
+                    "artifactType: card-registry",
+                    "",
+                    "## Domain Coverage",
+                    "Product workflow, backend/API, data/storage, frontend/UI, Electron, integrations, security, testing, CI, and release are scanned before lane grouping.",
+                    "",
+                    "## CARD List",
+                    "| CARD | Domain | Authority | Candidate lane | Status | Objective | Source refs | Task-card candidates |",
+                    "|---|---|---|---|---|---|---|---|",
+                    *[
+                        f"| CARD-{idx:03d} | domain-{idx} | B0/B1/B2 | frontier-{idx % 3} | draft | objective | SRC-001 | task-card candidate |"
+                        for idx in range(1, 11)
+                    ],
+                    "",
+                    "## Lane Grouping",
+                    "Frontier lane candidates group related CARDs by risk and parallel safety.",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("valid CARD registry", run(["--artifact", str(card_registry_path), "--ruleset", "card-registry", "--strict"]), 0)
+
+        bad_card_registry_path = tmp / "bad-CARD-registry.md"
+        bad_card_registry_path.write_text(
+            "\n".join(
+                [
+                    "schemaVersion: openacp-card-registry.v1",
+                    "artifactType: card-registry",
+                    "",
+                    "## Domain Coverage",
+                    "Product workflow, backend/API, data/storage, frontend/UI, Electron, integrations, security, testing, CI, and release are scanned.",
+                    "",
+                    "## CARD List",
+                    "| CARD | Domain | Task-card candidates |",
+                    "|---|---|---|",
+                    *[f"| CARD-{idx:03d} | backend | task-card candidate |" for idx in range(1, 6)],
+                    "",
+                    "## Lane Grouping",
+                    "Frontier lane candidate.",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("CARD registry requires enough CARDs or exception", run(["--artifact", str(bad_card_registry_path), "--ruleset", "card-registry", "--strict"]), 1)
 
         launcher_path = tmp / "launcher.md"
         launcher_path.write_text(
@@ -555,7 +624,6 @@ def main() -> int:
                     "|---|---|",
                     "| 做了什么　 | Frontier 刷新了 lane backlog。 |",
                     "| 总体进度　 | 60%。仍有 B2 子任务未 consume。 |",
-                    "| Checkpoint　 | lane-local closure。 |",
                     "| Lane　　　 | docs lane。 |",
                     "| 目标　　 | 收口当前 lane 的 B0/B1/B2 工作。 |",
                     "| 缺口　　 | 需要继续 consume worker handoff。 |",
@@ -568,6 +636,26 @@ def main() -> int:
             encoding="utf-8",
         )
         assert_exit("valid Chinese Frontier formal report", run(["--artifact", str(zh_frontier_report_path), "--ruleset", "formal-report", "--strict"]), 0)
+
+        bad_checkpoint_report_path = tmp / "bad-checkpoint-formal-report.md"
+        bad_checkpoint_report_path.write_text(
+            zh_frontier_report_path.read_text(encoding="utf-8").replace("| Lane　　　 | docs lane。 |", "| Checkpoint　 | lane-local closure。 |\n| Lane　　　 | docs lane。 |"),
+            encoding="utf-8",
+        )
+        assert_exit("formal report rejects checkpoint row", run(["--artifact", str(bad_checkpoint_report_path), "--ruleset", "formal-report", "--strict"]), 1)
+
+        bad_english_dominant_report_path = tmp / "bad-english-dominant-formal-report.md"
+        bad_english_dominant_report_path.write_text(
+            "\n".join(
+                [
+                    zh_frontier_report_path.read_text(encoding="utf-8"),
+                    "",
+                    "Source classification summary: current sources are final specification, product requirements, platform checklist, and migration readiness notes.",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        assert_exit("Chinese formal report rejects long English prose", run(["--artifact", str(bad_english_dominant_report_path), "--ruleset", "formal-report", "--strict"]), 1)
 
         bad_formal_report_path = tmp / "bad-formal-report.md"
         bad_formal_report_path.write_text(
@@ -598,6 +686,8 @@ def main() -> int:
                     "Human-managed child launchers are fallback only when direct subagent dispatch is unavailable, unsafe, explicitly requested, or requires a separately user-managed session.",
                     "Maintain a child ledger with promptId, responseId, taskId, handoffId, role, authority, effects, subagent id, terminal status, consume status, and remaining risk.",
                     "Every reply must include a human next step.",
+                    "Do not return to Primary merely because a provisional packet, source baseline, handoff, or consume-result was written.",
+                    "`blocked on Primary` is valid only when branchReturnGate is satisfied and every visible remaining gap is needs_final_authority or explicitly_out.",
                     "```json",
                     json.dumps(
                         {
@@ -726,6 +816,7 @@ def main() -> int:
         public_pkg = tmp / "public-package"
         (public_pkg / "templates").mkdir(parents=True)
         (public_pkg / "examples").mkdir()
+        (public_pkg / "README.md").write_text("OpenACP public package\n", encoding="utf-8")
         (public_pkg / "templates" / "formal-report.md").write_text("Response ID: `OACP-TEMPLATE-0001`\n", encoding="utf-8")
         (public_pkg / "examples" / "formal-report-example.md").write_text("Response ID: `OACP-EXAMPLE-0001`\n", encoding="utf-8")
         assert_exit(
@@ -744,6 +835,13 @@ def main() -> int:
             1,
         )
         internal_report.unlink()
+
+        (public_pkg / "README.md").write_text("OpenACP 中文入口\n", encoding="utf-8")
+        assert_exit(
+            "root README must stay English",
+            run(["--artifact", str(public_pkg), "--ruleset", "public-package", "--strict"]),
+            1,
+        )
 
         local_response_path = "C:" + "\\" + "Users" + "\\" + "example" + "\\" + "OpenACP" + "\\" + "response.md"
         (public_pkg / "README.md").write_text("Response log path: " + local_response_path + "\n", encoding="utf-8")

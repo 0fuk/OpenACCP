@@ -13,13 +13,15 @@ Every formal report must carry a `Response ID`, not `Report ID`. It must also in
 
 Use the user's preferred language when it is known. If the language is not known, keep the language consistent with the user's current conversation.
 
+When the preferred language is Chinese, use Chinese as the main language for headings, summaries, table cells, evidence explanations, and next actions. Keep English only for stable technical terms and exact names such as `Primary`, `Frontier`, `worker`, `reviewer`, `handoff`, `validator`, `source pack`, `Prompt ID`, `Response ID`, `CARD`, `task-card`, `B0/B1/B2/B3`, `CI`, `CLI`, `JSON`, `schema`, exact file names, or project-specific product terms. Do not write long English sentences or paragraphs in a Chinese report.
+
 ## Chat Table Fit Rule
 
 Formal reports are often rendered in narrow chat panes. Keep the table readable:
 
 - Use short first-column labels. Generic reports may use `Changed`, `Progress`, `Gate`, `Area`, `Goal`, `Gaps`, `Next`.
-- Primary Chinese reports should use `做了什么`, `总体进度`, `Checkpoint`, `Frontier`, `目标`, `缺口`, `下一步`.
-- Frontier Chinese reports should use `做了什么`, `总体进度`, `Checkpoint`, `Lane`, `目标`, `缺口`, `下一步`.
+- Primary Chinese reports should use `做了什么`, `总体进度`, `Frontier`, `目标`, `缺口`, `下一步`.
+- Frontier Chinese reports should use `做了什么`, `总体进度`, `Lane`, `目标`, `缺口`, `下一步`.
 - Keep each table cell to a short summary.
 - Do not put long paths, URLs, commit hashes, full commands, validation logs, or long inline-code snippets inside table cells.
 - Put detailed evidence after the table under `Evidence Details` as normal bullets.

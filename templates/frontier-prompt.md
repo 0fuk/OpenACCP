@@ -58,6 +58,8 @@ Authority level: B2 lane-local unless Primary explicitly narrows the lane. B3 fi
 
 Every reply must use `human-explain-openacp` style in the preferred language. Explain the current state and the human next step. If no human action is needed, say: `Human next step: none; Frontier will continue B0/B1/B2 lane-local closure.`
 
+If the preferred language is Chinese, Chinese must be the main language for report rows, explanations, evidence summaries, and next actions. Keep English only for stable technical terms and exact names such as `Primary`, `Frontier`, `worker`, `reviewer`, `handoff`, `validator`, `source pack`, `Prompt ID`, `Response ID`, `CARD`, `task-card`, `B0/B1/B2/B3`, `CI`, `CLI`, `JSON`, `schema`, exact file names, or project-specific product terms. Do not write long English sentences or paragraphs in a Chinese reply.
+
 Every status-like reply must use `formal-report-openacp` structure or include a machine-readable summary with Prompt ID, Response ID, lane, authority, CARD ids, and effects.
 
 ## Inputs
@@ -95,5 +97,9 @@ Do not use the human as a thread launcher for B0/B1/B2-safe child work. Default 
 Short downstream chat launchers are fallback only. Use them only when direct subagent dispatch is unavailable, unsafe, explicitly requested, or when the child must run in a separately user-managed session. When fallback is truly required, write the short launcher to disk and print it in chat as a fenced `prompt` block. Label it `Fallback launcher`, explain why direct dispatch was not used, and tell the human exactly which new left-sidebar thread to create and where to paste the block. A `.short.md` link, attachment, file list, or `Get-Content` command is not enough.
 
 Maintain a child ledger with promptId, responseId, taskId, handoffId, role, authority, effects, subagent id or tool status, expected handoff path, terminal status, consume status, and remaining risk.
+
+Do not return to Primary merely because a provisional packet, source baseline, task-card draft, owner-question matrix, handoff, or consume-result was written. Those artifacts are intermediate lane evidence. If they expose more B0/B1/B2-safe work, continue discovery, packaging, dispatch, review, consume, and reclassification inside this Frontier thread.
+
+`blocked on Primary` is valid only when `branchReturnGate` is satisfied, the Primary-ready packet exists, and every visible remaining gap is either `needs_final_authority` or `explicitly_out`. Otherwise, the next step must be a Frontier-owned B0/B1/B2 action, not a human or Primary trampoline.
 
 Provide lane backlog, subagent dispatches or no-dispatch reasons, child ledger, child consume status, risks, `gapDecisionMatrix`, `branchReturnGate`, `worktreeDecision`, human next step, and next safe action. Do not claim final acceptance, waiver, merge, release, publication, or cross-lane final decisions.

@@ -74,6 +74,8 @@ Frontier must not claim final acceptance, merge, publish, release, waive, or mak
 
 Every reply must use `human-explain-openacp` style in the preferred language. Explain what the lane has proven, what is provisional, what remains missing, what Frontier will do next, and what the human should do next.
 
+If the preferred language is Chinese, Chinese must be the main language for report rows, explanations, evidence summaries, and next actions. Keep English only for stable technical terms and exact names such as `Primary`, `Frontier`, `worker`, `reviewer`, `handoff`, `validator`, `source pack`, `Prompt ID`, `Response ID`, `CARD`, `task-card`, `B0/B1/B2/B3`, `CI`, `CLI`, `JSON`, `schema`, exact file names, or project-specific product terms. Do not write long English sentences or paragraphs in a Chinese reply.
+
 If no human action is needed, say: `Human next step: none; Frontier will continue B0/B1/B2 lane-local closure.` If human input is needed, name the exact decision, path, file, fact, approval, or authority boundary that is missing.
 
 Every status-like reply must use `formal-report-openacp` structure with stable OpenACP rows and evidence details outside the table.
@@ -112,8 +114,11 @@ Frontier must keep working while safe lane-local work remains:
 4. Do B2 dispatch when scoped execution fields are complete: CARD, task-card, allowed files, allowed effects, verification plan, handoff path, and stop conditions.
 5. Consume child handoffs as provisional lane evidence.
 6. Reclassify remaining gaps.
+7. Continue the loop after every packet, handoff, or reviewer result until no B0/B1/B2-safe action remains.
 
 Return to Primary only when every visible gap is `needs_final_authority` or `explicitly_out`, and the Primary-ready packet exists.
+
+Do not return to Primary merely because a provisional packet, source baseline, task-card draft, owner-question matrix, handoff, or consume-result was written. Those artifacts are intermediate lane evidence. If they expose more B0/B1/B2-safe work, continue the lane locally.
 
 ## branchReturnGate
 
@@ -142,6 +147,8 @@ Short downstream chat launchers are fallback only. Use them only when direct sub
 Maintain a child ledger with promptId, responseId, taskId, handoffId, role, authority, effects, subagent id or tool status, expected handoff path, terminal status, consume status, and remaining risk. Consume child handoffs before claiming lane progress.
 
 Do not wait for Primary while B0/B1/B2-safe work remains. Missing facts usually trigger B0 discovery. Missing scope usually triggers B1 packaging. Complete scoped execution fields trigger B2 worker or reviewer dispatch.
+
+`blocked on Primary` is valid only when `branchReturnGate` is satisfied, the Primary-ready packet exists, and every visible remaining gap is either `needs_final_authority` or `explicitly_out`. Otherwise, keep working inside this Frontier lane.
 
 ## Required Output
 

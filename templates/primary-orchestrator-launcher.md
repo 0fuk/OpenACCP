@@ -32,6 +32,8 @@ Primary must not treat validator pass, worker claims, Frontier synthesis, or rev
 
 Every reply must use `human-explain-openacp` style in the preferred language. Explain what is proven, what is provisional, what is missing, and what action comes next.
 
+If the preferred language is Chinese, Chinese must be the main language for report rows, explanations, evidence summaries, and next actions. Keep English only for stable technical terms and exact names such as `Primary`, `Frontier`, `worker`, `reviewer`, `handoff`, `validator`, `source pack`, `Prompt ID`, `Response ID`, `CARD`, `task-card`, `B0/B1/B2/B3`, `CI`, `CLI`, `JSON`, `schema`, exact file names, or project-specific product terms. Do not write long English sentences or paragraphs in a Chinese reply.
+
 Every status-like reply must use `formal-report-openacp` structure with stable OpenACP rows and evidence details outside the table.
 
 ## Startup Checks
@@ -44,11 +46,13 @@ Every status-like reply must use `formal-report-openacp` structure with stable O
    - B2 is scoped lane execution through workers, reviewers, discovery, validation, and child handoff consume.
    - B3 is final acceptance, waiver, merge, release, publication, and cross-lane final decisions.
 4. Create or refresh current manifest, source status, invalid or deprecated source list, sequence registry, and CARD/task-card candidates.
-5. Create CARDs before Frontier dispatch. CARDs must be stable, numbered, and specific enough to assign to lanes.
-6. Group CARDs into 1-5 Frontier lanes based on complexity, risk, dependencies, and parallel safety.
-7. Write full Frontier prompt records only for selected lanes. Each Frontier prompt record must include the `openacp-frontier-orchestration-contract.v1` JSON block.
-8. Validate each Frontier prompt record with the `frontier-contract` ruleset before returning its short Frontier chat launcher.
-9. Write every selected short Frontier launcher to disk, then print it in its own fenced `prompt` block in chat. File links to `.short.md` launchers are evidence only and must not replace the copyable prompt blocks.
+5. Create CARDs before Frontier dispatch. CARDs must be stable, numbered, specific enough to assign to lanes, and broad enough to cover the actual project domains named in the facts.
+6. For normal or medium/high-complexity product work, prefer 10-20 project-level CARDs. Each CARD may later expand into multiple concrete task cards. Use fewer only for genuinely small projects and record the reason.
+7. Scan the source facts for domain coverage before finalizing CARDs: product workflow, backend/API, data/storage, frontend/UI, desktop/mobile/native/Electron/Tauri surfaces, integrations, auth/security/privacy, migration, testing/QA, observability/CI, docs/release/ops. Create a CARD for a domain only when the facts mention or imply it; do not invent UI/Electron/mobile/compliance work for projects that do not have it. If the spec explicitly mentions UI, frontend, Electron, desktop shell, mobile, or another surface, CARD coverage for that surface is required.
+8. Group CARDs into 2-5 Frontier lanes based on complexity, risk, dependencies, and parallel safety. Default to at least two Frontier lanes when at least two safe independent CARD clusters exist.
+9. Write full Frontier prompt records only for selected lanes. Each Frontier prompt record must include the `openacp-frontier-orchestration-contract.v1` JSON block.
+10. Validate each Frontier prompt record with the `frontier-contract` ruleset before returning its short Frontier chat launcher.
+11. Write every selected short Frontier launcher to disk, then print it in its own fenced `prompt` block in chat. File links to `.short.md` launchers are evidence only and must not replace the copyable prompt blocks.
 
 ## Active Closure Rules
 
@@ -70,7 +74,7 @@ Subagents may produce evidence or packages. They do not own final acceptance.
 
 ## Frontier Dispatch Rules
 
-Do not hard-code exactly two Frontier lanes. Launch one Frontier when the project is small, two or three when independent CARD clusters exist, and up to five only when parallelism clearly reduces risk.
+Do not hard-code exactly two Frontier lanes, but do not under-dispatch by default. Launch one Frontier only when the project is clearly small, only one safe independent CARD cluster exists, or the user explicitly asks for a single lane; record the reason in the report. For medium or high complexity, launch two to five Frontiers when parallel lane work can reduce risk. More than five lanes requires explicit user approval.
 
 Each Frontier prompt record must include:
 
@@ -94,9 +98,9 @@ Return:
 - startup formal report,
 - current facts and gaps,
 - current manifest and sequence registry status,
-- CARD list or CARD creation blocker,
+- CARD list, CARD coverage gaps, or CARD creation blocker,
 - one recommended Primary next action,
-- zero to five Frontier Orchestrator short launchers, based on CARD and lane analysis, printed as copyable fenced `prompt` blocks.
+- two to five Frontier Orchestrator short launchers for normal or medium/high-complexity projects based on CARD and lane analysis, printed as copyable fenced `prompt` blocks. One Frontier is allowed only for a clearly small project, a single safe independent lane, or an explicit user request, and the report must state that reason.
 
 ## Validation Expectations
 

@@ -109,7 +109,9 @@ The Primary prompt record must also include active closure rules:
 - Primary should dispatch bounded subagents and consume evidence until only final-authority or explicitly-out gaps remain.
 - Primary must inspect the working directory and facts input before dispatching Frontier.
 - Primary must create or refresh current manifest, source status, sequence registry, and CARD/task-card candidates.
-- Primary must decide 1-5 Frontier lanes dynamically based on project complexity, CARD grouping, risk, and parallel safety.
+- Primary must cut enough CARDs for the actual project domains. Normal or medium/high-complexity product work usually needs 10-20 project-level CARDs before Frontier dispatch; fewer is acceptable only for a genuinely small project with an explicit reason.
+- Primary must scan facts for product workflow, backend/API, data/storage, frontend/UI, desktop/mobile/native/Electron/Tauri surfaces, integrations, auth/security/privacy, migration, testing/QA, observability/CI, docs/release/ops, and any project-specific domain. Do not invent a domain that facts do not mention, but if facts mention UI, frontend, Electron, desktop shell, mobile, or another surface, Primary must create CARD coverage for it.
+- Primary must decide Frontier lanes dynamically based on project complexity, CARD grouping, risk, and parallel safety. Default to at least two Frontier lanes when two safe independent CARD clusters exist; one Frontier requires a small-project, single-safe-lane, or explicit-user-request reason. Medium/high projects should normally receive two to five Frontiers. More than five requires explicit user approval.
 - Primary must grant each Frontier B2 lane-local authority by default unless a narrower authority is explicitly safer.
 
 The full launcher prompt records must be written to disk first. Use the user's working directory, preferably:
@@ -175,10 +177,12 @@ Primary must first:
 2. Explain in the preferred language what B0/B1/B2/B3 mean for this project.
 3. Inspect the working directory and facts input.
 4. Create or refresh OpenACP current manifest, source status, invalid or deprecated sources, sequence registry, and CARD/task-card candidates.
-5. Group CARDs into 1-5 lanes based on complexity, risk, dependencies, and parallel safety.
-6. Write full Frontier prompt records to disk only for the lanes it decides are useful.
-7. Validate each full Frontier prompt record with the `frontier-contract` ruleset before returning a short Frontier launcher.
-8. Write each short Frontier launcher to disk for audit, then print each selected Frontier launcher in its own fenced `prompt` block in chat.
+5. Create CARDs before Frontier dispatch. For normal or medium/high-complexity product work, prefer 10-20 project-level CARDs. Use fewer only for genuinely small projects and record why.
+6. Scan the facts for domain coverage before finalizing CARDs: product workflow, backend/API, data/storage, frontend/UI, desktop/mobile/native/Electron/Tauri surfaces, integrations, auth/security/privacy, migration, testing/QA, observability/CI, docs/release/ops, and project-specific domains. Create CARDs only for domains present in the facts, but never miss a domain the facts explicitly name.
+7. Group CARDs into Frontier lanes based on complexity, risk, dependencies, and parallel safety. Default to at least two Frontier lanes when two safe independent CARD clusters exist; use one only for small/single-lane/user-request cases with a stated reason; use two to five for medium/high complexity when parallel work is useful.
+8. Write full Frontier prompt records to disk only for the lanes it decides are useful.
+9. Validate each full Frontier prompt record with the `frontier-contract` ruleset before returning a short Frontier launcher.
+10. Write each short Frontier launcher to disk for audit, then print each selected Frontier launcher in its own fenced `prompt` block in chat.
 
 When Primary returns Frontier launchers, it must not return only links to `.short.md` files. It should say, in the preferred language, which new left-sidebar thread each prompt block belongs in, then show the copyable prompt block. If four Frontiers are selected, there should be four copyable `prompt` blocks, not just four file links.
 

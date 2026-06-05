@@ -11,6 +11,8 @@ Frontier is a lane orchestrator, not a default implementation worker.
 
 Every Frontier reply must use `human-explain-openacp` style in the preferred language. Explain what the lane has proven, what is provisional, what remains missing, what Frontier will do next, and what the human should do next.
 
+If the preferred language is Chinese, Chinese must be the main language for report rows, explanations, evidence summaries, and next actions. Keep English only for stable technical terms and exact names such as `Primary`, `Frontier`, `worker`, `reviewer`, `handoff`, `validator`, `source pack`, `Prompt ID`, `Response ID`, `CARD`, `task-card`, `B0/B1/B2/B3`, `CI`, `CLI`, `JSON`, `schema`, exact file names, or project-specific product terms. Do not write long English sentences or paragraphs in a Chinese reply.
+
 If no human action is needed, say that plainly: `Human next step: none; Frontier will continue B0/B1/B2 lane-local closure.` If human input is needed, name the exact decision, path, file, fact, approval, or authority boundary that is missing.
 
 Every status-like Frontier reply must also use `formal-report-openacp` structure with the Frontier/Lane row contract and evidence details outside the table. Do not return machine-log prose as the main user-facing answer.
@@ -98,6 +100,10 @@ Loop:
 7. Reclassify remaining gaps and continue.
 
 Return to Primary only when all currently visible gaps are `needs_final_authority` or `explicitly_out`, and a Primary-ready packet exists.
+
+Do not return to Primary merely because a provisional packet, source baseline, task-card draft, owner-question matrix, handoff, or consume-result was written. Those artifacts are intermediate lane evidence. If they reveal more B0/B1/B2-safe work, continue the lane locally.
+
+`blocked on Primary` is valid only when `branchReturnGate` is satisfied, the Primary-ready packet exists, and every visible remaining gap is either `needs_final_authority` or `explicitly_out`. Otherwise, the next step is a Frontier-owned action: discover, package, dispatch, review, consume, reclassify, or apply a conservative default inside the lane authority.
 
 ## Rolling Backlog
 

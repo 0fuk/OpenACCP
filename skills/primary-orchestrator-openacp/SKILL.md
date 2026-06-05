@@ -1,6 +1,6 @@
 ---
 name: primary-orchestrator-openacp
-description: Run final-authority OpenACP coordination. Use for checkpoint decisions, authority charters, dispatch, final handoff consume, PR/CI/merge or publication readiness, waivers, and accepting or rejecting reviewed evidence.
+description: Run final-authority OpenACP coordination. Use for coordination decisions, authority charters, dispatch, final handoff consume, PR/CI/merge or publication readiness, waivers, and accepting or rejecting reviewed evidence.
 ---
 
 # Primary Orchestrator OpenACP
@@ -10,6 +10,8 @@ Primary owns final authority.
 ## Reply Contract
 
 Every Primary reply must use `human-explain-openacp` style: explain what is proven, what is provisional, what is missing, and what action comes next in the preferred language.
+
+If the preferred language is Chinese, Chinese must be the main language for the report, explanation, evidence summary, and next action. Keep English only for stable technical terms and exact names such as `Primary`, `Frontier`, `worker`, `reviewer`, `handoff`, `validator`, `source pack`, `Prompt ID`, `Response ID`, `CARD`, `task-card`, `B0/B1/B2/B3`, `CI`, `CLI`, `JSON`, `schema`, exact file names, or project-specific product terms. Do not write long English sentences or paragraphs in a Chinese reply.
 
 Every status-like Primary reply must also use `formal-report-openacp` structure with stable OpenACP report rows and evidence details outside the table. Do not return machine-log prose as the main user-facing answer.
 
@@ -106,17 +108,19 @@ When the Primary thread starts from the short launcher, it must:
    - B3: final acceptance, waiver, merge, release, publication, and cross-lane final decisions.
 3. Inspect the working directory and facts input.
 4. Create or refresh current manifest, source status, invalid or deprecated sources, sequence registry, and CARD/task-card candidates.
-5. Create CARDs before Frontier dispatch. CARDs should be stable, numbered, and specific enough to assign to lanes.
-6. Group CARDs into 1-5 Frontier lanes based on complexity, risk, dependency, and parallel safety.
-7. Grant Frontier B2 lane-local authority by default, with B3 forbidden.
-8. Write full Frontier prompt records to disk and return short Frontier launchers only for the selected lanes.
-9. Require each Frontier prompt record to include the `openacp-frontier-orchestration-contract.v1` JSON block.
-10. Validate each Frontier prompt record with `openacp-validate --artifact <frontier-prompt-record> --ruleset frontier-contract --strict` before returning its short launcher.
-11. Require each Frontier prompt record to use subagent-first child dispatch: worker, reviewer, discovery, validation, and task-card-only child work should be dispatched by the Frontier through available subagent or delegation tools when B0/B1/B2-safe. Human-managed child launchers are fallback only and must explain why direct dispatch was unavailable or unsafe.
+5. Create CARDs before Frontier dispatch. CARDs should be stable, numbered, specific enough to assign to lanes, and broad enough to cover the actual project domains named in the facts.
+6. For normal or medium/high-complexity product work, prefer 10-20 project-level CARDs. Each CARD may later expand into multiple concrete task cards. Use fewer only for genuinely small projects and record the reason.
+7. Scan the source facts for domain coverage before finalizing CARDs: product workflow, backend/API, data/storage, frontend/UI, desktop/mobile/native/Electron/Tauri surfaces, integrations, auth/security/privacy, migration, testing/QA, observability/CI, docs/release/ops. Create a CARD for a domain only when the facts mention or imply it; do not invent UI/Electron/mobile/compliance work for projects that do not have it. If the spec explicitly mentions UI, frontend, Electron, desktop shell, mobile, or another surface, CARD coverage for that surface is required.
+8. Group CARDs into 2-5 Frontier lanes based on complexity, risk, dependency, and parallel safety. Default to at least two Frontier lanes when at least two safe independent CARD clusters exist.
+9. Grant Frontier B2 lane-local authority by default, with B3 forbidden.
+10. Write full Frontier prompt records to disk and return short Frontier launchers only for the selected lanes.
+11. Require each Frontier prompt record to include the `openacp-frontier-orchestration-contract.v1` JSON block.
+12. Validate each Frontier prompt record with `openacp-validate --artifact <frontier-prompt-record> --ruleset frontier-contract --strict` before returning its short launcher.
+13. Require each Frontier prompt record to use subagent-first child dispatch: worker, reviewer, discovery, validation, and task-card-only child work should be dispatched by the Frontier through available subagent or delegation tools when B0/B1/B2-safe. Human-managed child launchers are fallback only and must explain why direct dispatch was unavailable or unsafe.
 
 For every selected Frontier, Primary must write the short Frontier launcher to disk and print it in its own fenced `prompt` block in chat. File links alone are invalid. Before each block, say which new left-sidebar thread the user should create and paste that block into.
 
-Primary should not hard-code exactly two Frontier lanes. If one lane is enough, launch one. If the project is broad, launch up to five. More than five lanes requires explicit user approval.
+Primary should not hard-code exactly two Frontier lanes, but it should not under-dispatch by default. Launch one Frontier only when the project is clearly small, only one safe independent CARD cluster exists, or the user explicitly asks for a single lane; record the reason in the report. For medium or high complexity, launch two to five Frontiers when parallel lane work can reduce risk. More than five lanes requires explicit user approval.
 
 Primary should also maintain machine-readable state:
 

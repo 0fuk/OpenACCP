@@ -2,7 +2,9 @@
 
 OpenACP has two adoption paths. Pick the shortest one that matches your current material.
 
-For Codex or Claude Code startup, begin with `docs/codex-install-and-start.md`. The default path is to install skills, install the workflow kit, validate, produce a formal report automatically, then ask for the required working directory, a source pack, PRD, spec, facts path or uploaded project materials, and the user's preferred language. After those inputs arrive, startup returns one short Primary launcher only, printed in chat as a fenced `prompt` block; Primary later reviews the workspace, creates CARDs, and decides whether to launch 1-5 Frontier lanes.
+For Codex or Claude Code startup, begin with `docs/codex-install-and-start.md`. The default path is to install skills, install the workflow kit, validate, produce a formal report automatically, then ask for the required working directory, a source pack, PRD, spec, facts path or uploaded project materials, and the user's preferred language. After those inputs arrive, startup returns one short Primary launcher only, printed in chat as a fenced `prompt` block; Primary later reviews the workspace, creates CARDs, and decides whether to launch Frontier lanes.
+
+For normal or medium-complexity projects, Primary should usually create enough CARDs to support useful parallelism and then launch at least two Frontier lanes when two safe independent CARD clusters exist. One Frontier is only for a clearly small project, a single safe lane, or an explicit user request, and Primary must state that reason. Medium-high projects usually need two to five Frontiers; more than five requires explicit user approval.
 
 ## Path A: I Only Have A PRD
 

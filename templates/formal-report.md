@@ -25,7 +25,6 @@ Use these rows for a Chinese Primary report:
 |---|---|
 | 做了什么　 | |
 | 总体进度　 | Include a numeric estimate. |
-| Checkpoint　 | |
 | Frontier　 | |
 | 目标　　 | |
 | 缺口　　 | |
@@ -37,7 +36,6 @@ Use these rows for a Chinese Frontier report:
 |---|---|
 | 做了什么　 | |
 | 总体进度　 | Include a numeric estimate. |
-| Checkpoint　 | |
 | Lane　　　 | |
 | 目标　　 | |
 | 缺口　　 | |

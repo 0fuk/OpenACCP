@@ -16,7 +16,7 @@ Scoped execution under a visible charter. A Primary-launched Frontier should def
 
 ## B3
 
-Final authority: merge, release, final acceptance, waiver, checkpoint, publication, cross-lane final decisions, unrestricted real resource use, broad dependency authorization, or destructive cleanup.
+Final authority: merge, release, final acceptance, waiver, final coordination gate, publication, cross-lane final decisions, unrestricted real resource use, broad dependency authorization, or destructive cleanup.
 
 ## Gap Decision Matrix
 

@@ -24,6 +24,7 @@ The validator is not a full JSON Schema engine. It uses hardcoded rules that mat
 - `machine-summary`: compact locator summary for worker, reviewer, discovery, Frontier, or Primary output with Prompt ID, Response ID, authority, effects, basisRefs, locators, claims, and next actions.
 - `status-report`: current state, unverified claims, blockers, next actions, and authority limits.
 - `assumption-ledger`: assumptions, evidence, risk, and confirmation flags.
+- `card-registry`: project-level CARD registry with domain coverage, 10-20 CARD expectation for normal or medium/high-complexity work, task-card candidates, Frontier lane grouping, and explicit small/single-lane/user-request exception when fewer CARDs are used.
 - `prompt-record`: full on-disk orchestrator or worker prompt record with Prompt ID, role, authority, preferred language, and human-readable reply contract.
 - `launcher`: short chat launcher that points to an on-disk prompt record, requires explicit UTF-8 reading, and does not paste the full prompt body into chat. Worker, reviewer, discovery, validation, and task-card-only launchers are rejected unless they are explicitly marked as fallback launchers with a direct-dispatch failure reason. Use `--prompt-record` to cross-check the launcher Prompt ID against the full prompt record.
 - `launcher-output`: response-log or chat-output text that must include one or more copyable fenced `prompt` blocks, plus natural-language instruction to open a new left-sidebar thread and paste the launcher. It rejects file-link-only and `Get-Content` substitutes.
@@ -31,7 +32,7 @@ The validator is not a full JSON Schema engine. It uses hardcoded rules that mat
 - `frontier-contract`: Frontier prompt or report text with B2 lane-local authority, active B0/B1/B2 closure rules, gap decision matrix, branch return gate, worktree decision, subagent-first current-thread dispatch, child ledger, human next step, fallback-only child launcher rules, and a JSON `openacp-frontier-orchestration-contract.v1` block.
 - `current-manifest`: current fact anchor that records preferred language, facts input, current source pack, invalid sources, deprecated sources, sequence registry, active cards, active lanes, superseded prompts, cancelled prompts, and latest consume refs.
 - `sequence-registry`: registry of prompt records, responses, handoffs, consumes, active cards, active lanes, and current/latest pointers.
-- `public-package`: UTF-8, common mojibake, local paths, internal identifier markers, lightweight secret markers, and internal formal reports placed in public report paths.
+- `public-package`: UTF-8, common mojibake, local paths, internal identifier markers, lightweight secret markers, English-only root README, and internal formal reports placed in public report paths.
 
 ## Commands
 
@@ -65,6 +66,12 @@ python tools/openacp_validate.py --artifact .openacp/launchers/primary-orchestra
 python tools/openacp_validate.py --artifact .openacp/launchers/primary-orchestrator.short.md --ruleset launcher --prompt-record .openacp/launchers/primary-orchestrator.prompt.md --expect-prompt-id <prompt-id> --strict
 python tools/openacp_validate.py --artifact .openacp/reports/response-with-launcher.md --ruleset launcher-output --strict
 python tools/openacp_validate.py --artifact .openacp/reports/response.md --ruleset formal-report --strict
+```
+
+CARD registries can be checked before Frontier dispatch:
+
+```bash
+python tools/openacp_validate.py --artifact .openacp/tasks/CARDS.md --ruleset card-registry --strict
 ```
 
 Manifest and registry validation should run after Primary creates or refreshes coordination state:
