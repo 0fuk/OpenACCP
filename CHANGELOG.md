@@ -15,6 +15,7 @@
 - Authority charters now include data risk limits, resource-use limits, allowed inputs/outputs, forbidden side effects, and stop conditions.
 - Current manifests and sequence registries now track active lanes, superseded or cancelled prompts, consume records, and latest consume refs.
 - Startup and Frontier launcher instructions now require both on-disk launcher files and copyable chat `prompt` blocks; file links or `Get-Content` commands are explicitly rejected as substitutes.
+- README now uses a human-readable onboarding flow with concrete user personas, manual Primary/Frontier startup guidance, skill descriptions, artifact communication, B0/B1/B2/B3 explanations, and core OpenACP technology summaries.
 
 ## [0.1.0] - 2026-06-03
 
