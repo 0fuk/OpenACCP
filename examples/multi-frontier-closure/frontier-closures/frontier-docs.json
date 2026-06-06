@@ -16,6 +16,15 @@
   "childLedgerRef": "../child-ledgers/frontier-docs.json",
   "allChildrenTerminal": true,
   "allChildHandoffsConsumedOrRejected": true,
+  "branchReturnGate": {
+    "state": "ready_for_primary",
+    "safeWorkRemainingCount": 0,
+    "finalAuthorityGapCount": 1,
+    "explicitlyOutCount": 0,
+    "primaryReadyPacketExists": true,
+    "reason": "All lane-local evidence has returned and only final acceptance remains."
+  },
+  "laneProgressPacketRef": "",
   "primaryReadyPacketRef": "../primary-ready-packets/frontier-docs.md",
   "blockedOnHumanReason": "",
   "remainingB0B1B2SafeWork": [],

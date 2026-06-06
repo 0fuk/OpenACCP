@@ -258,6 +258,10 @@ REQUIRED_FIELDS: dict[str, list[str]] = {
         "sourceRoots",
         "testEntrypoints",
         "worktreePolicy",
+        "inferenceStatus",
+        "inferredFrom",
+        "confidence",
+        "ambiguities",
         "allowedWritablePaths",
         "readOnlyPaths",
         "forbiddenPaths",
@@ -303,6 +307,8 @@ REQUIRED_FIELDS: dict[str, list[str]] = {
         "childLedgerRef",
         "allChildrenTerminal",
         "allChildHandoffsConsumedOrRejected",
+        "branchReturnGate",
+        "laneProgressPacketRef",
         "primaryReadyPacketRef",
         "remainingB0B1B2SafeWork",
         "remainingFinalAuthorityGaps",
@@ -985,8 +991,16 @@ def validate_primary_prompt_contract_text(text: str, report: Report) -> None:
             "PRIMARY_RUNTIME_BOUNDARY_GATE",
             "blocking",
             "fail",
-            "Primary prompt must resolve runtime boundary before Frontier dispatch: product repo path, base branch, source roots, test entrypoints, worktree policy, and runtimeBoundaryRef.",
+            "Primary prompt must resolve runtime boundary before Frontier dispatch: repo path, inferred base branch, source roots, test entrypoints, worktree policy, and runtimeBoundaryRef.",
         )
+    if re.search(r"(?is)repo\s+path.{0,220}(actual|real|product|code entry point|git|repository)", text) or re.search(r"产品代码仓库路径|真正的产品\s*Git\s*repo", text):
+        report.add("PRIMARY_REPO_PATH_INPUT", "blocking", "pass", "Primary prompt distinguishes repo path as the product code repository.")
+    else:
+        report.add("PRIMARY_REPO_PATH_INPUT", "blocking", "fail", "Primary prompt must ask for repo path as the actual product code repository path.")
+    if re.search(r"(?is)infer.{0,220}(base branch|source roots|test entrypoints|worktree policy)", text) and re.search(r"(?is)ask.{0,120}(only|ambiguous|risk|impossible)", text):
+        report.add("PRIMARY_RUNTIME_INFERENCE", "blocking", "pass", "Primary prompt requires runtime inference before follow-up questions.")
+    else:
+        report.add("PRIMARY_RUNTIME_INFERENCE", "blocking", "fail", "Primary prompt must infer base branch, writable scope, test entrypoints, and worktree policy before asking follow-up questions.")
     if re.search(r"10\s*[-\u2010-\u2015]\s*20|10\s+to\s+20", text):
         report.add("PRIMARY_CARD_COUNT_RULE", "blocking", "pass", "Primary prompt requires 10-20 CARDs for normal or medium/high complexity.")
     else:
@@ -2306,11 +2320,25 @@ def validate_runtime_boundary(data: dict[str, Any], report: Report) -> None:
         report.add("DATA_RISK", "blocking", "fail", "dataRisk must be none, low, medium, high, or sensitive.")
     else:
         report.add("DATA_RISK", "blocking", "pass", "dataRisk is valid.")
-    for field_name in ["sourceRoots", "testEntrypoints", "allowedWritablePaths", "readOnlyPaths", "forbiddenPaths", "unresolvedOwnerInputs"]:
+    if data.get("inferenceStatus") not in {"not_attempted", "inferred", "partially_inferred", "ambiguous", "not_applicable"}:
+        report.add("RUNTIME_INFERENCE_STATUS", "blocking", "fail", "inferenceStatus must be not_attempted, inferred, partially_inferred, ambiguous, or not_applicable.")
+    else:
+        report.add("RUNTIME_INFERENCE_STATUS", "blocking", "pass", "inferenceStatus is valid.")
+    if data.get("confidence") not in {"high", "medium", "low", "unknown", "not_applicable"}:
+        report.add("RUNTIME_CONFIDENCE", "blocking", "fail", "confidence must be high, medium, low, unknown, or not_applicable.")
+    else:
+        report.add("RUNTIME_CONFIDENCE", "blocking", "pass", "confidence is valid.")
+    for field_name in ["sourceRoots", "testEntrypoints", "inferredFrom", "ambiguities", "allowedWritablePaths", "readOnlyPaths", "forbiddenPaths", "unresolvedOwnerInputs"]:
         if isinstance(data.get(field_name), list):
             report.add(f"{field_name.upper()}_ARRAY", "blocking", "pass", f"{field_name} is an array.")
         else:
             report.add(f"{field_name.upper()}_ARRAY", "blocking", "fail", f"{field_name} must be an array.")
+    if data.get("productRepoStatus") in {"found", "provided"} and data.get("inferenceStatus") in {"not_attempted", "ambiguous"}:
+        report.add("RUNTIME_REPO_INFERENCE", "blocking", "fail", "resolved product repos require runtime inference evidence before B2 planning.")
+    elif data.get("productRepoStatus") in {"found", "provided"} and not data.get("inferredFrom"):
+        report.add("RUNTIME_REPO_INFERENCE", "blocking", "fail", "resolved product repos require inferredFrom evidence.")
+    else:
+        report.add("RUNTIME_REPO_INFERENCE", "blocking", "pass", "runtime inference state is compatible with product repo status.")
     gate = data.get("b2DispatchGate")
     if not isinstance(gate, dict):
         report.add("B2_DISPATCH_GATE_OBJECT", "blocking", "fail", "b2DispatchGate must be an object.")
@@ -2703,7 +2731,18 @@ def validate_frontier_closure(data: dict[str, Any], report: Report) -> None:
             report.add(f"{field_name.upper()}_ARRAY", "blocking", "pass", f"{field_name} is an array.")
         else:
             report.add(f"{field_name.upper()}_ARRAY", "blocking", "fail", f"{field_name} must be an array.")
+    validate_frontier_branch_return_gate(data, report)
     branch_state = data.get("branchState")
+    primary_ready_ref = str(data.get("primaryReadyPacketRef", "")).strip()
+    lane_progress_ref = str(data.get("laneProgressPacketRef", "")).strip()
+    if branch_state != "blocked_on_primary" and primary_ready_ref:
+        report.add("FRONTIER_PRIMARY_READY_ONLY_FOR_RETURN", "blocking", "fail", "primaryReadyPacketRef is allowed only for true blocked_on_primary return.")
+    elif branch_state != "blocked_on_primary":
+        report.add("FRONTIER_PRIMARY_READY_ONLY_FOR_RETURN", "blocking", "pass", "non-return closure does not claim a Primary-ready packet.")
+    if branch_state == "open" and not lane_progress_ref:
+        report.add("FRONTIER_LANE_PROGRESS_PACKET", "blocking", "fail", "open Frontier progress requires laneProgressPacketRef instead of Primary-ready packet.")
+    elif branch_state == "open":
+        report.add("FRONTIER_LANE_PROGRESS_PACKET", "blocking", "pass", "open Frontier records a lane-progress packet.")
     if branch_state in {"closed", "blocked_on_primary", "blocked_on_human"} and remaining_safe_decisions:
         report.add(
             "FRONTIER_RETURN_GATE_SAFE_DECISIONS",
@@ -2747,6 +2786,99 @@ def validate_frontier_closure(data: dict[str, Any], report: Report) -> None:
         report.add("FRONTIER_HUMAN_NEXT_STEP", "blocking", "fail", "frontier-closure must include humanNextStep.")
     else:
         report.add("FRONTIER_HUMAN_NEXT_STEP", "blocking", "pass", "frontier-closure includes humanNextStep.")
+        validate_frontier_next_step_text(data, report)
+    validate_frontier_closure_against_lane_registry(data, report)
+
+
+def validate_frontier_branch_return_gate(data: dict[str, Any], report: Report) -> None:
+    gate = data.get("branchReturnGate")
+    if not isinstance(gate, dict):
+        report.add("FRONTIER_BRANCH_RETURN_GATE", "blocking", "fail", "branchReturnGate must be an object.")
+        return
+    report.add("FRONTIER_BRANCH_RETURN_GATE", "blocking", "pass", "branchReturnGate is an object.")
+    required = ["state", "safeWorkRemainingCount", "finalAuthorityGapCount", "explicitlyOutCount", "primaryReadyPacketExists", "reason"]
+    missing = [field for field in required if field not in gate]
+    if missing:
+        report.add("FRONTIER_BRANCH_RETURN_GATE_FIELDS", "blocking", "fail", "branchReturnGate missing fields: " + ", ".join(missing))
+    else:
+        report.add("FRONTIER_BRANCH_RETURN_GATE_FIELDS", "blocking", "pass", "branchReturnGate has required fields.")
+    state = gate.get("state")
+    if state not in {"not_ready", "ready_for_primary", "closed", "blocked_on_human", "not_applicable"}:
+        report.add("FRONTIER_BRANCH_RETURN_GATE_STATE", "blocking", "fail", "branchReturnGate.state must be not_ready, ready_for_primary, closed, blocked_on_human, or not_applicable.")
+    for count_field in ["safeWorkRemainingCount", "finalAuthorityGapCount", "explicitlyOutCount"]:
+        count_value = gate.get(count_field)
+        if not isinstance(count_value, int) or count_value < 0:
+            report.add("FRONTIER_BRANCH_RETURN_GATE_COUNTS", "blocking", "fail", f"branchReturnGate.{count_field} must be a non-negative integer.")
+    if not isinstance(gate.get("primaryReadyPacketExists"), bool):
+        report.add("FRONTIER_BRANCH_RETURN_GATE_PACKET_FLAG", "blocking", "fail", "branchReturnGate.primaryReadyPacketExists must be boolean.")
+    if not str(gate.get("reason", "")).strip():
+        report.add("FRONTIER_BRANCH_RETURN_GATE_REASON", "blocking", "fail", "branchReturnGate.reason must explain the return state.")
+    branch_state = data.get("branchState")
+    safe_count = gate.get("safeWorkRemainingCount")
+    if branch_state == "open" and state != "not_ready":
+        report.add("FRONTIER_BRANCH_RETURN_GATE_CONSISTENCY", "blocking", "fail", "open Frontier closures require branchReturnGate.state not_ready.")
+    elif branch_state == "blocked_on_primary":
+        if state != "ready_for_primary":
+            report.add("FRONTIER_BRANCH_RETURN_GATE_CONSISTENCY", "blocking", "fail", "blocked_on_primary requires branchReturnGate.state ready_for_primary.")
+        elif safe_count != 0:
+            report.add("FRONTIER_BRANCH_RETURN_GATE_CONSISTENCY", "blocking", "fail", "blocked_on_primary requires branchReturnGate.safeWorkRemainingCount 0.")
+        elif gate.get("primaryReadyPacketExists") is not True:
+            report.add("FRONTIER_BRANCH_RETURN_GATE_CONSISTENCY", "blocking", "fail", "blocked_on_primary requires primaryReadyPacketExists true.")
+        else:
+            report.add("FRONTIER_BRANCH_RETURN_GATE_CONSISTENCY", "blocking", "pass", "blocked_on_primary return gate is consistent.")
+    elif branch_state == "closed" and state != "closed":
+        report.add("FRONTIER_BRANCH_RETURN_GATE_CONSISTENCY", "blocking", "fail", "closed Frontier closures require branchReturnGate.state closed.")
+    elif branch_state == "blocked_on_human" and state != "blocked_on_human":
+        report.add("FRONTIER_BRANCH_RETURN_GATE_CONSISTENCY", "blocking", "fail", "blocked_on_human Frontier closures require branchReturnGate.state blocked_on_human.")
+    elif branch_state == "open":
+        report.add("FRONTIER_BRANCH_RETURN_GATE_CONSISTENCY", "blocking", "pass", "open Frontier return gate remains not_ready.")
+
+
+def validate_frontier_next_step_text(data: dict[str, Any], report: Report) -> None:
+    next_step = str(data.get("humanNextStep", ""))
+    branch_state = data.get("branchState")
+    consume_pattern = r"(?i)\bPrimary\s+(?:should|can|must|needs to)\s+consume\b|Primary\s+consume|consume\s+the\s+(?:packet|lane|handoff)|主.*consume|交回\s*Primary|等待\s*Primary"
+    if branch_state != "blocked_on_primary" and re.search(consume_pattern, next_step):
+        report.add("FRONTIER_NEXT_STEP_PREMATURE_CONSUME", "blocking", "fail", "non-return Frontier next step must not ask Primary to consume a stage packet.")
+    else:
+        report.add("FRONTIER_NEXT_STEP_PREMATURE_CONSUME", "blocking", "pass", "next step does not trampoline stage progress to Primary.")
+
+
+def validate_frontier_closure_against_lane_registry(data: dict[str, Any], report: Report) -> None:
+    lane_registry_path = Path(report.artifact).parent.parent / "lane-registry.json"
+    if not lane_registry_path.exists():
+        report.add("FRONTIER_LANE_REGISTRY_CROSSCHECK", "warning", "pass", "No sibling lane-registry.json found for cross-check.", str(lane_registry_path))
+        return
+    lane_report = Report(str(lane_registry_path), "lane-registry")
+    lane_data = load_json(lane_registry_path, lane_report)
+    if not isinstance(lane_data, dict):
+        report.add("FRONTIER_LANE_REGISTRY_CROSSCHECK", "blocking", "fail", "Sibling lane-registry.json could not be read.", str(lane_registry_path))
+        return
+    lanes = lane_data.get("lanes")
+    if not isinstance(lanes, list):
+        report.add("FRONTIER_LANE_REGISTRY_CROSSCHECK", "blocking", "fail", "Sibling lane-registry.json has no lanes array.", str(lane_registry_path))
+        return
+    lane = next((item for item in lanes if isinstance(item, dict) and item.get("laneId") == data.get("laneId")), None)
+    if not isinstance(lane, dict):
+        report.add("FRONTIER_LANE_REGISTRY_CROSSCHECK", "warning", "pass", "No matching lane found in sibling lane registry.", str(lane_registry_path))
+        return
+    return_gate = lane.get("returnGateStatus")
+    if not isinstance(return_gate, dict):
+        report.add("FRONTIER_LANE_REGISTRY_CROSSCHECK", "blocking", "fail", "Matching lane has no returnGateStatus.", str(lane_registry_path))
+        return
+    lane_state = return_gate.get("state")
+    lane_safe = return_gate.get("safeWorkRemainingCount")
+    branch_state = data.get("branchState")
+    closure_gate = data.get("branchReturnGate") if isinstance(data.get("branchReturnGate"), dict) else {}
+    closure_state = closure_gate.get("state")
+    if lane_state == "not_ready" and branch_state == "blocked_on_primary":
+        report.add("FRONTIER_LANE_REGISTRY_CROSSCHECK", "blocking", "fail", "lane-registry returnGateStatus.not_ready cannot coexist with blocked_on_primary closure.", str(lane_registry_path))
+    elif lane_state == "not_ready" and closure_state == "ready_for_primary":
+        report.add("FRONTIER_LANE_REGISTRY_CROSSCHECK", "blocking", "fail", "lane-registry returnGateStatus.not_ready cannot coexist with ready_for_primary closure gate.", str(lane_registry_path))
+    elif isinstance(lane_safe, int) and lane_safe > 0 and branch_state in {"blocked_on_primary", "closed", "blocked_on_human"}:
+        report.add("FRONTIER_LANE_REGISTRY_CROSSCHECK", "blocking", "fail", "terminal Frontier closure is invalid while lane-registry records safeWorkRemainingCount > 0.", str(lane_registry_path))
+    else:
+        report.add("FRONTIER_LANE_REGISTRY_CROSSCHECK", "blocking", "pass", "frontier closure matches sibling lane return gate.", str(lane_registry_path))
 
 
 def validate_frontier_primary_ready_packet(data: dict[str, Any], report: Report) -> None:

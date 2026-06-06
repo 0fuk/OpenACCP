@@ -7,7 +7,7 @@
       "decisionId": "OQ-001",
       "type": "owner-question",
       "status": "open",
-      "question": "Which product repo path, base branch, source roots, test entrypoints, and worktree policy should B2 work use?",
+      "question": "What product repo path should Primary inspect? If there is no product repo yet, answer no repo yet. Primary will infer base branch, writable scope, test entrypoints, and worktree policy from the repo when available.",
       "basisRefs": [".openaccp/coordination/runtime-boundary.json"],
       "blocks": ["B2 implementation dispatch"],
       "safeDefault": "Continue B0/B1 packaging and discovery only.",

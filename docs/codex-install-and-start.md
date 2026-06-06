@@ -84,23 +84,29 @@ Use only the OpenACCP report header: `| 类型和状态 | 内容 |` for Chinese 
 
 Keep PowerShell blocks, bash blocks, command lists, executable paths, local install paths, and temporary install directories out of the user-facing post-install report. The `验证` row simply says `验证通过` or `验证失败`; if a note is useful, write one short natural-language sentence after the table.
 
-The next step must ask for:
+The next step must ask for exactly these three project inputs in numbered lines:
 
-- your working directory, which is required,
-- your current source pack, PRD, spec, or facts path,
-- your preferred language for future Primary, Frontier, worker, reviewer, and discovery replies.
+1. `Facts input / project facts`: source pack, PRD, spec, design document, facts folder, or uploaded project materials.
+2. `Working directory / local agent coordination workbench`: where OpenACCP may write `.openaccp`, `launchers`, `coordination`, `reports`, `handoffs`, the CARD registry, and the source pack.
+3. `Repo path / product code repository path`: the actual product Git repository. Primary uses it to infer the Git branch, base branch, writable scope, test entrypoints, worktree policy, and worker-editable files.
 
-If the user does not have a prepared facts path, the agent may ask the user to upload or attach the project materials. The working directory is still mandatory because the launchers need a concrete place where work can happen.
+If the user does not have a prepared facts path, ask the user to upload or attach project materials. If the working directory and repo path are the same, the user can say that. If no product repo exists yet, the user should explicitly say `no repo yet`; Primary then stays in planning, packaging, and readiness mode. Preferred language is optional; when omitted, continue in the current conversation language.
 
 Use plain human-readable wording for the final ask. For example:
 
 ```text
-OpenACCP is installed and validated. To build a useful Primary launcher, send one clear working directory. This is required. Also send your source pack, PRD, spec, design document, or facts path. If you have rough project materials instead of a clean facts path, upload or attach them and I will treat them as candidate facts while organizing the source pack. Please also tell me your preferred language; if you omit it, I will keep using your current language.
+OpenACCP is installed and validated. Please send:
+
+1. Facts input / project facts: a source pack, PRD, spec, design document, facts folder, or uploaded files.
+2. Working directory / local agent coordination workbench: the folder where I can write `.openaccp`, launchers, coordination files, reports, handoffs, CARD registry, and source-pack artifacts.
+3. Repo path / product code repository path: the real product Git repo. Primary will inspect it to infer branch, base branch, writable scope, test entrypoints, worktree policy, and worker-editable files.
+
+If the working directory and repo path are the same, say so. If there is no repo yet, say `no repo yet`. If you want a specific language for all later replies, include it; otherwise I will keep using the current language.
 ```
 
 ## After The User Provides Project Inputs
 
-After the user provides a working directory, facts input, and preferred language or language fallback, the agent returns:
+After the user provides facts input, working directory, repo path or `no repo yet`, and preferred language or language fallback, the agent returns:
 
 - one Primary Orchestrator launcher.
 
@@ -113,14 +119,14 @@ The launchers must name:
 
 - role,
 - authority level,
+- facts input,
 - working directory,
-- source pack or facts input,
-- preferred language,
-- product repo path,
-- base branch,
-- source roots,
-- test entrypoints,
-- worktree policy,
+- product repo path or explicit `no repo yet`,
+- preferred language or language fallback,
+- Primary-inferred base branch,
+- Primary-inferred source roots,
+- Primary-inferred test entrypoints,
+- Primary-inferred worktree policy,
 - writable paths,
 - read-only references,
 - forbidden paths or side effects,
@@ -130,10 +136,10 @@ The launchers must name:
 The Primary prompt record must also include active closure rules:
 
 - Primary dispatches bounded subagents and consumes evidence until only final-authority or explicitly-out gaps remain.
-- Primary must inspect the working directory and facts input before dispatching Frontier.
-- Primary must create or refresh `.openaccp/coordination/runtime-boundary.json` before dispatching Frontier. It must resolve or explicitly mark product repo path, base branch, source roots, test entrypoints, worktree policy, writable paths, read-only paths, forbidden paths, data risk, side-effect policy, and `b2DispatchGate`.
+- Primary must inspect the facts input, working directory, and repo path before dispatching Frontier.
+- Primary must create or refresh `.openaccp/coordination/runtime-boundary.json` before dispatching Frontier. It must take the repo path as the product code entry point, then infer base branch, source roots, test entrypoints, worktree policy, writable paths, read-only paths, forbidden paths, data risk, side-effect policy, and `b2DispatchGate`.
 - Primary must create or refresh current manifest, source status registry, lane registry, decision registry, sequence registry, and CARD/task-card candidates.
-- If product repo path, base branch, source roots, test entrypoints, or worktree policy are missing, Primary asks the user in the Primary report and continues B0/B1 packaging only. Primary keeps unresolved runtime questions out of Frontier immediate blockers. Frontier lanes launched before product-write readiness use `coordination_only` or `read_only_review`.
+- If repo path is missing, ambiguous, or explicitly `no repo yet`, Primary asks for repo path or records `no repo yet` and continues B0/B1 packaging/readiness only. For base branch, source roots, test entrypoints, writable scope, and worktree policy, Primary infers first and asks only when inference is ambiguous, risky, or impossible. Primary keeps unresolved runtime questions out of Frontier immediate blockers. Frontier lanes launched before product-write readiness use `coordination_only` or `read_only_review`.
 - Primary must cut enough CARDs for the actual project domains. Normal or medium/high-complexity product work usually needs 10-20 project-level CARDs before Frontier dispatch; fewer is acceptable only for a genuinely small project with an explicit reason.
 - Primary must scan facts for product workflow, backend/API, data/storage, frontend/UI, desktop/mobile/native/Electron/Tauri surfaces, integrations, auth/security/privacy, migration, testing/QA, observability/CI, docs/release/ops, and any project-specific domain. Do not invent a domain that facts do not mention, but if facts mention UI, frontend, Electron, desktop shell, mobile, or another surface, Primary must create CARD coverage for it.
 - Primary must decide Frontier lanes dynamically based on project complexity, CARD grouping, risk, and parallel safety. Default to at least two Frontier lanes when two safe independent CARD clusters exist; one Frontier requires a small-project, single-safe-lane, or explicit-user-request reason. Medium/high projects normally receive two to five Frontiers. More than five requires explicit user approval.
@@ -207,8 +213,8 @@ The Primary thread, not the install startup thread, decides Frontier dispatch.
 
 Primary must first:
 
-1. Read the prompt record, working directory, facts input, and preferred language.
-2. Create or refresh runtime boundary: product repo path, base branch, source roots, test entrypoints, worktree policy, writable/read-only/forbidden paths, data risk, side-effect policy, and `b2DispatchGate`.
+1. Read the prompt record, facts input, working directory, repo path, and preferred language.
+2. Create or refresh runtime boundary: repo path, inferred base branch, source roots, test entrypoints, worktree policy, writable/read-only/forbidden paths, data risk, side-effect policy, and `b2DispatchGate`.
 3. Explain in the preferred language what B0/B1/B2/B3 mean for this project.
 4. Inspect the working directory and facts input.
 5. Create or refresh OpenACCP current manifest, source status registry, invalid or deprecated sources, decision registry, sequence registry, lane registry, and CARD/task-card candidates.
@@ -227,7 +233,7 @@ Inside a Frontier lane, worker/reviewer/discovery/validation child work is dispa
 
 Primary and Frontier maintain machine-readable coordination state:
 
-- `runtime-boundary` records repo path, base branch, source roots, test entrypoints, worktree policy, writable/read-only/forbidden paths, side effects, data risk, and `b2DispatchGate`.
+- `runtime-boundary` records repo path, inferred base branch, source roots, test entrypoints, worktree policy, writable/read-only/forbidden paths, side effects, data risk, inference evidence, ambiguity notes, and `b2DispatchGate`.
 - `current-manifest` records current facts, invalid or deprecated sources, active lanes, superseded prompts, cancelled prompts, registry refs, and latest consume refs.
 - `sequence-registry` records Prompt IDs, Response IDs, handoffs, consume results, active cards, active lanes, lifecycle status, and current/latest pointers.
 - `lane-registry` records Primary/Frontier lanes, assigned CARDs, `child-ledgers/<lane-id>.json` refs, `frontier-closures/<lane-id>.json` refs, and return-gate status.

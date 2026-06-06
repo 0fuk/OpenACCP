@@ -46,13 +46,13 @@ Startup performs three setup steps:
 
 The post-install formal report stays short and human-readable. It summarizes validation in words and keeps command output, executable paths, local install paths, and temporary directories out of chat.
 
-After installation and validation, the agent asks you for:
+After installation and validation, the agent asks for these setup inputs in three clear lines:
 
-- **Working directory**: required. Launchers need a concrete project workspace where the agent is allowed to work.
-- **Facts input**: a source pack, PRD, spec, design document, facts path, or uploaded project materials.
-- **Preferred language**: the language that every Primary, Frontier, worker, reviewer, and discovery reply uses consistently.
+1. **Facts input / project facts**: a source pack, PRD, spec, design document, facts folder, or uploaded project materials.
+2. **Working directory / local agent coordination workbench**: the place where OpenACCP may write `.openaccp`, `launchers`, `coordination`, `reports`, `handoffs`, the CARD registry, and the source pack. This is the coordination workbench.
+3. **Repo path / product code repository path**: the real product Git repository. Primary uses it to infer the current Git branch, base branch, writable scope, test entrypoints, worktree policy, and which files scoped workers may edit. This is the code workspace.
 
-When the facts path is still rough, upload or attach the project materials. The agent treats them as candidate facts until it organizes and validates them. A working directory is still required.
+If the working directory and repo path are the same directory, say so. If there is no product repo yet, say `no repo yet`; Primary will stay in planning, packaging, and readiness mode until a repo is available. The agent uses the current conversation language unless you provide a preferred language.
 
 After you provide those inputs:
 
@@ -71,10 +71,10 @@ The Primary thread starts after you paste the short Primary launcher into a new 
 
 Primary does the coordination work:
 
-1. Read the working directory and facts input.
+1. Read the facts input, working directory, repo path, and preferred language or language fallback.
 2. Classify sources as `current`, `reference`, `deprecated`, or `invalid`.
 3. Create or refresh the source pack, scope boundary, assumptions ledger, runtime boundary, current manifest, source status registry, lane registry, decision registry, sequence registry, and CARD registry.
-4. Resolve or explicitly mark product repo path, base branch, source roots, test entrypoints, worktree policy, writable/read-only/forbidden paths, side effects, and data risk before B2 Frontier dispatch.
+4. Resolve the runtime boundary before B2 Frontier dispatch. Primary takes the repo path as the product code entry point, then infers base branch, source roots, test entrypoints, worktree policy, writable/read-only/forbidden paths, side effects, and data risk from Git metadata, repo files, CI files, package metadata, and common project layouts. Primary asks follow-up questions only when inference is ambiguous, risky, or impossible.
 5. Split the project into CARDs before dispatching Frontier lanes.
 6. Decide how many Frontier lanes are useful based on project complexity, dependencies, risk, and parallel safety.
 7. Write full Frontier prompt records and short Frontier launchers for selected lanes.
@@ -91,11 +91,12 @@ Manual Primary launcher:
 ```prompt
 Use primary-orchestrator-openaccp to start OpenACCP coordination for this project.
 
-Working directory: <your project path>
-Facts input: <source pack, PRD, spec, design document, facts path, or uploaded materials>
+Facts input: <source pack, PRD, spec, design document, facts folder, or uploaded materials>
+Working directory: <where OpenACCP may write .openaccp coordination files>
+Repo path: <actual product Git repository path, or "no repo yet">
 Preferred language: <English / Chinese / your choice>
 
-First review the workspace and facts. Create or refresh the source pack, scope boundary, assumptions ledger, runtime boundary, current manifest, source status registry, lane registry, decision registry, sequence registry, and CARD registry. Resolve or explicitly mark product repo path, base branch, source roots, test entrypoints, and worktree policy before B2 Frontier dispatch. Split the project into enough CARDs to support useful parallel Frontier lanes. Then return a human-readable status report and copyable short Frontier launchers for selected lanes.
+First review the facts, coordination workbench, and product repo path. Create or refresh the source pack, scope boundary, assumptions ledger, runtime boundary, current manifest, source status registry, lane registry, decision registry, sequence registry, and CARD registry. Infer base branch, source roots, test entrypoints, and worktree policy from the repo before B2 Frontier dispatch; ask only for ambiguous or risky runtime choices. Split the project into enough CARDs to support useful parallel Frontier lanes. Then return a human-readable status report and copyable short Frontier launchers for selected lanes.
 ```
 
 Manual Frontier launcher:
@@ -129,7 +130,7 @@ Frontier
   -> runs B0/B1/B2 lane-local closure
   -> dispatches worker/reviewer/discovery subagents when safe
   -> consumes child handoffs
-  -> writes lane status, child ledger, frontier closure, and Primary-ready packet
+  -> writes lane status, child ledger, lane-progress packet, and frontier closure proof
 
 worker / reviewer / discovery
   -> returns handoff, review report, machine summary, or evidence summary
@@ -146,7 +147,7 @@ Important artifacts:
 | `source pack` | The current fact list. It tells agents what may drive implementation and what is only background. |
 | `scope boundary` | The line between allowed work and forbidden work. |
 | `assumptions ledger` | Explicit assumptions that are not fully proven yet. |
-| `runtime boundary` | Repo path, base branch, source roots, test entrypoints, worktree policy, writable/read-only/forbidden paths, side effects, data risk, and the `b2DispatchGate` that says whether product-write B2 work is ready, blocked, or coordination-only. |
+| `runtime boundary` | Repo path, inferred base branch, source roots, test entrypoints, worktree policy, writable/read-only/forbidden paths, side effects, data risk, and the `b2DispatchGate` that says whether product-write B2 work is ready, blocked, or coordination-only. |
 | `current manifest` | The current coordination anchor: source pack, runtime boundary, source status registry, lane registry, CARD registry, and active lanes. |
 | `sequence registry` | Prompt IDs, Response IDs, handoffs, consumes, cards, active lanes, lifecycle states, and current/latest pointers. |
 | `source status registry` | Current, reference, deprecated, invalid, and unknown sources with reasons and locators. |
@@ -160,7 +161,8 @@ Important artifacts:
 | `short launcher` | The copyable chat block that points a new thread to the full prompt record. |
 | `handoff` | Evidence from a worker, reviewer, or discovery agent. It proves some things and leaves other things unproven. |
 | `consume result` | The orchestrator decision about what a handoff actually proves before acceptance. |
-| `frontier closure` | The gate proof for whether a Frontier can keep working, close, or return to Primary. |
+| `lane-progress packet` | A stage packet showing useful Frontier progress. It is evidence for the lane and does not require Primary consume by default. |
+| `frontier closure` | The gate proof for whether a Frontier can keep working, close, or return to Primary. A Primary-ready packet is valid only when this proof shows that all visible remaining gaps are final-authority-only or explicitly out. |
 | `formal report` | Human-readable status: what changed, progress, area, goal, gaps, next action, and evidence. |
 | `machine summary` | Compact locators for downstream agents and validators. |
 
@@ -169,7 +171,7 @@ Important artifacts:
 | Role | What it does | Authority boundary |
 |---|---|---|
 | `Primary` | Owns project-level coordination, CARD decomposition, lane dispatch, final consume, and final acceptance decisions. | Keeps final acceptance separate from worker claims, reviewer recommendations, and validator pass. |
-| `Frontier` | Owns one lane. It keeps closing B0/B1/B2-safe work by refreshing backlog, dispatching subagents, consuming child handoffs, and preparing Primary-ready packets. | Runs lane orchestration and reserves B3 final authority for Primary or the human owner. |
+| `Frontier` | Owns one lane. It keeps closing B0/B1/B2-safe work by refreshing backlog, dispatching subagents, consuming child handoffs, and writing lane-progress packets. It prepares a Primary-ready packet only when the return gate proves no lane-local safe work remains. | Runs lane orchestration and reserves B3 final authority for Primary or the human owner. |
 | `worker` | Executes one bounded task card and returns verification evidence. | Stays inside the assigned task card, authority charter, and stop conditions. |
 | `reviewer` | Performs read-only review of scope, correctness, verification, side effects, and overclaiming. | Stays read-only and returns recommendations as evidence. |
 | `discovery` | Reads facts, classifies gaps, and prepares safe next actions. | Keeps source promotion under explicit authority. |
@@ -341,7 +343,7 @@ openaccp init ./my-openaccp-package
 openaccp init ./my-openaccp-package --write
 ```
 
-`openaccp init` is a dry run by default. It is a bootstrap fallback. For real projects, install the skills first, then let Primary create project-specific prompt records and launchers from your working directory and facts input.
+`openaccp init` is a dry run by default. It is a bootstrap fallback. For real projects, install the skills first, then let Primary create project-specific prompt records and launchers from your facts input, working directory, and repo path.
 
 ## Positioning
 

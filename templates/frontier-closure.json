@@ -16,6 +16,15 @@
   "childLedgerRef": ".openaccp/coordination/child-ledgers/<lane-id>.json",
   "allChildrenTerminal": false,
   "allChildHandoffsConsumedOrRejected": false,
+  "branchReturnGate": {
+    "state": "not_ready",
+    "safeWorkRemainingCount": 1,
+    "finalAuthorityGapCount": 0,
+    "explicitlyOutCount": 0,
+    "primaryReadyPacketExists": false,
+    "reason": "Frontier still has lane-local B0/B1/B2-safe work; this is a lane-progress packet, not a Primary-ready closure packet."
+  },
+  "laneProgressPacketRef": ".openaccp/coordination/frontier-packets/<lane-id>.lane-progress.md",
   "primaryReadyPacketRef": "",
   "blockedOnHumanReason": "",
   "remainingB0B1B2SafeWork": ["<safe lane-local work still available>"],
@@ -32,5 +41,5 @@
     "resourceUse": "local only",
     "noDispatchReason": "B2 dispatch fields are not ready yet."
   },
-  "humanNextStep": "No human action is needed while Frontier still has B0/B1/B2-safe work."
+  "humanNextStep": "No human action is needed while Frontier still has B0/B1/B2-safe work. Frontier will continue lane-local discovery, packaging, dispatch, review, consume, and reclassification."
 }

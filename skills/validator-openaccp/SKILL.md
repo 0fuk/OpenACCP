@@ -36,7 +36,7 @@ python tools/openaccp_validate.py --artifact machine-summary.json --ruleset mach
 
 Use `frontier-contract` before launching or reusing a Frontier prompt. It checks the B2 lane contract, `openaccp-frontier-orchestration-contract.v1` JSON block, subagent-first dispatch, child ledger, branch return gate, worktree decision, human-readable reporting, and fallback-only child launcher rule.
 
-Use `runtime-boundary` during Primary startup before B2 Frontier dispatch. It records working directory, product repo status/path, base branch, source roots, test entrypoints, worktree policy, writable/read-only/forbidden paths, side-effect level, data risk, unresolved owner inputs, and `b2DispatchGate`.
+Use `runtime-boundary` during Primary startup before B2 Frontier dispatch. It records working directory, product repo status/path, Primary-inferred base branch, source roots, test entrypoints, worktree policy, inference evidence, ambiguity notes, writable/read-only/forbidden paths, side-effect level, data risk, unresolved owner inputs, and `b2DispatchGate`.
 
 Use `lane-registry` for the active Primary/Frontier control plane. It records project complexity, Frontier dispatch mode, lane-count reason, lane ids, objectives, authority, assigned CARDs, runtime boundary, child ledger, latest consume refs, return gate status, and per-lane `b2DispatchGate`.
 
@@ -46,7 +46,7 @@ Use `source-status-registry` to make current/reference/deprecated/invalid/unknow
 
 Use `decision-registry` for owner questions, Primary decisions, waivers, and out-of-scope decisions that block or unblock lanes.
 
-Use `frontier-closure` before a Frontier reports closed or blocked-on-Primary. It rejects early return when B0/B1/B2-safe work remains, when child work is not terminal or consumed/rejected, or when the Primary-ready packet is missing.
+Use `frontier-closure` before a Frontier reports closed or blocked-on-Primary. It rejects early return when B0/B1/B2-safe work remains, when child work is not terminal or consumed/rejected, when stage progress is mislabeled as a Primary-ready packet, when a Primary consume next step appears before the return gate is ready, or when the sibling lane registry still says the lane is not ready for Primary.
 
 Use `card-registry` before Frontier dispatch. It checks that CARDs were cut from a broad domain scan, normal or medium/high-complexity projects have enough CARDs for useful parallelism, fewer CARDs have an explicit small/single-lane/user-request reason, and CARDs can map to task-card candidates and Frontier lane groups.
 

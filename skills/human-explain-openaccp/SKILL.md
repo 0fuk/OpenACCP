@@ -58,12 +58,14 @@ For every Frontier reply, include a practical recommended next step:
 
 After OpenACCP installation and validation, explain the missing inputs in practical terms:
 
-- The working directory is required because launchers need a concrete project place where the agent is allowed to work.
-- The facts input can be a source pack, PRD, spec, design document, facts path, or uploaded project materials.
+- The facts input can be a source pack, PRD, spec, design document, facts folder, or uploaded project materials.
+- The working directory is the local agent coordination workbench. Explain that OpenACCP writes `.openaccp`, launchers, coordination files, reports, handoffs, CARD registry, and source-pack artifacts there.
+- The `repo path` is the product code repository path. Explain that this is the real product Git repo. Primary uses it to infer Git branch, base branch, writable scope, test entrypoints, worktree policy, and worker-editable files.
+- If the working directory and repo path are the same, say that is acceptable. If no product repo exists yet, ask the user to say `no repo yet`.
 - If the facts input is uploaded material instead of a path, say that it will be treated as candidate facts until the agent organizes or validates it.
 - Preferred language matters because every Primary, Frontier, worker, reviewer, and discovery reply should stay in one consistent language.
 
-Do not end with only "send paths". Say why the inputs matter and what will happen next: after the user provides them, the startup agent will write one full Primary prompt record to the working directory, then return one short copyable Primary chat launcher that points to that file.
+Do not end with only "send paths". Ask in numbered lines for facts input, working directory, and repo path. Say why the inputs matter and what will happen next: after the user provides them, the startup agent will write one full Primary prompt record to the working directory, then return one short copyable Primary chat launcher that points to that file. Preferred language is optional; if omitted, keep the current conversation language.
 
 The short launcher must appear directly in chat as a fenced `prompt` block with natural-language guidance to create a new thread from the left sidebar and paste that block there. A file link, file attachment, file list, or `Get-Content` command is not enough.
 

@@ -155,6 +155,10 @@ def valid_runtime_boundary(tmp: Path) -> dict:
         "sourceRoots": ["src"],
         "testEntrypoints": ["pytest"],
         "worktreePolicy": "allowed",
+        "inferenceStatus": "inferred",
+        "inferredFrom": ["repo path", "pyproject.toml", "git metadata"],
+        "confidence": "high",
+        "ambiguities": [],
         "allowedWritablePaths": [".openaccp/**", "worktrees/**"],
         "readOnlyPaths": ["source/**"],
         "forbiddenPaths": [".git/**"],
@@ -271,7 +275,7 @@ def valid_decision_registry() -> dict:
                 "decisionId": "OQ-001",
                 "type": "owner-question",
                 "status": "open",
-                "question": "Which repo branch should implementation workers use?",
+                "question": "Which repo path should Primary inspect if the provided repo path is ambiguous?",
                 "basisRefs": ["runtime-boundary.json"],
                 "blocks": ["B2 implementation dispatch"],
                 "safeDefault": "Do B0/B1 packaging only.",
@@ -294,6 +298,15 @@ def valid_frontier_closure() -> dict:
         "childLedgerRef": "child-ledger.json",
         "allChildrenTerminal": True,
         "allChildHandoffsConsumedOrRejected": True,
+        "branchReturnGate": {
+            "state": "ready_for_primary",
+            "safeWorkRemainingCount": 0,
+            "finalAuthorityGapCount": 1,
+            "explicitlyOutCount": 0,
+            "primaryReadyPacketExists": True,
+            "reason": "Only final acceptance remains.",
+        },
+        "laneProgressPacketRef": "",
         "primaryReadyPacketRef": "primary-ready-packet.md",
         "remainingB0B1B2SafeWork": [],
         "remainingFinalAuthorityGaps": ["final acceptance"],
@@ -311,6 +324,38 @@ def valid_frontier_closure() -> dict:
         },
         "humanNextStep": "Primary should consume the ready packet.",
     }
+
+
+def valid_frontier_progress_closure() -> dict:
+    closure = valid_frontier_closure()
+    closure["branchState"] = "open"
+    closure["gapDecisionMatrix"] = [
+        {
+            "gap": "runtime product write is not ready",
+            "decision": "prepare_package",
+            "nextSafeAction": "Frontier continues B1 readiness packaging.",
+        }
+    ]
+    closure["allChildrenTerminal"] = False
+    closure["allChildHandoffsConsumedOrRejected"] = False
+    closure["branchReturnGate"] = {
+        "state": "not_ready",
+        "safeWorkRemainingCount": 1,
+        "finalAuthorityGapCount": 0,
+        "explicitlyOutCount": 0,
+        "primaryReadyPacketExists": False,
+        "reason": "Lane-local B0/B1/B2-safe work remains.",
+    }
+    closure["laneProgressPacketRef"] = "lane-progress-packet.md"
+    closure["primaryReadyPacketRef"] = ""
+    closure["remainingB0B1B2SafeWork"] = ["Prepare repo-readiness checklist."]
+    closure["remainingFinalAuthorityGaps"] = []
+    closure["worktreeDecision"]["base"] = "unresolved"
+    closure["worktreeDecision"]["worktree"] = "not-created"
+    closure["worktreeDecision"]["branch"] = "not-created"
+    closure["worktreeDecision"]["noDispatchReason"] = "Product-write runtime boundary is not ready; Frontier continues B0/B1 readiness work."
+    closure["humanNextStep"] = "No human action is needed; Frontier will continue lane-local B0/B1/B2 readiness work."
+    return closure
 
 
 def write_coordination_fixtures(tmp: Path, source_path: Path) -> dict[str, Path]:
@@ -512,6 +557,43 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     write_json(bad_closure_path, bad_closure)
     assert_exit("frontier closure rejects early Primary return", run(["--artifact", str(bad_closure_path), "--ruleset", "frontier-closure", "--strict"]), 1)
 
+    progress_closure = valid_frontier_progress_closure()
+    progress_closure_path = tmp / "frontier-progress-closure.json"
+    write_json(progress_closure_path, progress_closure)
+    assert_exit("frontier progress closure uses lane-progress packet", run(["--artifact", str(progress_closure_path), "--ruleset", "frontier-closure", "--strict"]), 0)
+
+    bad_progress_ready = valid_frontier_progress_closure()
+    bad_progress_ready["primaryReadyPacketRef"] = "primary-ready-packet.md"
+    bad_progress_ready_path = tmp / "bad-progress-primary-ready.json"
+    write_json(bad_progress_ready_path, bad_progress_ready)
+    assert_exit("frontier progress rejects Primary-ready packet", run(["--artifact", str(bad_progress_ready_path), "--ruleset", "frontier-closure", "--strict"]), 1)
+
+    bad_progress_consume = valid_frontier_progress_closure()
+    bad_progress_consume["humanNextStep"] = "Primary should consume the stage packet."
+    bad_progress_consume_path = tmp / "bad-progress-consume-text.json"
+    write_json(bad_progress_consume_path, bad_progress_consume)
+    assert_exit("frontier progress rejects Primary consume next step", run(["--artifact", str(bad_progress_consume_path), "--ruleset", "frontier-closure", "--strict"]), 1)
+
+    cross_coord = tmp / "cross-coordination"
+    cross_closures = cross_coord / "frontier-closures"
+    cross_closures.mkdir(parents=True)
+    cross_lane = valid_lane_registry()
+    cross_lane["projectComplexity"] = "small"
+    cross_lane["frontierDispatchMode"] = "single_frontier"
+    cross_lane["frontierDispatchReason"] = "small project"
+    cross_lane["lanes"][0]["laneId"] = "frontier-docs"
+    cross_lane["lanes"][0]["role"] = "frontier"
+    cross_lane["lanes"][0]["status"] = "prepared"
+    cross_lane["lanes"][0]["authorityLevel"] = "B2"
+    cross_lane["lanes"][0]["returnGateStatus"]["state"] = "not_ready"
+    cross_lane["lanes"][0]["returnGateStatus"]["safeWorkRemainingCount"] = 1
+    cross_lane["lanes"][0]["returnGateStatus"]["frontierClosureRef"] = "frontier-closures/frontier-docs.json"
+    write_json(cross_coord / "lane-registry.json", cross_lane)
+    cross_bad_closure = valid_frontier_closure()
+    write_json(cross_closures / "frontier-docs.json", cross_bad_closure)
+    (cross_closures / "primary-ready-packet.md").write_text("Primary-ready packet for cross-check.\n", encoding="utf-8")
+    assert_exit("frontier closure rejects lane-registry not_ready conflict", run(["--artifact", str(cross_closures / "frontier-docs.json"), "--ruleset", "frontier-closure", "--strict"]), 1)
+
     bad_ready_packet = valid_frontier_closure()
     bad_ready_packet["primaryReadyPacketRef"] = "missing-primary-ready-packet.md"
     bad_ready_packet_path = tmp / "bad-frontier-closure-ready-packet.json"
@@ -556,7 +638,9 @@ def assert_text_rules(tmp: Path) -> None:
             "Authority level: B3",
             "Preferred language: Chinese",
             "Use human-explain-openaccp for every reply.",
-            "Before Frontier dispatch, resolve working directory, facts path, preferred language, product repo path, base branch, source roots, test entrypoints, worktree policy, runtime boundary, and runtimeBoundaryRef.",
+            "Before Frontier dispatch, read facts input, working directory, preferred language, and repo path as the actual product code repository path.",
+            "Resolve runtime boundary and runtimeBoundaryRef before Frontier dispatch. Infer base branch, source roots, test entrypoints, worktree policy, and writable scope from the repo before asking follow-up questions.",
+            "Ask only when runtime inference is ambiguous, risky, or impossible.",
             "Create 10-20 project-level CARDs for normal or medium/high-complexity work before Frontier dispatch.",
             "Scan product workflow, backend/API, data/storage, frontend/UI, desktop/mobile/native/Electron/Tauri surfaces, integrations, security, testing, CI, release, and ops before finalizing CARDs.",
             "Default to at least two Frontier lanes when two safe independent CARD clusters exist.",

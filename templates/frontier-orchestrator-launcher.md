@@ -50,7 +50,7 @@ Frontier must not claim final acceptance, merge, publish, release, waive, or mak
     ]
   },
   "branchReturnGate": {
-    "rule": "Return to Primary only after every visible remaining gap is needs_final_authority or explicitly_out and a Primary-ready packet exists."
+    "rule": "Return to Primary only after every visible remaining gap is needs_final_authority or explicitly_out and a Primary-ready packet exists. Stage evidence uses a lane-progress packet and does not require Primary consume by default."
   },
   "coordinationRefs": {
     "runtimeBoundaryRef": ".openaccp/coordination/runtime-boundary.json",
@@ -130,9 +130,13 @@ Return to Primary only when every visible gap is `needs_final_authority` or `exp
 
 Do not return to Primary merely because a provisional packet, source baseline, task-card draft, owner-question matrix, handoff, or consume-result was written. Those artifacts are intermediate lane evidence. If they expose more B0/B1/B2-safe work, continue the lane locally.
 
+Use `lane-progress packet` or `frontier-progress packet` for intermediate evidence. These packets help the lane continue and do not ask Primary to consume by default. A `Primary-ready packet` is valid only when `branchReturnGate` proves there is no remaining B0/B1/B2-safe lane-local work.
+
+If `runtimeBoundaryRef` says product-write B2 is not ready, treat that as a boundary for implementation workers only. Continue B0/B1/readiness work inside the lane: task-card refinement, verification matrix, owner-question matrix, repo-readiness checklist, worker prompt package, risk review, reviewer dispatch, discovery dispatch, and child handoff consume. Ask Primary only when the runtime boundary explicitly records an ambiguity that affects this lane and no lane-local B0/B1/B2 action can reduce it.
+
 ## branchReturnGate
 
-Before returning to Primary, prove that every visible remaining gap is `needs_final_authority` or `explicitly_out`, and that a Primary-ready packet exists.
+Before returning to Primary, prove that every visible remaining gap is `needs_final_authority` or `explicitly_out`, that no B0/B1/B2-safe work remains, and that a Primary-ready packet exists.
 
 ## worktreeDecision
 

@@ -12,7 +12,7 @@
   "dataRiskLimit": "low",
   "resourceUseLimit": ["Local coordination artifacts and local verification only."],
   "allowedInputs": ["Source pack, assigned CARDs, lane backlog, task cards, child handoffs, and reviewer reports."],
-  "allowedOutputs": ["Lane backlog, child prompt records, task cards, provisional consume results, handoffs, and Primary-ready packet."],
+  "allowedOutputs": ["Lane backlog, child prompt records, task cards, provisional consume results, handoffs, lane-progress packet, and Primary-ready packet only when the return gate is ready."],
   "forbiddenSideEffects": ["Runtime edits by Frontier.", "Credential use.", "Publication.", "Merge or release."],
   "stopConditions": ["A remaining gap is B3-only.", "Lane scope is contradicted.", "Data risk exceeds low."],
   "expiresWhen": "The documentation lane is closed or final authority revokes the charter."

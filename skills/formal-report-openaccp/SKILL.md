@@ -49,18 +49,24 @@ The startup formal report states:
 
 The startup report keeps validation commands, shell snippets, PowerShell snippets, local executable paths, skill install paths, and temporary install directories out of chat. The `验证` or `Gate` row says only whether validation passed or failed. If details are needed, use one short sentence outside the table, not a command block.
 
-The next step must ask for:
+The next step must ask for exactly these setup inputs in numbered lines:
 
-- your working directory, which is required,
-- your current source pack, PRD, spec, or facts path,
-- your preferred language for future Primary, Frontier, worker, reviewer, and discovery replies.
+1. Current project facts input: source pack, PRD, spec, design document, facts folder, or uploaded project materials.
+2. Working directory / local agent coordination workbench: where OpenACCP may write `.openaccp`, launchers, coordination files, reports, handoffs, CARD registry, and source-pack artifacts.
+3. `repo path` / product code repository path: the actual product Git repo. Primary uses it to infer Git branch, base branch, writable scope, test entrypoints, worktree policy, and which files scoped workers may edit.
 
-If no prepared facts path exists, ask the user to upload or attach the project materials. Uploaded materials become candidate facts; the working directory is still required.
+If no prepared facts path exists, ask the user to upload or attach the project materials. Uploaded materials become candidate facts. If the working directory and repo path are the same, the user can say so. If no product repo exists yet, the user should say `no repo yet`. Preferred language is optional; if omitted, continue in the current conversation language.
 
 End the post-install report with human-readable wording, not a vague checklist. The meaning is:
 
 ```text
-OpenACCP is installed and validated. To build a useful Primary launcher, send one clear working directory. This is required. Also send your source pack, PRD, spec, design document, or facts path. If you have rough project materials instead of a clean facts path, upload or attach them and I will treat them as candidate facts while organizing the source pack. Please also tell me your preferred language; if you omit it, I will keep using your current language.
+OpenACCP is installed and validated. Please send:
+
+1. 当前项目事实源：source pack、PRD、spec、设计文档、facts 文件夹，或者直接上传项目材料。
+2. 工作路径 / 本地 agent 编排工作台：这里会放 `.openaccp`、launchers、coordination、reports、handoffs、CARD registry、source pack 等协调文件。
+3. `repo path` / 产品代码仓库路径：真正的产品 Git repo。Primary 会用它判断当前 Git branch、base branch、可写范围、测试入口、worktree policy，以及哪些文件可以交给 worker 改。
+
+如果工作路径和 repo path 是同一个目录，直接说明即可。如果现在还没有产品 repo，请写 `no repo yet`。如果你想固定后续回复语言，也可以一起告诉我；不写的话我继续使用当前语言。
 ```
 
 ## Next Step Rule
