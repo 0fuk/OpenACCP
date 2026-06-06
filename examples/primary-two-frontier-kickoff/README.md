@@ -1,6 +1,6 @@
 # Primary Plus Two Frontier Kickoff
 
-This example shows the expected output shape after a Primary thread has inspected a real working directory, reviewed the facts input, created CARDs, and decided that two Frontier lanes are useful.
+This example shows the expected output shape after a Primary thread has inspected the project facts, coordination workbench, product repo path, created CARDs, and decided that two Frontier lanes are useful.
 
 GitHub install startup returns one short Primary launcher. Frontier launchers are created later by Primary after CARD and lane analysis.
 
@@ -8,17 +8,18 @@ GitHub install startup returns one short Primary launcher. Frontier launchers ar
 
 Primary should already have:
 
-- working directory, which is required,
-- current source pack, PRD, spec, or facts path,
-- preferred language,
+- facts input: source pack, PRD, spec, design document, facts folder, or uploaded project materials,
+- working directory: the local agent coordination workbench where OpenACCP may write `.openaccp`, launchers, coordination files, reports, handoffs, CARD registry, and source-pack artifacts,
+- repo path: the actual product Git repository path, or `no repo yet`,
+- preferred language or current conversation language fallback,
 - current manifest or manifest draft,
+- runtime boundary with Primary-inferred Git branch, base branch, source roots, writable scope, test entrypoints, worktree policy, and worker-editable files,
 - CARD/task-card candidates.
 
-If no facts path exists yet, the user can upload project materials instead. The working directory is still required.
+If no facts path exists yet, the user can upload project materials instead. If the working directory and repo path are the same, the user can say so. If no product repo exists yet, the user can say `no repo yet`; Primary then keeps product-write B2 closed and continues planning, packaging, and readiness work.
 
 Optional but useful:
 
-- writable paths,
 - read-only reference paths,
 - forbidden paths or side effects,
 - known lanes or priorities.
@@ -79,7 +80,9 @@ Role: Primary Orchestrator
 Authority: B3 final authority
 Working directory: <user-provided path>
 Facts input: <user-provided source pack, PRD, spec, facts path, or uploaded materials>
+Repo path: <actual product Git repo path, or no repo yet>
 Preferred language: <user-provided language>
+Runtime boundary: <Primary-inferred base branch, source roots, writable scope, test entrypoints, and worktree policy>
 CARDs: <CARD list created by Primary>
 Goal: decide source status, authority boundaries, and lane split.
 Next action: dispatch the selected B2 Frontier lanes and consume their provisional evidence.
@@ -93,6 +96,8 @@ Authority: B2 lane-local
 Lane: <lane 01 objective>
 Working directory: <user-provided path>
 Facts input: <user-provided source pack, PRD, spec, facts path, or uploaded materials>
+Repo path: <actual product Git repo path, or no repo yet>
+Runtime boundary: <Primary-inferred fields and b2DispatchGate>
 Assigned CARDs: <CARD ids>
 Goal: discover gaps, prepare task cards, and identify safe worker packages for lane 01.
 ```
@@ -105,6 +110,8 @@ Authority: B2 lane-local
 Lane: <lane 02 objective>
 Working directory: <user-provided path>
 Facts input: <user-provided source pack, PRD, spec, facts path, or uploaded materials>
+Repo path: <actual product Git repo path, or no repo yet>
+Runtime boundary: <Primary-inferred fields and b2DispatchGate>
 Assigned CARDs: <CARD ids>
 Goal: discover gaps, prepare task cards, and identify safe worker packages for lane 02.
 ```
