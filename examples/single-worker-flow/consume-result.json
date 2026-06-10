@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "openaccp-consume-result.v1",
+  "artifactType": "consume-result",
+  "consumeId": "CONS-DOCS-001",
+  "responseId": "CONS-DOCS-RESP-001",
+  "consumerRole": "primary",
+  "authorityScope": "final",
+  "targetHandoffIds": ["HAND-DOCS-001"],
+  "targetReviewIds": ["REV-DOCS-001"],
+  "decision": "accepted",
+  "basisRefs": ["handoff.json", "review-report.json"],
+  "evidenceStatus": ["Worker handoff and reviewer recommendation are present."],
+  "claimsAccepted": ["The docs-only task stayed within assigned scope."],
+  "claimsRejected": ["No merge, release, or publication claim is accepted."],
+  "remainingRisks": ["Publication readiness remains a separate owner decision."],
+  "authorityLimits": ["This consume result accepts evidence only."],
+  "nextActions": ["Record the accepted evidence in the project status report."]
+}

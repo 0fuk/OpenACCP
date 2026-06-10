@@ -13,6 +13,7 @@ OpenACCP contributions should improve reusable multi-agent coordination, not enc
 - Run the validator self-test before submitting changes.
 - Keep strict fixtures and concept examples clearly labeled.
 - Keep local reports in ignored paths such as `.openaccp-local/`.
+- Write commit messages in imperative mood with a capitalized first word; conventional-commit prefixes are optional.
 
 ## Local Validation
 

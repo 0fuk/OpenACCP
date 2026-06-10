@@ -15,6 +15,10 @@ OpenACCP focuses on the coordination layer around agent runtimes, model framewor
 
 In one sentence: **AI agents can do work; OpenACCP keeps the work coordinated, reviewable, and recoverable.**
 
+## Pre-1.0 Compatibility
+
+Before v1.0, artifact schemas may introduce breaking changes without changing `schemaVersion`. After upgrading, re-run the validator on stored artifacts and check `CHANGELOG.md` for the migration note.
+
 ## Who This Is For
 
 OpenACCP is for people who have moved beyond one-off prompts and are starting to use AI agents like a small project team.
@@ -278,10 +282,23 @@ Every Primary, Frontier, worker, reviewer, discovery, bootstrap, and validation 
 
 ## Minimum Useful Setup
 
-The smallest useful OpenACCP package contains:
+The smallest useful OpenACCP package is the single-worker flow. It matches `examples/single-worker-flow/` and contains nine artifacts:
 
 ```text
 source pack
+task card
+authority charter
+worker handoff
+review report
+consume result
+status report
+machine summary
+formal report
+```
+
+Multi-lane coordination adds these artifacts when Primary needs Frontier lanes, runtime boundaries, and shared state:
+
+```text
 scope boundary
 assumptions ledger
 CARD registry
@@ -292,16 +309,10 @@ lane registry
 child ledger
 source status registry
 decision registry
-task card
-authority charter
-worker handoff
-review report
-consume result
 frontier closure
-formal report
 ```
 
-When these inputs are missing, start with `bootstrap-openaccp` so implementation begins from task cards, acceptance criteria, verification plans, and stop conditions.
+When the minimum package inputs are missing, start with `bootstrap-openaccp` so implementation begins from task cards, acceptance criteria, verification plans, and stop conditions.
 
 ## Repository Map
 

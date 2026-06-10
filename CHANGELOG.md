@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Compatibility
+
+- Before v1.0, artifact schemas may introduce breaking changes without changing `schemaVersion`. After upgrading, re-run the validator on stored artifacts and use this changelog as the migration record.
+
 ### Added
 
 - `consume-result` and `machine-summary` schemas, templates, examples, and validator rulesets.
@@ -17,7 +21,7 @@
 - Startup and Frontier launcher instructions now require both on-disk launcher files and copyable chat `prompt` blocks; file links or `Get-Content` commands are explicitly rejected as substitutes.
 - README now uses a human-readable onboarding flow with concrete user personas, manual Primary/Frontier startup guidance, skill descriptions, artifact communication, B0/B1/B2/B3 explanations, and core OpenACCP technology summaries.
 
-## [0.1.0] - 2026-06-03
+## [0.1.0] - 2026-06-04
 
 ### Added
 

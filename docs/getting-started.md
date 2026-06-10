@@ -35,8 +35,10 @@ Use OpenACCP Coordination when the project already has enough facts to dispatch 
 
 ## Minimum Safe Flow
 
+The minimum package is the single-worker flow shown in `examples/single-worker-flow/`. It contains the nine artifacts needed to validate one bounded task from source facts through review and consume:
+
 ```text
-source pack -> scope boundary -> task card -> authority charter -> worker -> handoff -> reviewer -> final consume
+source pack -> task card -> authority charter -> worker handoff -> review report -> consume result -> status report -> machine summary -> formal report
 ```
 
-If a step is missing, use discovery or bootstrap before implementation.
+Use the Bootstrap path when the source pack or task card is missing. Use the Coordination path when the project needs the larger multi-lane package: scope boundary, assumptions ledger, CARD registry, runtime boundary, current manifest, sequence registry, lane registry, child ledger, source status registry, decision registry, and Frontier closure.

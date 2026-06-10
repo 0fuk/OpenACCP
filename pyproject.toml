@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "openaccp"
-version = "0.1.0"
+dynamic = ["version"]
 description = "OpenACCP is an open workflow protocol for coordinating multi-agent software work."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -29,6 +29,9 @@ openaccp-validate = "openaccp.validate:main"
 
 [tool.setuptools]
 packages = ["openaccp", "openaccp.schemas"]
+
+[tool.setuptools.dynamic]
+version = {attr = "openaccp.version.VERSION"}
 
 [tool.setuptools.package-data]
 "openaccp.schemas" = ["*.schema.json"]

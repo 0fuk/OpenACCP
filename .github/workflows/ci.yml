@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.13"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,8 +39,10 @@ jobs:
           python tools/openaccp_validate.py --artifact examples/single-worker-flow/task-card.json --ruleset task-card --source-pack examples/single-worker-flow/source-pack.json --strict
           python tools/openaccp_validate.py --artifact examples/single-worker-flow/handoff.json --ruleset handoff --task-card examples/single-worker-flow/task-card.json --strict
           python tools/openaccp_validate.py --artifact examples/single-worker-flow/review-report.json --ruleset review-report --strict
+          python tools/openaccp_validate.py --artifact examples/single-worker-flow/consume-result.json --ruleset consume-result --strict
           python tools/openaccp_validate.py --artifact examples/single-worker-flow/machine-summary.json --ruleset machine-summary --strict
           python tools/openaccp_validate.py --artifact examples/single-worker-flow/status-report.json --ruleset status-report --strict
+          python tools/openaccp_validate.py --artifact examples/single-worker-flow/formal-report-example.md --ruleset formal-report --strict
       - name: Validate PRD-only bootstrap flow
         run: |
           python tools/openaccp_validate.py --artifact examples/prd-only-bootstrap/source-pack.json --ruleset source-pack --strict
