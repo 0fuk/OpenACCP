@@ -15,7 +15,7 @@ The validator runs JSON Schema checks first, then applies OpenACCP semantic, cro
 - `source-pack`: current, reference, and deprecated source grouping.
 - `scope-boundary`: in-scope, out-of-scope, approval, forbidden action, and stop-condition coverage.
 - `task-card`: executable slice, source refs, scope, verification plan, authority level, and B2/B3 authority charter reference.
-- `authority-charter`: granted role, authority level, final authority reservation, scope limits, data risk limit, resource use limit, allowed inputs/outputs, forbidden side effects, and stop conditions.
+- `authority-charter`: granted role, authority level, final authority reservation, machine-readable delegated final decisions, scope limits, data risk limit, resource use limit, allowed inputs/outputs, forbidden side effects, and stop conditions.
 - `handoff`: non-final worker or role claims, `Response ID`, authority, base and result commits, worktree, data risk, effects preset, changed file scope, task ID match, verification evidence, and forbidden claims.
 - `review-report`: reviewer recommendation and review evidence shape.
 - `consume-result`: provisional or final consume decision, target handoffs/reviews, accepted/rejected claims, evidence status, authority limits, and next actions.

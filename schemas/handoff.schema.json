@@ -3,7 +3,7 @@
   "$id": "https://openaccp.dev/schemas/handoff.schema.json",
   "title": "OpenACCP Handoff",
   "type": "object",
-  "required": ["schemaVersion", "artifactType", "handoffId", "taskId", "responseId", "actorRole", "authority", "workspaceRef", "worktree", "branchRef", "baseCommit", "commit", "dataRisk", "effectsPreset", "changedFiles", "changedArtifacts", "claims", "verificationEvidence", "deviations", "risks", "assumptionsUsed", "remainingWork", "stateClaim"],
+  "required": ["schemaVersion", "artifactType", "handoffId", "taskId", "responseId", "actorRole", "authority", "workspaceRef", "dataRisk", "effectsPreset", "changedFiles", "changedArtifacts", "claims", "verificationEvidence", "deviations", "risks", "assumptionsUsed", "remainingWork", "stateClaim"],
   "properties": {
     "schemaVersion": { "const": "openaccp-handoff.v1" },
     "artifactType": { "const": "handoff" },
@@ -19,8 +19,8 @@
     "commit": { "type": "string", "minLength": 1 },
     "dataRisk": { "enum": ["none", "low", "medium", "high", "sensitive"] },
     "effectsPreset": { "enum": ["read_only_handoff", "review_handoff", "orchestration_local_write", "docs_task_card_commit", "implementation_local_commit", "primary_only", "custom_expanded"] },
-    "changedFiles": { "$ref": "#/$defs/nonEmptyStrings" },
-    "changedArtifacts": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["path", "changeType"], "additionalProperties": true } },
+    "changedFiles": { "type": "array", "items": { "type": "string" } },
+    "changedArtifacts": { "type": "array", "items": { "type": "object", "required": ["path", "changeType"], "additionalProperties": true } },
     "claims": { "$ref": "#/$defs/nonEmptyStrings" },
     "verificationEvidence": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["check", "method", "result"], "additionalProperties": true } },
     "deviations": { "type": "array", "items": { "type": "string" } },
@@ -34,6 +34,29 @@
     {
       "if": { "properties": { "actorRole": { "const": "frontier" } }, "required": ["actorRole"] },
       "then": { "properties": { "effectsPreset": { "const": "orchestration_local_write" } } }
+    },
+    {
+      "if": {
+        "properties": { "effectsPreset": { "enum": ["read_only_handoff", "review_handoff"] } },
+        "required": ["effectsPreset"]
+      },
+      "then": {
+        "properties": {
+          "worktree": { "enum": ["none", "not_applicable"] },
+          "branchRef": { "enum": ["none", "not_applicable"] },
+          "baseCommit": { "enum": ["none", "not_applicable"] },
+          "commit": { "enum": ["none", "not_applicable"] },
+          "changedFiles": { "type": "array", "items": { "type": "string" } },
+          "changedArtifacts": { "type": "array", "items": { "type": "object", "required": ["path", "changeType"], "additionalProperties": true } }
+        }
+      },
+      "else": {
+        "required": ["worktree", "branchRef", "baseCommit", "commit"],
+        "properties": {
+          "changedFiles": { "$ref": "#/$defs/nonEmptyStrings" },
+          "changedArtifacts": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["path", "changeType"], "additionalProperties": true } }
+        }
+      }
     }
   ],
   "additionalProperties": true

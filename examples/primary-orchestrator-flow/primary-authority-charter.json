@@ -8,7 +8,7 @@
     "Assign authority charters.",
     "Dispatch Frontier, worker, or reviewer roles.",
     "Consume handoffs and reviewer reports.",
-    "Accept, reject, amend, waive, merge, publish, or release when the owner basis is sufficient."
+    "Accept, reject, or amend reviewed evidence when the delegated decision is listed in delegatedFinalAuthority."
   ],
   "forbiddenActions": [
     "Treat missing evidence as verified.",
@@ -19,12 +19,29 @@
     "Frontier may receive B0, B1, or scoped B2 authority.",
     "Workers may receive scoped B2 authority only through a task card and authority charter.",
     "Reviewers provide recommendations but do not own final acceptance.",
-    "B3 final authority is not delegated to downstream roles."
+    "B3 final authority is not delegated to downstream roles.",
+    "Production launch, public publication, and risk waiver remain with the human owner unless a future charter names a narrower owner-approved decision."
   ],
-  "finalAuthorityReservedTo": "Primary or human owner",
+  "finalAuthorityReservedTo": "human-owner",
+  "delegatedFinalAuthority": [
+    {
+      "decisionId": "DFA-PRIMARY-001",
+      "delegatedTo": "primary",
+      "decision": "Accept, reject, or amend demo evidence after validator and reviewer checks.",
+      "scope": "Example coordination artifacts only.",
+      "owner": "human-owner"
+    },
+    {
+      "decisionId": "DFA-PRIMARY-002",
+      "delegatedTo": "primary",
+      "decision": "Record internal merge-readiness recommendation for the demo flow.",
+      "scope": "Recommendation only; actual merge, release, or external publication remains owner-controlled.",
+      "owner": "human-owner"
+    }
+  ],
   "scopeLimits": [
     "Final decisions must name the source pack, task card, handoff, reviewer report, validator result, or waiver basis used.",
-    "Publication, merge, and release decisions require the owner-defined release standard."
+    "Production launch, public publication, and risk waiver require an explicit human-owner decision."
   ],
   "dataRiskLimit": "sensitive",
   "resourceUseLimit": [
@@ -34,7 +51,7 @@
     "Current manifest, source pack, sequence registry, task cards, authority charters, handoffs, review reports, validator reports, and owner decisions."
   ],
   "allowedOutputs": [
-    "Final consume results, authority charters, prompt records, launchers, status reports, merge or release decisions when authorized."
+    "Final consume results, authority charters, prompt records, launchers, status reports, and owner-ready recommendations."
   ],
   "forbiddenSideEffects": [
     "Unrecorded final waivers.",

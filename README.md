@@ -44,6 +44,8 @@ Startup performs three setup steps:
 2. Install the Python workflow kit and run basic validation.
 3. Produce a formal report automatically as part of startup.
 
+For manual skill installation details, see [docs/skill-install.md](docs/skill-install.md).
+
 The post-install formal report stays short and human-readable. It summarizes validation in words and keeps command output, executable paths, local install paths, and temporary directories out of chat.
 
 After installation and validation, the agent asks for these setup inputs in three clear lines:
@@ -175,7 +177,7 @@ Important artifacts:
 | `worker` | Executes one bounded task card and returns verification evidence. | Stays inside the assigned task card, authority charter, and stop conditions. |
 | `reviewer` | Performs read-only review of scope, correctness, verification, side effects, and overclaiming. | Stays read-only and returns recommendations as evidence. |
 | `discovery` | Reads facts, classifies gaps, and prepares safe next actions. | Keeps source promotion under explicit authority. |
-| `human owner` | Decides product intent, risk acceptance, release, and high-risk exceptions. | Receives questions only when the next useful step needs owner facts or final authority. |
+| `human owner` | Decides product intent, risk acceptance, customer-visible release, public publication, production launch, and high-risk exceptions. | Receives questions only when the next useful step needs owner facts or owner-reserved final authority. |
 
 ## B0 / B1 / B2 / B3
 
@@ -186,7 +188,7 @@ These levels answer one practical question: **how much authority does this agent
 | `B0` | Read-only discovery and review. | Source discovery, risk scan, evidence review, backlog refresh, source classification. |
 | `B1` | Package preparation. | CARD shaping, task-card drafts, verification matrices, owner questions, handoff schema, dispatch-ready packets. |
 | `B2` | Scoped execution under an authority charter. | Worker dispatch, worktree setup, bounded implementation, focused verification, child handoff consume. |
-| `B3` | Final authority. | Final acceptance, PR/CI/merge, release, publication, final waiver, cross-lane final decisions. |
+| `B3` | Final authority. | Primary may act only on decisions listed in `delegatedFinalAuthority`; production launch, public publication, customer-visible release, and risk waiver stay with the human owner by default. |
 
 The key rule: **a B3 blocker still leaves B0/B1/B2 work available.** If agents can still discover facts, narrow scope, prepare packages, dispatch scoped workers, or add review evidence, they keep moving.
 

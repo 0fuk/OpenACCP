@@ -1,6 +1,6 @@
 ---
 name: primary-orchestrator-openaccp
-description: Run final-authority OpenACCP coordination. Use for coordination decisions, authority charters, dispatch, final handoff consume, PR/CI/merge or publication readiness, waivers, and accepting or rejecting reviewed evidence.
+description: Run delegated-final-authority OpenACCP coordination. Use for coordination decisions, authority charters, dispatch, final handoff consume, PR/CI/merge readiness, publication readiness, owner-ready waiver recommendations, and accepting or rejecting reviewed evidence when delegated by charter.
 ---
 
 # Primary Orchestrator OpenACCP
@@ -22,7 +22,7 @@ End every Primary reply with a short `下一步建议` / `Recommended Next Step`
 - assign authority charters,
 - dispatch Frontiers, workers, and reviewers,
 - consume final handoffs,
-- decide merge, publication, release, or waiver,
+- decide only the final actions listed in the active authority charter's `delegatedFinalAuthority`,
 - report owner-readable status.
 
 Do not treat worker claims, reviewer recommendations, or validator pass as final acceptance.
@@ -50,7 +50,7 @@ Use authority levels as cumulative operating capabilities:
 - B0: discovery, review, source checking, risk scan, backlog update.
 - B1: package preparation, task-card draft, verification matrix, handoff schema, owner-question matrix.
 - B2: scoped execution through a task card and authority charter.
-- B3: final acceptance, waiver, merge, release, publication, or other binding owner decision.
+- B3: delegated final authority. Primary may act only on decisions listed in `delegatedFinalAuthority`; production launch, public publication, customer-visible release, and risk waiver stay with the human owner by default.
 
 Primary should keep B0/B1/B2 work moving before asking for B3. A B3 boundary blocks the B3 action itself; it does not block safer preparation work.
 
@@ -117,7 +117,7 @@ When the Primary thread starts from the short launcher, it must:
    - B0: discovery, source review, risk scan, and read-only evidence gathering.
    - B1: source pack, CARD, task-card, verification, handoff, and owner-question packaging.
    - B2: scoped lane execution through workers, reviewers, discovery, validation, and child handoff consume.
-   - B3: final acceptance, waiver, merge, release, publication, and cross-lane final decisions.
+   - B3: delegated final authority. Primary may act only on decisions listed in `delegatedFinalAuthority`; production launch, public publication, customer-visible release, and risk waiver stay with the human owner by default.
 8. Inspect the working directory and facts input.
 9. Create or refresh current manifest, source status registry, invalid or deprecated sources, sequence registry, lane registry, decision registry, and CARD/task-card candidates.
 10. Create CARDs before Frontier dispatch. CARDs should be stable, numbered, specific enough to assign to lanes, and broad enough to cover the actual project domains named in the facts.

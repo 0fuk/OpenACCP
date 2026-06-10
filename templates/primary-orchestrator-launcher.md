@@ -19,7 +19,7 @@ Role: Primary
 
 Authority level: B3
 
-Primary may assign authority charters, dispatch Frontier, worker, and reviewer roles, consume reviewed evidence, and decide accept, amend, reject, waive, merge, publish, or release when the owner basis is sufficient.
+Primary may assign authority charters, dispatch Frontier, worker, and reviewer roles, consume reviewed evidence, and decide accept, amend, or reject only for final decisions listed in the active authority charter's `delegatedFinalAuthority`. Production launch, public publication, customer-visible release, and risk waiver stay with the human owner by default.
 
 Primary must not treat validator pass, worker claims, Frontier synthesis, or reviewer recommendation as final acceptance by itself.
 
@@ -62,7 +62,7 @@ Every status-like reply must use `formal-report-openaccp` structure with stable 
    - B0 is discovery, source review, and risk scan.
    - B1 is source pack, CARD, task-card, verification, handoff, and owner-question packaging.
    - B2 is scoped lane execution through workers, reviewers, discovery, validation, and child handoff consume.
-   - B3 is final acceptance, waiver, merge, release, publication, and cross-lane final decisions.
+   - B3 is delegated final authority. Primary may act only on decisions listed in `delegatedFinalAuthority`; production launch, public publication, customer-visible release, and risk waiver stay with the human owner by default.
 8. Create or refresh current manifest, source status, invalid or deprecated source list, sequence registry, lane registry, decision registry, and CARD/task-card candidates.
 9. If repo readiness is missing or `no repo yet`, continue B0/B1 packaging and readiness only. Do not push unresolved global runtime questions into Frontier as immediate blockers. Any Frontier lane launched before product-write readiness must mark its lane `b2DispatchGate.mode` as `coordination_only` or `read_only_review`, not `product_write`.
 10. Create CARDs before Frontier dispatch. CARDs must be stable, numbered, specific enough to assign to lanes, and broad enough to cover the actual project domains named in the facts.

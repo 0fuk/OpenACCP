@@ -3,7 +3,7 @@
   "$id": "https://openaccp.dev/schemas/authority-charter.schema.json",
   "title": "OpenACCP Authority Charter",
   "type": "object",
-  "required": ["schemaVersion", "artifactType", "charterId", "grantedRole", "authorityLevel", "allowedActions", "forbiddenActions", "delegationRules", "finalAuthorityReservedTo", "scopeLimits", "dataRiskLimit", "resourceUseLimit", "allowedInputs", "allowedOutputs", "forbiddenSideEffects", "stopConditions", "expiresWhen"],
+  "required": ["schemaVersion", "artifactType", "charterId", "grantedRole", "authorityLevel", "allowedActions", "forbiddenActions", "delegationRules", "finalAuthorityReservedTo", "delegatedFinalAuthority", "scopeLimits", "dataRiskLimit", "resourceUseLimit", "allowedInputs", "allowedOutputs", "forbiddenSideEffects", "stopConditions", "expiresWhen"],
   "properties": {
     "schemaVersion": { "const": "openaccp-authority-charter.v1" },
     "artifactType": { "const": "authority-charter" },
@@ -14,6 +14,21 @@
     "forbiddenActions": { "$ref": "#/$defs/nonEmptyStrings" },
     "delegationRules": { "$ref": "#/$defs/nonEmptyStrings" },
     "finalAuthorityReservedTo": { "type": "string", "minLength": 1 },
+    "delegatedFinalAuthority": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["decisionId", "delegatedTo", "decision", "scope", "owner"],
+        "properties": {
+          "decisionId": { "type": "string", "minLength": 1 },
+          "delegatedTo": { "enum": ["primary", "human-owner"] },
+          "decision": { "type": "string", "minLength": 1 },
+          "scope": { "type": "string", "minLength": 1 },
+          "owner": { "enum": ["human-owner"] }
+        },
+        "additionalProperties": true
+      }
+    },
     "scopeLimits": { "$ref": "#/$defs/nonEmptyStrings" },
     "dataRiskLimit": { "enum": ["none", "low", "medium", "high", "sensitive"] },
     "resourceUseLimit": { "$ref": "#/$defs/nonEmptyStrings" },

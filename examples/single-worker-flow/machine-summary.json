@@ -19,6 +19,6 @@
     "Created a docs-only getting-started artifact within task-card scope."
   ],
   "nextActions": [
-    "Primary or human owner should consume the handoff and reviewer report."
+    "Primary should consume the handoff and reviewer report when delegatedFinalAuthority covers the decision; otherwise the human owner decides."
   ]
 }

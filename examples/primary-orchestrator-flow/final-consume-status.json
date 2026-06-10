@@ -24,11 +24,11 @@
     "No final acceptance has been recorded yet."
   ],
   "nextActions": [
-    "Primary or human owner should accept, amend, reject, or waive the reviewed evidence.",
+    "Primary should accept, amend, or reject reviewed evidence only when that decision is listed in delegatedFinalAuthority; waiver remains a human-owner decision by default.",
     "After owner approval, record the final decision and run the release gate required by the project."
   ],
   "authorityLimits": [
-    "Worker and reviewer evidence is provisional until Primary or human owner consumes it.",
+    "Worker and reviewer evidence is provisional until the authorized final owner consumes it.",
     "Validator pass is structural evidence, not final acceptance."
   ]
 }

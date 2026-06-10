@@ -117,6 +117,7 @@ REQUIRED_FIELDS: dict[str, list[str]] = {
         "forbiddenActions",
         "delegationRules",
         "finalAuthorityReservedTo",
+        "delegatedFinalAuthority",
         "scopeLimits",
         "dataRiskLimit",
         "resourceUseLimit",
@@ -536,7 +537,7 @@ class Report:
 
 def read_utf8(path: Path) -> tuple[str | None, str | None]:
     try:
-        return path.read_text(encoding="utf-8"), None
+        return path.read_text(encoding="utf-8-sig"), None
     except UnicodeDecodeError as exc:
         return None, f"UTF-8 decode failed: {exc}"
     except OSError as exc:
@@ -1981,6 +1982,35 @@ def validate_authority_charter(data: dict[str, Any], report: Report) -> None:
         report.add("DATA_RISK_LIMIT", "blocking", "fail", "dataRiskLimit must be none, low, medium, high, or sensitive.")
     else:
         report.add("DATA_RISK_LIMIT", "blocking", "pass", "dataRiskLimit is valid.")
+    reserved_to = str(data.get("finalAuthorityReservedTo", "")).strip()
+    if not reserved_to:
+        report.add("FINAL_AUTHORITY_RESERVED_TO", "blocking", "fail", "finalAuthorityReservedTo must name the final authority owner.")
+    elif re.search(r"\bor\b|/", reserved_to, flags=re.IGNORECASE):
+        report.add("FINAL_AUTHORITY_RESERVED_TO", "blocking", "fail", "finalAuthorityReservedTo must name one owner, not an ambiguous choice.")
+    else:
+        report.add("FINAL_AUTHORITY_RESERVED_TO", "blocking", "pass", "finalAuthorityReservedTo names one owner.")
+    delegated = data.get("delegatedFinalAuthority")
+    if not isinstance(delegated, list):
+        report.add("DELEGATED_FINAL_AUTHORITY", "blocking", "fail", "delegatedFinalAuthority must be an array.")
+    else:
+        report.add("DELEGATED_FINAL_AUTHORITY", "blocking", "pass", "delegatedFinalAuthority is an array.")
+        reserved_terms = re.compile(r"(?i)\b(production\s+launch|public\s+publication|risk\s+waiver|legal\s+waiver|release\s+to\s+users)\b")
+        for idx, item in enumerate(delegated):
+            loc = f"delegatedFinalAuthority[{idx}]"
+            if not isinstance(item, dict):
+                report.add("DELEGATED_FINAL_AUTHORITY_ITEM", "blocking", "fail", "delegatedFinalAuthority entries must be objects.", loc)
+                continue
+            missing = [field for field in ["decisionId", "delegatedTo", "decision", "scope", "owner"] if not str(item.get(field, "")).strip()]
+            if missing:
+                report.add("DELEGATED_FINAL_AUTHORITY_FIELDS", "blocking", "fail", "delegatedFinalAuthority entry missing fields: " + ", ".join(missing), loc)
+            if item.get("owner") != "human-owner":
+                report.add("DELEGATED_FINAL_AUTHORITY_OWNER", "blocking", "fail", "delegated final authority must retain human-owner as owner.", loc)
+            if item.get("delegatedTo") == "primary" and reserved_terms.search(str(item.get("decision", "")) + " " + str(item.get("scope", ""))):
+                report.add("DELEGATED_FINAL_AUTHORITY_RESERVED_DECISION", "blocking", "fail", "production launch, public publication, and risk waiver cannot be delegated to Primary by default.", loc)
+    if data.get("grantedRole") == "primary" and data.get("authorityLevel") == "B3" and not delegated:
+        report.add("PRIMARY_B3_DELEGATION", "blocking", "fail", "Primary B3 charters must enumerate delegated final decisions.")
+    elif data.get("grantedRole") == "primary" and data.get("authorityLevel") == "B3":
+        report.add("PRIMARY_B3_DELEGATION", "blocking", "pass", "Primary B3 charter enumerates delegated final decisions.")
     for field_name in [
         "allowedActions",
         "forbiddenActions",
@@ -2152,8 +2182,8 @@ def validate_sequence_registry(data: dict[str, Any], report: Report) -> None:
                 report.add("SEQUENCE_INVALID_REASON", "blocking", "fail", f"{collection_name} invalid entries require invalidReason.", loc)
             if id_field not in item:
                 report.add("SEQUENCE_ID_FIELD", "blocking", "fail", f"{collection_name} entry missing {id_field}.", loc)
-    if prompt_status.get(str(data.get("currentPromptId"))) in {"deprecated", "invalid", "rejected"}:
-        report.add("CURRENT_PROMPT_STATUS", "blocking", "fail", "currentPromptId must not point to deprecated, invalid, or rejected prompt status.")
+    if prompt_status.get(str(data.get("currentPromptId"))) in {"superseded", "cancelled", "invalid"}:
+        report.add("CURRENT_PROMPT_STATUS", "blocking", "fail", "currentPromptId must not point to superseded, cancelled, or invalid prompt status.")
     else:
         report.add("CURRENT_PROMPT_STATUS", "blocking", "pass", "currentPromptId status is usable.")
     response_prompt_by_id = {
@@ -2161,6 +2191,15 @@ def validate_sequence_registry(data: dict[str, Any], report: Report) -> None:
         for item in data.get("responses", [])
         if isinstance(item, dict) and item.get("responseId")
     }
+    response_status = {
+        str(item.get("responseId")): str(item.get("status", ""))
+        for item in data.get("responses", [])
+        if isinstance(item, dict) and item.get("responseId")
+    }
+    if response_status.get(str(data.get("latestResponseId"))) in {"superseded", "cancelled", "invalid"}:
+        report.add("LATEST_RESPONSE_STATUS", "blocking", "fail", "latestResponseId must not point to superseded, cancelled, or invalid response status.")
+    else:
+        report.add("LATEST_RESPONSE_STATUS", "blocking", "pass", "latestResponseId status is usable.")
     if response_prompt_by_id.get(str(data.get("latestResponseId"))) == str(data.get("currentPromptId")):
         report.add("LATEST_RESPONSE_PROMPT_MATCH", "blocking", "pass", "latestResponseId belongs to currentPromptId.")
     else:
@@ -2983,9 +3022,25 @@ def validate_handoff(data: dict[str, Any], report: Report, task_card: dict[str, 
         report.add("EFFECTS_PRESET", "blocking", "fail", "effectsPreset is not a known OpenACCP effects preset.")
     else:
         report.add("EFFECTS_PRESET", "blocking", "pass", "effectsPreset is valid.")
-    for field_name in ["responseId", "worktree", "baseCommit", "commit"]:
+    is_read_only_handoff = data.get("effectsPreset") in {"read_only_handoff", "review_handoff"}
+    for field_name in ["responseId"]:
         require_non_empty_string(data, field_name, report)
-    require_non_empty_array(data, "changedFiles", report)
+    if is_read_only_handoff:
+        for field_name in ["worktree", "baseCommit", "commit"]:
+            if data.get(field_name) in {None, "", "none", "not_applicable"}:
+                report.add(f"{field_name.upper()}_READ_ONLY_OPTIONAL", "blocking", "pass", f"{field_name} is optional for read-only handoffs.")
+            else:
+                require_non_empty_string(data, field_name, report)
+        for field_name in ["changedFiles", "changedArtifacts"]:
+            if isinstance(data.get(field_name), list):
+                report.add(f"{field_name.upper()}_READ_ONLY_ARRAY", "blocking", "pass", f"{field_name} may be empty for read-only handoffs.")
+            else:
+                report.add(f"{field_name.upper()}_READ_ONLY_ARRAY", "blocking", "fail", f"{field_name} must be an array for read-only handoffs.")
+    else:
+        for field_name in ["worktree", "baseCommit", "commit"]:
+            require_non_empty_string(data, field_name, report)
+        require_non_empty_array(data, "changedFiles", report)
+        require_non_empty_array(data, "changedArtifacts", report)
     state = str(data.get("stateClaim", ""))
     if state not in NON_FINAL_HANDOFF_STATES:
         report.add("HANDOFF_STATE_CLAIM", "blocking", "fail", "handoff stateClaim must be proposed, implemented, verified, or reviewed.")
@@ -3036,6 +3091,10 @@ def check_handoff_scope(data: dict[str, Any], task_card: dict[str, Any] | None, 
     else:
         report.add("HANDOFF_TASK_ID_MATCH", "blocking", "pass", "handoff.taskId matches taskCard.taskId.")
     validate_handoff_actor_authority(data, task_card, report)
+    if data.get("effectsPreset") in {"read_only_handoff", "review_handoff"} and not data.get("changedFiles") and not data.get("changedArtifacts"):
+        check_forbidden_handoff_claims(data, task_card, report)
+        report.add("READ_ONLY_HANDOFF_SCOPE", "blocking", "pass", "Read-only handoff has no changed files or artifacts to scope-check.")
+        return
     allowed = task_card.get("allowedScope", {}).get("filesOrArtifacts", [])
     if not isinstance(allowed, list) or not allowed:
         report.add("TASK_CARD_ALLOWED_SCOPE", "blocking", "fail", "Task card allowedScope.filesOrArtifacts is missing.")
@@ -3086,7 +3145,7 @@ def validate_handoff_actor_authority(data: dict[str, Any], task_card: dict[str, 
         "discovery": {"B0"},
         "reviewer": {"B0"},
         "frontier": {"B0", "B1", "B2"},
-        "worker": {"B2"},
+        "worker": {"B0", "B1", "B2"},
     }
     allowed_levels = allowed_by_actor.get(str(actor), set())
     if handoff_level not in allowed_levels:

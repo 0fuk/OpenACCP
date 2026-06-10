@@ -107,6 +107,34 @@ def handoff() -> dict:
     }
 
 
+def read_only_handoff() -> dict:
+    return {
+        "schemaVersion": "openaccp-handoff.v1",
+        "artifactType": "handoff",
+        "handoffId": "HAND-REVIEW-001",
+        "taskId": "TASK-001",
+        "responseId": "RESP-REVIEW-001",
+        "actorRole": "reviewer",
+        "authority": "B0",
+        "workspaceRef": "local-workspace",
+        "worktree": "none",
+        "branchRef": "none",
+        "baseCommit": "none",
+        "commit": "none",
+        "dataRisk": "low",
+        "effectsPreset": "review_handoff",
+        "changedFiles": [],
+        "changedArtifacts": [],
+        "claims": ["Reviewed scope and evidence without modifying files."],
+        "verificationEvidence": [{"check": "read-only review", "method": "manual review", "result": "pass"}],
+        "deviations": [],
+        "risks": [],
+        "assumptionsUsed": [],
+        "remainingWork": [],
+        "stateClaim": "reviewed",
+    }
+
+
 def fixtures(tmp: Path) -> dict[str, Path]:
     paths = {
         "source_pack": tmp / "source-pack.json",
@@ -140,6 +168,79 @@ def valid_sequence_registry() -> dict:
             }
         ],
         "activeLanes": [{"laneId": "primary", "role": "primary", "status": "active", "currentPromptId": "PROMPT-001", "authorityLevel": "B3"}],
+    }
+
+
+def valid_consume_result() -> dict:
+    return {
+        "schemaVersion": "openaccp-consume-result.v1",
+        "artifactType": "consume-result",
+        "consumeId": "CONSUME-001",
+        "responseId": "RESP-001",
+        "consumerRole": "primary",
+        "authorityScope": "final",
+        "targetHandoffIds": ["HAND-001"],
+        "targetReviewIds": ["REV-001"],
+        "decision": "accepted",
+        "basisRefs": ["handoff.json", "review-report.json"],
+        "evidenceStatus": ["Handoff was reviewed."],
+        "claimsAccepted": ["Scoped claim accepted."],
+        "claimsRejected": ["No release claim accepted."],
+        "remainingRisks": ["Owner release review still pending."],
+        "authorityLimits": ["Final consume covers evidence only."],
+        "nextActions": ["Record the consume result."],
+    }
+
+
+def valid_machine_summary() -> dict:
+    return {
+        "schemaVersion": "openaccp-machine-summary.v1",
+        "artifactType": "machine-summary",
+        "summaryId": "MSUM-001",
+        "role": "worker",
+        "promptId": "PROMPT-001",
+        "responseId": "RESP-001",
+        "authority": "B2",
+        "effectsPreset": "docs_task_card_commit",
+        "basisRefs": ["source-pack.json", "task-card.json"],
+        "locators": [
+            {"kind": "task-card", "id": "TASK-001", "path": "task-card.json"},
+            {"kind": "handoff", "id": "HAND-001", "path": "handoff.json"},
+        ],
+        "status": "verified-provisional",
+        "claims": ["Scoped docs work completed."],
+        "nextActions": ["Primary consume."],
+    }
+
+
+def valid_authority_charter() -> dict:
+    return {
+        "schemaVersion": "openaccp-authority-charter.v1",
+        "artifactType": "authority-charter",
+        "charterId": "CHARTER-001",
+        "grantedRole": "primary",
+        "authorityLevel": "B3",
+        "allowedActions": ["Consume reviewed evidence."],
+        "forbiddenActions": ["Claim production launch."],
+        "delegationRules": ["Delegated final decisions must be listed explicitly."],
+        "finalAuthorityReservedTo": "human-owner",
+        "delegatedFinalAuthority": [
+            {
+                "decisionId": "DFA-001",
+                "delegatedTo": "primary",
+                "decision": "Accept or reject reviewed evidence.",
+                "scope": "Coordination evidence only.",
+                "owner": "human-owner",
+            }
+        ],
+        "scopeLimits": ["No production launch."],
+        "dataRiskLimit": "low",
+        "resourceUseLimit": ["Local coordination only."],
+        "allowedInputs": ["handoff.json", "review-report.json"],
+        "allowedOutputs": ["consume-result.json"],
+        "forbiddenSideEffects": ["Credential use."],
+        "stopConditions": ["Owner-reserved decision is required."],
+        "expiresWhen": "The consume decision is recorded.",
     }
 
 
@@ -426,6 +527,24 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
         run(["--artifact", str(paths["handoff"]), "--ruleset", "handoff", "--task-card", str(paths["task_card"]), "--strict"]),
         0,
     )
+    read_only_task_path = tmp / "read-only-task-card.json"
+    write_json(read_only_task_path, task_card("B0"))
+    read_only_handoff_path = tmp / "read-only-handoff.json"
+    write_json(read_only_handoff_path, read_only_handoff())
+    assert_exit(
+        "valid read-only reviewer handoff",
+        run(["--artifact", str(read_only_handoff_path), "--ruleset", "handoff", "--task-card", str(read_only_task_path), "--strict"]),
+        0,
+    )
+    bad_read_only_claim = read_only_handoff()
+    bad_read_only_claim["claims"] = ["final acceptance approved"]
+    bad_read_only_claim_path = tmp / "bad-read-only-handoff-overclaim.json"
+    write_json(bad_read_only_claim_path, bad_read_only_claim)
+    assert_exit(
+        "read-only handoff overclaim rejected",
+        run(["--artifact", str(bad_read_only_claim_path), "--ruleset", "handoff", "--task-card", str(read_only_task_path), "--strict"]),
+        1,
+    )
 
     bad_task = json.loads(paths["task_card"].read_text(encoding="utf-8"))
     bad_task["inputRefs"] = ["REF-001"]
@@ -445,6 +564,13 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     write_json(bad_handoff_path, bad_handoff)
     assert_exit("handoff overclaim rejected", run(["--artifact", str(bad_handoff_path), "--ruleset", "handoff", "--task-card", str(paths["task_card"]), "--strict"]), 1)
 
+    bad_empty_write_handoff = json.loads(paths["handoff"].read_text(encoding="utf-8"))
+    bad_empty_write_handoff["changedFiles"] = []
+    bad_empty_write_handoff["changedArtifacts"] = []
+    bad_empty_write_handoff_path = tmp / "bad-empty-write-handoff.json"
+    write_json(bad_empty_write_handoff_path, bad_empty_write_handoff)
+    assert_exit("write handoff rejects empty changed artifacts", run(["--artifact", str(bad_empty_write_handoff_path), "--ruleset", "handoff", "--task-card", str(paths["task_card"]), "--strict"]), 1)
+
     bad_scope = json.loads(paths["handoff"].read_text(encoding="utf-8"))
     bad_scope["changedArtifacts"] = [{"path": "src/app.py", "changeType": "updated"}]
     bad_scope["changedFiles"] = ["src/app.py"]
@@ -455,12 +581,50 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     coordination = write_coordination_fixtures(tmp, paths["source_pack"])
     assert_exit("valid current manifest", run(["--artifact", str(coordination["current"]), "--ruleset", "current-manifest", "--strict"]), 0)
     assert_exit("valid sequence registry", run(["--artifact", str(coordination["sequence"]), "--ruleset", "sequence-registry", "--strict"]), 0)
+    bom_sequence_path = tmp / "bom-sequence-registry.json"
+    bom_sequence_path.write_bytes(b"\xef\xbb\xbf" + coordination["sequence"].read_bytes())
+    assert_exit("sequence registry accepts UTF-8 BOM", run(["--artifact", str(bom_sequence_path), "--ruleset", "sequence-registry", "--strict"]), 0)
     assert_exit("valid runtime boundary", run(["--artifact", str(coordination["runtime"]), "--ruleset", "runtime-boundary", "--strict"]), 0)
     assert_exit("valid lane registry", run(["--artifact", str(coordination["lanes"]), "--ruleset", "lane-registry", "--strict"]), 0)
     assert_exit("valid child ledger", run(["--artifact", str(coordination["child"]), "--ruleset", "child-ledger", "--strict"]), 0)
     assert_exit("valid source status registry", run(["--artifact", str(coordination["source_status"]), "--ruleset", "source-status-registry", "--strict"]), 0)
     assert_exit("valid decision registry", run(["--artifact", str(coordination["decision"]), "--ruleset", "decision-registry", "--strict"]), 0)
     assert_exit("valid frontier closure", run(["--artifact", str(coordination["closure"]), "--ruleset", "frontier-closure", "--strict"]), 0)
+    consume_result_path = tmp / "consume-result.json"
+    write_json(consume_result_path, valid_consume_result())
+    assert_exit("valid consume result", run(["--artifact", str(consume_result_path), "--ruleset", "consume-result", "--strict"]), 0)
+    machine_summary_path = tmp / "machine-summary.json"
+    write_json(machine_summary_path, valid_machine_summary())
+    assert_exit("valid machine summary", run(["--artifact", str(machine_summary_path), "--ruleset", "machine-summary", "--strict"]), 0)
+
+    bad_consume = valid_consume_result()
+    bad_consume["consumerRole"] = "worker"
+    bad_consume_path = tmp / "bad-final-consume-worker.json"
+    write_json(bad_consume_path, bad_consume)
+    assert_exit("consume result rejects worker final consume", run(["--artifact", str(bad_consume_path), "--ruleset", "consume-result", "--strict"]), 1)
+
+    bad_summary = valid_machine_summary()
+    bad_summary["role"] = "worker"
+    bad_summary["authority"] = "B3"
+    bad_summary_path = tmp / "bad-machine-summary-worker-b3.json"
+    write_json(bad_summary_path, bad_summary)
+    assert_exit("machine summary rejects worker B3", run(["--artifact", str(bad_summary_path), "--ruleset", "machine-summary", "--strict"]), 1)
+
+    authority_charter_path = tmp / "authority-charter-primary.json"
+    write_json(authority_charter_path, valid_authority_charter())
+    assert_exit("valid authority charter", run(["--artifact", str(authority_charter_path), "--ruleset", "authority-charter", "--strict"]), 0)
+
+    bad_ambiguous_authority = valid_authority_charter()
+    bad_ambiguous_authority["finalAuthorityReservedTo"] = "Primary or human owner"
+    bad_ambiguous_authority_path = tmp / "bad-authority-ambiguous-final-owner.json"
+    write_json(bad_ambiguous_authority_path, bad_ambiguous_authority)
+    assert_exit("authority charter rejects ambiguous final owner", run(["--artifact", str(bad_ambiguous_authority_path), "--ruleset", "authority-charter", "--strict"]), 1)
+
+    bad_reserved_delegation = valid_authority_charter()
+    bad_reserved_delegation["delegatedFinalAuthority"][0]["decision"] = "Approve production launch"
+    bad_reserved_delegation_path = tmp / "bad-authority-reserved-delegation.json"
+    write_json(bad_reserved_delegation_path, bad_reserved_delegation)
+    assert_exit("authority charter rejects reserved Primary delegation", run(["--artifact", str(bad_reserved_delegation_path), "--ruleset", "authority-charter", "--strict"]), 1)
 
     bad_manifest = json.loads(coordination["current"].read_text(encoding="utf-8"))
     bad_manifest["activeLanes"][0]["role"] = "frontier"
@@ -475,6 +639,19 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     bad_sequence_path = tmp / "bad-sequence-frontier-b3.json"
     write_json(bad_sequence_path, bad_sequence)
     assert_exit("sequence registry rejects Frontier B3", run(["--artifact", str(bad_sequence_path), "--ruleset", "sequence-registry", "--strict"]), 1)
+
+    bad_current_superseded = valid_sequence_registry()
+    bad_current_superseded["prompts"][0]["status"] = "superseded"
+    bad_current_superseded["prompts"][0]["supersededBy"] = "PROMPT-002"
+    bad_current_superseded_path = tmp / "bad-current-prompt-superseded.json"
+    write_json(bad_current_superseded_path, bad_current_superseded)
+    assert_exit("sequence registry rejects superseded current prompt", run(["--artifact", str(bad_current_superseded_path), "--ruleset", "sequence-registry", "--strict"]), 1)
+
+    bad_current_cancelled = valid_sequence_registry()
+    bad_current_cancelled["prompts"][0]["status"] = "cancelled"
+    bad_current_cancelled_path = tmp / "bad-current-prompt-cancelled.json"
+    write_json(bad_current_cancelled_path, bad_current_cancelled)
+    assert_exit("sequence registry rejects cancelled current prompt", run(["--artifact", str(bad_current_cancelled_path), "--ruleset", "sequence-registry", "--strict"]), 1)
 
     bad_lane_auth = valid_lane_registry()
     bad_lane_auth["lanes"][0]["role"] = "frontier"

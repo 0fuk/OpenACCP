@@ -4,7 +4,7 @@ OpenACCP defines roles by authority, not by model provider.
 
 ## Primary
 
-Primary owns final authority. It can assign charters, dispatch lanes and workers, consume final handoffs, decide merge or publication, grant waivers, and accept or reject evidence.
+Primary owns delegated final coordination authority. It can assign charters, dispatch lanes and workers, consume final handoffs, and accept, reject, or amend evidence when the authority charter lists that decision in `delegatedFinalAuthority`.
 
 Primary also owns active closure. It should split work into lanes, dispatch bounded subagents, consume evidence, reclassify remaining gaps, and continue until the visible work is closed, explicitly out, child work is terminal and consumed or rejected, or the remaining gap is blocked on a real final-authority decision.
 
@@ -26,7 +26,7 @@ Reviewer is read-only by default. It checks scope, correctness, verification, si
 
 ## Human Owner
 
-Human owner decides business meaning, legal or policy questions, real resource approval, credentials, data permissions, production launch, and risk waivers.
+Human owner decides business meaning, legal or policy questions, real resource approval, credentials, data permissions, production launch, public publication, customer-visible release, and risk waivers. These decisions stay with the human owner unless a future charter names a narrower owner-approved delegation.
 
 ## Hygiene
 

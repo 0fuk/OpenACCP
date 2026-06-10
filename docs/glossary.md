@@ -6,7 +6,7 @@
 - `B0`: read-only discovery and review. Look, compare, and report.
 - `B1`: packaging and preparation. Turn gaps into task cards, matrices, and worker-ready material.
 - `B2`: scoped execution. Do the named work under a task card and charter.
-- `B3`: final authority. Accept, waive, merge, release, publish, or make another binding final decision.
+- `B3`: final authority. Primary may act only on decisions listed in `delegatedFinalAuthority`; production launch, public publication, customer-visible release, and risk waiver stay with the human owner by default.
 - `Frontier`: lane orchestrator. It manages a bounded area of work and prepares or dispatches scoped tasks when chartered.
 - `handoff`: structured evidence from a role. Analogy: a delivery note that says what changed, what was checked, what remains, and what cannot be claimed.
 - `Primary`: final-authority role. It consumes reviewed evidence and owns binding decisions.

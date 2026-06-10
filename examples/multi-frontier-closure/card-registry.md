@@ -5,7 +5,17 @@ artifactType: card-registry
 
 ## Domain Coverage
 
-- product workflow, backend API, data storage, frontend UI, desktop Electron, integrations, security, testing QA, CI, release ops were scanned for this example fixture.
+| Domain | Present? | Source refs | CARD coverage | Decision |
+|---|---|---|---|---|
+| Product workflow | no | Fixture focuses on documentation closure mechanics. | none | out of scope for this strict fixture |
+| Backend API | no | No backend source exists in this fixture. | none | out of scope for this strict fixture |
+| Data storage | no | No data/storage source exists in this fixture. | none | out of scope for this strict fixture |
+| Frontend UI | no | No UI source exists in this fixture. | none | out of scope for this strict fixture |
+| Desktop / Electron | no | No desktop shell source exists in this fixture. | none | out of scope for this strict fixture |
+| Integrations | no | No integration source exists in this fixture. | none | out of scope for this strict fixture |
+| Security / privacy | no | No security or privacy behavior is in scope. | none | out of scope for this strict fixture |
+| Testing / QA | yes | SRC-DEMO-PRD | CARD-001 | covered |
+| CI / release / ops | no | Release and CI behavior are not modeled here. | none | out of scope for this strict fixture |
 
 ## Complexity Assessment
 

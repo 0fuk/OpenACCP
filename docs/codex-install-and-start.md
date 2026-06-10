@@ -227,7 +227,7 @@ Primary must first:
 
 When Primary returns Frontier launchers, chat includes the preferred-language left-sidebar thread instruction and one copyable `prompt` block for each selected Frontier. If four Frontiers are selected, chat shows four copyable `prompt` blocks.
 
-Frontier lanes default to B2 lane-local authority. A B2 Frontier may actively run B0 discovery, B1 packaging, B2 scoped worker/reviewer/subagent dispatch, child handoff consume, provisional lane evidence synthesis, and closure proof inside its assigned lane. B3 final acceptance, waiver, merge, release, publication, and cross-lane final decisions remain with Primary or the human owner.
+Frontier lanes default to B2 lane-local authority. A B2 Frontier may actively run B0 discovery, B1 packaging, B2 scoped worker/reviewer/subagent dispatch, child handoff consume, provisional lane evidence synthesis, and closure proof inside its assigned lane. B3 decisions go to Primary only when listed in Primary's `delegatedFinalAuthority`; production launch, public publication, customer-visible release, and risk waiver stay with the human owner by default.
 
 Inside a Frontier lane, worker/reviewer/discovery/validation child work is dispatched by that Frontier through available subagent or delegation tools. Human-opened child worker or reviewer threads are fallback paths. If direct dispatch is unavailable or unsafe, the Frontier may return a short `Fallback launcher`, but it must write that launcher to disk, print it in chat as a fenced `prompt` block, explain why direct dispatch was unavailable or unsafe, and give one exact recommended next step.
 
