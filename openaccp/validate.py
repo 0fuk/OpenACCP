@@ -96,8 +96,10 @@ REQUIRED_FIELDS: dict[str, list[str]] = {
         "schemaVersion",
         "artifactType",
         "taskId",
+        "domain",
         "objective",
         "inputRefs",
+        "sourceStatusNote",
         "allowedScope",
         "forbiddenScope",
         "acceptanceCriteria",
@@ -275,6 +277,9 @@ REQUIRED_FIELDS: dict[str, list[str]] = {
         "schemaVersion",
         "artifactType",
         "registryId",
+        "projectComplexity",
+        "frontierDispatchMode",
+        "frontierDispatchReason",
         "lanes",
     ],
     "child-ledger": [
@@ -357,6 +362,7 @@ NON_FINAL_HANDOFF_STATES = {
 }
 
 AUTHORITY_LEVELS = {"B0", "B1", "B2", "B3"}
+HANDOFF_AUTHORITY_LEVELS = {"B0", "B1", "B2"}
 RISK_LEVELS = {"low", "medium", "high"}
 ROLES = {"primary", "frontier", "worker", "reviewer", "discovery", "human-owner"}
 ROLE_MAX_AUTHORITY = {
@@ -386,6 +392,8 @@ EFFECTS_PRESETS = {
     "primary_only",
     "custom_expanded",
 }
+B0_WORKER_EFFECTS = {"read_only_handoff", "review_handoff"}
+B1_WORKER_EFFECTS = {"read_only_handoff", "review_handoff", "docs_task_card_commit"}
 PROMPT_ID_RE = re.compile(r"(?im)^\s*(?:-\s*)?Prompt ID\s*:\s*`?([A-Za-z0-9][A-Za-z0-9_.:-]*)`?\s*$")
 RESPONSE_ID_RE = re.compile(r"(?im)^\s*(?:-\s*)?Response ID\s*:\s*`?([A-Za-z0-9][A-Za-z0-9_.:-]*)`?\s*$")
 PROMPT_RECORD_RE = re.compile(r"(?im)^\s*-\s*Prompt Record\s*:\s*(.+?)\s*$")
@@ -559,6 +567,16 @@ def load_json(path: Path, report: Report) -> Any | None:
         return None
     report.add("JSON_PARSE", "blocking", "pass", "JSON parsed.")
     return data
+
+
+def normalize_scope_path(value: str) -> str:
+    return value.replace("\\", "/")
+
+
+def scope_pattern_matches(path: str, pattern: str) -> bool:
+    normalized_path = normalize_scope_path(path)
+    normalized_pattern = normalize_scope_path(pattern)
+    return normalized_path == normalized_pattern or fnmatch.fnmatchcase(normalized_path, normalized_pattern)
 
 
 def schema_path_for_ruleset(ruleset: str) -> Path | None:
@@ -1883,8 +1901,6 @@ def validate_task_card(data: dict[str, Any], report: Report, source_pack: dict[s
         report.add("TASK_CARD_DOMAIN", "blocking", "fail", "Task card must include a domain for CARD traceability.")
     if str(data.get("sourceStatusNote", "")).strip():
         report.add("TASK_CARD_SOURCE_STATUS_NOTE", "blocking", "pass", "Task card includes a source status note.")
-    else:
-        report.add("TASK_CARD_SOURCE_STATUS_NOTE", "warning", "fail", "Task card should include sourceStatusNote for source traceability.")
     validate_task_verification_plan(data, report)
     for scope_name in ["allowedScope", "forbiddenScope"]:
         scope = data.get(scope_name)
@@ -3010,8 +3026,8 @@ def validate_handoff(data: dict[str, Any], report: Report, task_card: dict[str, 
         report.add("ARTIFACT_TYPE", "blocking", "fail", "artifactType must be handoff.")
     else:
         report.add("ARTIFACT_TYPE", "blocking", "pass", "artifactType is handoff.")
-    if data.get("authority") not in AUTHORITY_LEVELS:
-        report.add("HANDOFF_AUTHORITY", "blocking", "fail", "handoff authority must be B0, B1, B2, or B3.")
+    if data.get("authority") not in HANDOFF_AUTHORITY_LEVELS:
+        report.add("HANDOFF_AUTHORITY", "blocking", "fail", "handoff authority must be B0, B1, or B2.")
     else:
         report.add("HANDOFF_AUTHORITY", "blocking", "pass", "handoff authority is valid.")
     if data.get("dataRisk") not in DATA_RISK_LEVELS:
@@ -3109,9 +3125,9 @@ def check_handoff_scope(data: dict[str, Any], task_card: dict[str, Any] | None, 
     ]
     changed_files = [str(path) for path in data.get("changedFiles", []) if str(path).strip()]
     for path in sorted(set(changed_artifact_paths + changed_files)):
-        if not any(fnmatch.fnmatch(path, str(pattern)) or path == str(pattern) for pattern in allowed):
+        if not any(scope_pattern_matches(path, str(pattern)) for pattern in allowed):
             bad.append(path)
-        if any(fnmatch.fnmatch(path, str(pattern)) or path == str(pattern) for pattern in forbidden_patterns):
+        if any(scope_pattern_matches(path, str(pattern)) for pattern in forbidden_patterns):
             forbidden_hits.append(path)
     if bad:
         report.add("CHANGED_ARTIFACTS_SCOPE", "blocking", "fail", f"Changed artifacts exceed allowed scope: {', '.join(bad)}")
@@ -3152,6 +3168,14 @@ def validate_handoff_actor_authority(data: dict[str, Any], task_card: dict[str, 
         report.add("HANDOFF_ACTOR_AUTHORITY", "blocking", "fail", f"actorRole {actor} is not compatible with handoff authority {handoff_level}.")
     else:
         report.add("HANDOFF_ACTOR_AUTHORITY", "blocking", "pass", "actorRole is compatible with handoff authority.")
+    if actor == "worker" and handoff_level == "B0" and data.get("effectsPreset") not in B0_WORKER_EFFECTS:
+        report.add("WORKER_B0_EFFECTS", "blocking", "fail", "B0 worker handoffs must use read-only or review effects.")
+    elif actor == "worker" and handoff_level == "B0":
+        report.add("WORKER_B0_EFFECTS", "blocking", "pass", "B0 worker effects are read-only.")
+    if actor == "worker" and handoff_level == "B1" and data.get("effectsPreset") not in B1_WORKER_EFFECTS:
+        report.add("WORKER_B1_EFFECTS", "blocking", "fail", "B1 worker handoffs are limited to read-only, review, or docs/package effects.")
+    elif actor == "worker" and handoff_level == "B1":
+        report.add("WORKER_B1_EFFECTS", "blocking", "pass", "B1 worker effects are package-safe.")
     if actor == "frontier":
         if data.get("effectsPreset") == "orchestration_local_write":
             report.add("FRONTIER_HANDOFF_EFFECTS", "blocking", "pass", "Frontier handoff uses orchestration-local effects.")

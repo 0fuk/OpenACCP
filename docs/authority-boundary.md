@@ -10,6 +10,8 @@ Read-only discovery, source review, risk scan, reviewer dispatch, backlog classi
 
 Package preparation: worker prompt drafts, reviewer prompt drafts, task-card-only planning, verification matrices, handoff schema drafts, and owner question packets.
 
+B1 task cards may be delivered by a worker with a B1 handoff when the effect is limited to documentation, package preparation, read-only evidence, or review evidence. B1 worker handoffs do not authorize product-code implementation effects.
+
 ## B2
 
 Scoped execution under a visible charter. A Primary-launched Frontier should default to B2 lane-local authority unless Primary explicitly narrows it. B2 requires assigned CARDs or task cards, allowed actions, forbidden actions, allowed files or effects, workspace or branch boundary, verification, handoff path, data-risk limits, resource-use limits, and stop conditions.

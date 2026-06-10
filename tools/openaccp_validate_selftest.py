@@ -536,6 +536,31 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
         run(["--artifact", str(read_only_handoff_path), "--ruleset", "handoff", "--task-card", str(read_only_task_path), "--strict"]),
         0,
     )
+    read_only_worker = read_only_handoff()
+    read_only_worker["actorRole"] = "worker"
+    read_only_worker["effectsPreset"] = "read_only_handoff"
+    read_only_worker_path = tmp / "read-only-worker-handoff.json"
+    write_json(read_only_worker_path, read_only_worker)
+    assert_exit(
+        "valid B0 worker read-only handoff",
+        run(["--artifact", str(read_only_worker_path), "--ruleset", "handoff", "--task-card", str(read_only_task_path), "--strict"]),
+        0,
+    )
+    bad_b0_worker_effect = read_only_worker.copy()
+    bad_b0_worker_effect["worktree"] = "worktrees/docs-task-001"
+    bad_b0_worker_effect["branchRef"] = "docs/task-001"
+    bad_b0_worker_effect["baseCommit"] = "BASE-001"
+    bad_b0_worker_effect["commit"] = "COMMIT-001"
+    bad_b0_worker_effect["effectsPreset"] = "docs_task_card_commit"
+    bad_b0_worker_effect["changedFiles"] = ["docs/guide.md"]
+    bad_b0_worker_effect["changedArtifacts"] = [{"path": "docs/guide.md", "changeType": "created"}]
+    bad_b0_worker_effect_path = tmp / "bad-b0-worker-effect.json"
+    write_json(bad_b0_worker_effect_path, bad_b0_worker_effect)
+    assert_exit(
+        "B0 worker docs commit rejected",
+        run(["--artifact", str(bad_b0_worker_effect_path), "--ruleset", "handoff", "--task-card", str(read_only_task_path), "--strict"]),
+        1,
+    )
     bad_read_only_claim = read_only_handoff()
     bad_read_only_claim["claims"] = ["final acceptance approved"]
     bad_read_only_claim_path = tmp / "bad-read-only-handoff-overclaim.json"
@@ -564,6 +589,31 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     write_json(bad_handoff_path, bad_handoff)
     assert_exit("handoff overclaim rejected", run(["--artifact", str(bad_handoff_path), "--ruleset", "handoff", "--task-card", str(paths["task_card"]), "--strict"]), 1)
 
+    bad_b3_handoff = json.loads(paths["handoff"].read_text(encoding="utf-8"))
+    bad_b3_handoff["authority"] = "B3"
+    bad_b3_handoff_path = tmp / "bad-b3-handoff.json"
+    write_json(bad_b3_handoff_path, bad_b3_handoff)
+    assert_exit("handoff rejects B3 authority", run(["--artifact", str(bad_b3_handoff_path), "--ruleset", "handoff", "--task-card", str(paths["task_card"]), "--strict"]), 1)
+
+    b1_task_path = tmp / "b1-task-card.json"
+    write_json(b1_task_path, task_card("B1"))
+    b1_handoff = json.loads(paths["handoff"].read_text(encoding="utf-8"))
+    b1_handoff["authority"] = "B1"
+    b1_handoff_path = tmp / "b1-docs-handoff.json"
+    write_json(b1_handoff_path, b1_handoff)
+    assert_exit("valid B1 worker docs handoff", run(["--artifact", str(b1_handoff_path), "--ruleset", "handoff", "--task-card", str(b1_task_path), "--strict"]), 0)
+
+    bad_b1_mismatch = json.loads(paths["handoff"].read_text(encoding="utf-8"))
+    bad_b1_mismatch_path = tmp / "bad-b1-task-b2-handoff.json"
+    write_json(bad_b1_mismatch_path, bad_b1_mismatch)
+    assert_exit("B1 task rejects B2 handoff", run(["--artifact", str(bad_b1_mismatch_path), "--ruleset", "handoff", "--task-card", str(b1_task_path), "--strict"]), 1)
+
+    bad_b1_product = b1_handoff.copy()
+    bad_b1_product["effectsPreset"] = "implementation_local_commit"
+    bad_b1_product_path = tmp / "bad-b1-product-handoff.json"
+    write_json(bad_b1_product_path, bad_b1_product)
+    assert_exit("B1 worker product-write effect rejected", run(["--artifact", str(bad_b1_product_path), "--ruleset", "handoff", "--task-card", str(b1_task_path), "--strict"]), 1)
+
     bad_empty_write_handoff = json.loads(paths["handoff"].read_text(encoding="utf-8"))
     bad_empty_write_handoff["changedFiles"] = []
     bad_empty_write_handoff["changedArtifacts"] = []
@@ -577,6 +627,25 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     bad_scope_path = tmp / "bad-scope.json"
     write_json(bad_scope_path, bad_scope)
     assert_exit("scope overrun rejected", run(["--artifact", str(bad_scope_path), "--ruleset", "handoff", "--task-card", str(paths["task_card"]), "--strict"]), 1)
+
+    slash_scope_task = task_card()
+    slash_scope_task["allowedScope"]["filesOrArtifacts"] = ["docs/*"]
+    slash_scope_task_path = tmp / "slash-scope-task.json"
+    write_json(slash_scope_task_path, slash_scope_task)
+    backslash_handoff = json.loads(paths["handoff"].read_text(encoding="utf-8"))
+    backslash_handoff["changedFiles"] = ["docs\\guide.md"]
+    backslash_handoff["changedArtifacts"] = [{"path": "docs\\guide.md", "changeType": "created"}]
+    backslash_handoff_path = tmp / "backslash-handoff.json"
+    write_json(backslash_handoff_path, backslash_handoff)
+    assert_exit("scope matcher normalizes backslashes", run(["--artifact", str(backslash_handoff_path), "--ruleset", "handoff", "--task-card", str(slash_scope_task_path), "--strict"]), 0)
+
+    case_handoff = json.loads(paths["handoff"].read_text(encoding="utf-8"))
+    case_handoff["changedFiles"] = ["DOCS/guide.md"]
+    case_handoff["changedArtifacts"] = [{"path": "DOCS/guide.md", "changeType": "created"}]
+    case_handoff_path = tmp / "case-sensitive-handoff.json"
+    write_json(case_handoff_path, case_handoff)
+    assert_exit("scope matcher is case-sensitive", run(["--artifact", str(case_handoff_path), "--ruleset", "handoff", "--task-card", str(slash_scope_task_path), "--strict"]), 1)
+
 
     coordination = write_coordination_fixtures(tmp, paths["source_pack"])
     assert_exit("valid current manifest", run(["--artifact", str(coordination["current"]), "--ruleset", "current-manifest", "--strict"]), 0)
@@ -1351,24 +1420,53 @@ def assert_cli_entrypoints(tmp: Path) -> None:
 def assert_packaged_schemas_mirror_root() -> None:
     root_schema_dir = ROOT / "schemas"
     package_schema_dir = ROOT / "openaccp" / "schemas"
+    root_names = {path.name for path in root_schema_dir.glob("*.schema.json")}
+    package_names = {path.name for path in package_schema_dir.glob("*.schema.json")}
     missing: list[str] = []
+    extra: list[str] = []
     mismatched: list[str] = []
+    for name in sorted(root_names - package_names):
+        missing.append(name)
+    for name in sorted(package_names - root_names):
+        extra.append(name)
     for root_schema in sorted(root_schema_dir.glob("*.schema.json")):
         packaged_schema = package_schema_dir / root_schema.name
         if not packaged_schema.exists():
-            missing.append(root_schema.name)
             continue
         root_text = root_schema.read_text(encoding="utf-8")
         packaged_text = packaged_schema.read_text(encoding="utf-8")
         if root_text != packaged_text:
             mismatched.append(root_schema.name)
-    if missing or mismatched:
+    if missing or extra or mismatched:
         if missing:
             print("FAIL packaged schemas missing: " + ", ".join(missing))
+        if extra:
+            print("FAIL packaged schemas extra: " + ", ".join(extra))
         if mismatched:
             print("FAIL packaged schemas drifted: " + ", ".join(mismatched))
         raise SystemExit(1)
     print("PASS packaged schemas mirror root schemas")
+
+
+def assert_required_fields_cover_schema() -> None:
+    sys.path.insert(0, str(ROOT))
+    from openaccp.validate import JSON_SCHEMA_RULESETS, REQUIRED_FIELDS
+
+    missing_by_ruleset: list[str] = []
+    for ruleset in sorted(JSON_SCHEMA_RULESETS):
+        schema_path = ROOT / "schemas" / f"{ruleset}.schema.json"
+        if not schema_path.exists() or ruleset not in REQUIRED_FIELDS:
+            continue
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        schema_required = set(schema.get("required", []))
+        validator_required = set(REQUIRED_FIELDS.get(ruleset, []))
+        missing = sorted(schema_required - validator_required)
+        if missing:
+            missing_by_ruleset.append(f"{ruleset}: {', '.join(missing)}")
+    if missing_by_ruleset:
+        print("FAIL required fields missing schema fields: " + " | ".join(missing_by_ruleset))
+        raise SystemExit(1)
+    print("PASS validator required fields cover schema required fields")
 
 
 def main() -> int:
@@ -1380,6 +1478,7 @@ def main() -> int:
         assert_public_package_rules(tmp)
         assert_cli_entrypoints(tmp)
         assert_packaged_schemas_mirror_root()
+        assert_required_fields_cover_schema()
     return 0
 
 

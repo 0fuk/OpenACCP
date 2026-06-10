@@ -11,7 +11,7 @@
     "taskId": { "type": "string", "minLength": 1 },
     "responseId": { "type": "string", "minLength": 1 },
     "actorRole": { "enum": ["worker", "frontier", "reviewer", "discovery"] },
-    "authority": { "enum": ["B0", "B1", "B2", "B3"] },
+    "authority": { "enum": ["B0", "B1", "B2"] },
     "workspaceRef": { "type": "string", "minLength": 1 },
     "worktree": { "type": "string", "minLength": 1 },
     "branchRef": { "type": "string", "minLength": 1 },

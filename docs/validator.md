@@ -17,6 +17,7 @@ The validator runs JSON Schema checks first, then applies OpenACCP semantic, cro
 - `task-card`: executable slice, source refs, scope, verification plan, authority level, and B2/B3 authority charter reference.
 - `authority-charter`: granted role, authority level, final authority reservation, machine-readable delegated final decisions, scope limits, data risk limit, resource use limit, allowed inputs/outputs, forbidden side effects, and stop conditions.
 - `handoff`: non-final worker or role claims, `Response ID`, authority, base and result commits, worktree, data risk, effects preset, changed file scope, task ID match, verification evidence, and forbidden claims.
+  Handoff scope patterns use Python `fnmatch` semantics after path normalization. Backslashes are normalized to `/`, matching is case-sensitive on every platform, and `*` may match across `/`.
 - `review-report`: reviewer recommendation and review evidence shape.
 - `consume-result`: provisional or final consume decision, target handoffs/reviews, accepted/rejected claims, evidence status, authority limits, and next actions.
 - `machine-summary`: compact locator summary for worker, reviewer, discovery, Frontier, or Primary output with Prompt ID, Response ID, authority, effects, basisRefs, locators, claims, and next actions.
