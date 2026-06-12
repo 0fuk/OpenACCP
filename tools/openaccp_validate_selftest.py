@@ -1039,6 +1039,46 @@ def assert_text_rules(tmp: Path) -> None:
     )
     assert_exit("launcher output allows auto dispatch without paste block", run(["--artifact", str(auto_launcher_output_path), "--ruleset", "launcher-output", "--strict"]), 0)
 
+    one_click_launcher_output_path = tmp / "one-click-launcher-output.md"
+    one_click_launcher_output_path.write_text(
+        "\n".join(
+            [
+                "Dispatch channel: one_click",
+                "Primary opened Frontier 01 from the saved short launcher seed.",
+                "Prompt ID: openaccp-frontier-demo-lane-01",
+                "Launch result: started.",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    assert_exit("launcher output allows one-click dispatch without paste block", run(["--artifact", str(one_click_launcher_output_path), "--ruleset", "launcher-output", "--strict"]), 0)
+
+    attempted_failed_bare_dispatch_path = tmp / "attempted-failed-bare-dispatch.md"
+    attempted_failed_bare_dispatch_path.write_text(
+        "\n".join(
+            [
+                "agent_thread_spawn was attempted and failed.",
+                "frontier-01.short.md",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    assert_exit("launcher output rejects bare failed direct dispatch keyword", run(["--artifact", str(attempted_failed_bare_dispatch_path), "--ruleset", "launcher-output", "--strict"]), 1)
+
+    failed_explicit_dispatch_path = tmp / "failed-explicit-dispatch.md"
+    failed_explicit_dispatch_path.write_text(
+        "\n".join(
+            [
+                "Dispatch channel: agent_thread_spawn",
+                "Primary attempted to spawn Frontier 01 from the on-disk prompt record.",
+                "Prompt ID: openaccp-frontier-demo-lane-01",
+                "Spawn result: failed.",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    assert_exit("launcher output rejects failed explicit direct dispatch", run(["--artifact", str(failed_explicit_dispatch_path), "--ruleset", "launcher-output", "--strict"]), 1)
+
     missing_prompt_manual_output_path = tmp / "missing-prompt-manual-launcher-output.md"
     missing_prompt_manual_output_path.write_text(
         "\n".join(

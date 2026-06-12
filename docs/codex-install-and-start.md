@@ -168,7 +168,7 @@ Use this interaction shape for direct dispatch:
 
 1. Tell the user which full Primary prompt record file was written.
 2. State `Dispatch channel: agent_thread_spawn` or `Dispatch channel: one_click`.
-3. State whether Primary was started or whether a runtime dispatch error requires manual fallback.
+3. State a successful result line, such as `Spawn result: dispatched` for `agent_thread_spawn` or `Launch result: started` for `one_click`. If dispatch failed, switch to manual fallback instead of claiming direct dispatch.
 
 Use this interaction shape for manual fallback:
 

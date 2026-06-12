@@ -1345,18 +1345,29 @@ def launcher_output_dispatch_channel(text: str) -> str:
         raw = explicit.group(1).strip().lower().replace("-", "_")
         if raw in {"agent_thread_spawn", "one_click", "manual_paste"}:
             return raw
-    lower_text = text.lower()
-    if re.search(r"\bagent_thread_spawn\b", lower_text):
-        return "agent_thread_spawn"
-    if re.search(r"\bone_click\b", lower_text):
-        return "one_click"
     return "manual_paste"
+
+
+def launcher_output_has_dispatch_success(text: str, dispatch_channel: str) -> bool:
+    success_terms = r"(?:dispatched|spawned|started|created|success|succeeded|ok)"
+    if dispatch_channel == "agent_thread_spawn":
+        pattern = rf"(?im)^\s*(?:[-*]\s*)?Spawn\s+result\s*[:：]\s*`?{success_terms}`?\.?\s*$"
+        return bool(re.search(pattern, text))
+    if dispatch_channel == "one_click":
+        pattern = rf"(?im)^\s*(?:[-*]\s*)?(?:Launch|Dispatch|One[- ]click)\s+result\s*[:：]\s*`?{success_terms}`?\.?\s*$"
+        return bool(re.search(pattern, text))
+    return False
 
 
 def validate_launcher_output_text(text: str, report: Report) -> None:
     dispatch_channel = launcher_output_dispatch_channel(text)
     direct_dispatch = dispatch_channel in {"agent_thread_spawn", "one_click"}
     report.add("DISPATCH_CHANNEL", "blocking", "pass", f"Launcher output dispatch channel is {dispatch_channel}.")
+    if direct_dispatch and launcher_output_has_dispatch_success(text, dispatch_channel):
+        report.add("DIRECT_DISPATCH_RESULT", "blocking", "pass", f"{dispatch_channel} output includes direct dispatch success evidence.")
+    elif direct_dispatch:
+        report.add("DIRECT_DISPATCH_RESULT", "blocking", "fail", f"{dispatch_channel} output must include an explicit successful dispatch result line.")
+        direct_dispatch = False
     prompt_blocks = [match.group(1).strip() for match in PROMPT_FENCE_RE.finditer(text)]
     if not prompt_blocks and not direct_dispatch:
         report.add("PROMPT_FENCE", "blocking", "fail", "Launcher output must include at least one fenced ```prompt block with the copyable short launcher.")
