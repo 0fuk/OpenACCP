@@ -10,6 +10,8 @@
 
 - `consume-result` and `machine-summary` schemas, templates, examples, and validator rulesets.
 - Machine-readable Frontier contract block `openaccp-frontier-orchestration-contract.v1` for B2 lane closure, subagent-first dispatch, child ledger, and branch return gates.
+- Runtime-aware return event protocol: `runtime-boundary` now records Primary runtime identity and notification bridge policy, `lane-registry` records same-runtime or cross-runtime Frontier lanes, and `child-ledger` records `parent_consume_pending` plus wake state for returned evidence.
+- `openaccp notify-return` CLI command for producing a parent consume notification payload from the existing child-ledger path.
 - Prompt launcher cross-check support with `--prompt-record` and `--expect-prompt-id`.
 - `launcher-output` validator ruleset for response logs with explicit dispatch channels: direct agent/thread dispatch where supported, and strict copyable fenced `prompt` blocks for manual fallback.
 

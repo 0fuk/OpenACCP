@@ -249,6 +249,20 @@ def valid_runtime_boundary(tmp: Path) -> dict:
         "schemaVersion": "openaccp-runtime-boundary.v1",
         "artifactType": "runtime-boundary",
         "boundaryId": "RB-001",
+        "runtimeIdentity": {
+            "primaryRuntime": "codex",
+            "primaryRuntimeConfidence": "declared",
+            "detectionEvidence": ["Selftest declares the Primary runtime."],
+            "currentThreadRef": "selftest-primary-thread",
+        },
+        "notificationBridge": {
+            "state": "available",
+            "supportedRuntimes": ["codex", "claude-code"],
+            "wakePolicy": "cross_runtime_bridge",
+            "busyPolicy": "queue_until_safe_checkpoint",
+            "failurePolicy": "record_parent_consume_pending",
+            "bridgeCommand": "openaccp notify-return",
+        },
         "workingDirectory": str(tmp / "work"),
         "productRepoStatus": "found",
         "productRepoPath": str(tmp / "repo"),
@@ -280,6 +294,7 @@ def valid_lane_registry() -> dict:
         "schemaVersion": "openaccp-lane-registry.v1",
         "artifactType": "lane-registry",
         "registryId": "LANES-001",
+        "primaryRuntime": "codex",
         "projectComplexity": "bootstrap",
         "frontierDispatchMode": "pre_frontier",
         "dispatchChannel": "agent_thread_spawn",
@@ -289,6 +304,8 @@ def valid_lane_registry() -> dict:
                 "laneId": "primary",
                 "objective": "Coordinate the project",
                 "role": "primary",
+                "runtime": "codex",
+                "runtimeRelation": "same_runtime",
                 "status": "active",
                 "currentPromptId": "PROMPT-001",
                 "authorityLevel": "B3",
@@ -315,6 +332,87 @@ def valid_lane_registry() -> dict:
     }
 
 
+def valid_cross_runtime_lane_registry() -> dict:
+    registry = valid_lane_registry()
+    registry["projectComplexity"] = "normal"
+    registry["frontierDispatchMode"] = "multi_frontier"
+    registry["frontierDispatchReason"] = "Normal project uses two bounded Frontier lanes."
+    registry["lanes"] = [
+        registry["lanes"][0],
+        {
+            "laneId": "frontier-ui",
+            "objective": "Prepare UI task cards and safe worker packages.",
+            "role": "frontier",
+            "runtime": "claude-code",
+            "runtimeRelation": "cross_runtime",
+            "status": "prepared",
+            "currentPromptId": "PROMPT-FRONTIER-UI-001",
+            "authorityLevel": "B2",
+            "assignedCardIds": ["CARD-002"],
+            "runtimeBoundaryRef": "runtime-boundary.json",
+            "childLedgerRef": "child-ledger.json",
+            "latestConsumeRefs": [],
+            "notificationBridgePolicy": {
+                "state": "required",
+                "wakePolicy": "cross_runtime_bridge",
+                "busyPolicy": "queue_until_safe_checkpoint",
+                "failurePolicy": "record_parent_consume_pending",
+                "bridgeRef": "runtime-boundary.json#notificationBridge",
+            },
+            "b2DispatchGate": {
+                "mode": "coordination_only",
+                "state": "ready",
+                "reason": "Frontier may package and dispatch scoped children only.",
+            },
+            "returnGateStatus": {
+                "state": "not_ready",
+                "safeWorkRemainingCount": 1,
+                "finalAuthorityGapCount": 0,
+                "explicitlyOutCount": 0,
+                "frontierClosureRef": "",
+                "latestChildLedgerRef": "child-ledger.json",
+                "latestConsumeRefs": [],
+            },
+        },
+        {
+            "laneId": "frontier-platform",
+            "objective": "Prepare platform runtime task cards and safe worker packages.",
+            "role": "frontier",
+            "runtime": "codex",
+            "runtimeRelation": "same_runtime",
+            "status": "prepared",
+            "currentPromptId": "PROMPT-FRONTIER-PLATFORM-001",
+            "authorityLevel": "B2",
+            "assignedCardIds": ["CARD-003"],
+            "runtimeBoundaryRef": "runtime-boundary.json",
+            "childLedgerRef": "child-ledger.json",
+            "latestConsumeRefs": [],
+            "notificationBridgePolicy": {
+                "state": "not_required",
+                "wakePolicy": "same_runtime_native",
+                "busyPolicy": "queue_until_safe_checkpoint",
+                "failurePolicy": "record_parent_consume_pending",
+                "bridgeRef": "runtime-boundary.json#notificationBridge",
+            },
+            "b2DispatchGate": {
+                "mode": "coordination_only",
+                "state": "ready",
+                "reason": "Frontier may package and dispatch scoped children only.",
+            },
+            "returnGateStatus": {
+                "state": "not_ready",
+                "safeWorkRemainingCount": 1,
+                "finalAuthorityGapCount": 0,
+                "explicitlyOutCount": 0,
+                "frontierClosureRef": "",
+                "latestChildLedgerRef": "child-ledger.json",
+                "latestConsumeRefs": [],
+            },
+        },
+    ]
+    return registry
+
+
 def valid_child_ledger() -> dict:
     return {
         "schemaVersion": "openaccp-child-ledger.v1",
@@ -329,6 +427,13 @@ def valid_child_ledger() -> dict:
                 "handoffId": "HAND-001",
                 "role": "worker",
                 "authority": "B2",
+                "parentRuntime": "codex",
+                "childRuntime": "codex",
+                "runtimeRelation": "same_runtime",
+                "returnEventStatus": "consume_result_recorded",
+                "wakeStatus": "not_required",
+                "parentConsumeDuePolicy": "not_applicable",
+                "parentConsumeRef": "CONSUME-001",
                 "effects": ["docs-only"],
                 "subagentIdOrToolStatus": "direct-subagent",
                 "expectedHandoffPath": ".openaccp/handoffs/HAND-001.json",
@@ -657,6 +762,26 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     assert_exit("valid runtime boundary", run(["--artifact", str(coordination["runtime"]), "--ruleset", "runtime-boundary", "--strict"]), 0)
     assert_exit("valid lane registry", run(["--artifact", str(coordination["lanes"]), "--ruleset", "lane-registry", "--strict"]), 0)
     assert_exit("valid child ledger", run(["--artifact", str(coordination["child"]), "--ruleset", "child-ledger", "--strict"]), 0)
+    cross_runtime_lanes_path = tmp / "cross-runtime-lane-registry.json"
+    write_json(cross_runtime_lanes_path, valid_cross_runtime_lane_registry())
+    assert_exit("valid cross-runtime lane registry", run(["--artifact", str(cross_runtime_lanes_path), "--ruleset", "lane-registry", "--strict"]), 0)
+    cross_runtime_pending_child = valid_child_ledger()
+    cross_runtime_pending_child["children"][0].update(
+        {
+            "parentRuntime": "codex",
+            "childRuntime": "claude-code",
+            "runtimeRelation": "cross_runtime",
+            "returnEventStatus": "parent_consume_pending",
+            "wakeStatus": "queued_for_parent",
+            "parentConsumeDuePolicy": "next_safe_checkpoint",
+            "notificationBridgeRef": "runtime-boundary.json#notificationBridge",
+            "consumeStatus": "not_consumed",
+            "parentConsumeRef": "",
+        }
+    )
+    cross_runtime_pending_child_path = tmp / "cross-runtime-pending-child-ledger.json"
+    write_json(cross_runtime_pending_child_path, cross_runtime_pending_child)
+    assert_exit("valid cross-runtime returned child pending consume", run(["--artifact", str(cross_runtime_pending_child_path), "--ruleset", "child-ledger", "--strict"]), 0)
     assert_exit("valid source status registry", run(["--artifact", str(coordination["source_status"]), "--ruleset", "source-status-registry", "--strict"]), 0)
     assert_exit("valid decision registry", run(["--artifact", str(coordination["decision"]), "--ruleset", "decision-registry", "--strict"]), 0)
     assert_exit("valid frontier closure", run(["--artifact", str(coordination["closure"]), "--ruleset", "frontier-closure", "--strict"]), 0)
@@ -747,6 +872,12 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     write_json(bad_runtime_path, bad_runtime)
     assert_exit("runtime boundary rejects missing found repo path", run(["--artifact", str(bad_runtime_path), "--ruleset", "runtime-boundary", "--strict"]), 1)
 
+    bad_runtime_identity = valid_runtime_boundary(tmp)
+    bad_runtime_identity.pop("runtimeIdentity")
+    bad_runtime_identity_path = tmp / "bad-runtime-identity.json"
+    write_json(bad_runtime_identity_path, bad_runtime_identity)
+    assert_exit("runtime boundary rejects missing Primary runtime identity", run(["--artifact", str(bad_runtime_identity_path), "--ruleset", "runtime-boundary", "--strict"]), 1)
+
     blocked_runtime = valid_runtime_boundary(tmp)
     blocked_runtime["productRepoStatus"] = "missing"
     blocked_runtime["productRepoPath"] = ""
@@ -790,6 +921,29 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     bad_child_path = tmp / "bad-child-ledger.json"
     write_json(bad_child_path, bad_child)
     assert_exit("child ledger rejects B3 child authority", run(["--artifact", str(bad_child_path), "--ruleset", "child-ledger", "--strict"]), 1)
+
+    bad_cross_runtime_lanes = valid_cross_runtime_lane_registry()
+    bad_cross_runtime_lanes["lanes"][1].pop("notificationBridgePolicy")
+    bad_cross_runtime_lanes_path = tmp / "bad-cross-runtime-lane-missing-bridge.json"
+    write_json(bad_cross_runtime_lanes_path, bad_cross_runtime_lanes)
+    assert_exit("lane registry rejects cross-runtime Frontier without bridge policy", run(["--artifact", str(bad_cross_runtime_lanes_path), "--ruleset", "lane-registry", "--strict"]), 1)
+
+    bad_return_event_child = valid_child_ledger()
+    bad_return_event_child["children"][0].update(
+        {
+            "parentRuntime": "codex",
+            "childRuntime": "claude-code",
+            "runtimeRelation": "cross_runtime",
+            "returnEventStatus": "child_returned",
+            "wakeStatus": "not_attempted",
+            "parentConsumeDuePolicy": "not_applicable",
+            "consumeStatus": "not_consumed",
+            "parentConsumeRef": "",
+        }
+    )
+    bad_return_event_child_path = tmp / "bad-cross-runtime-child-return.json"
+    write_json(bad_return_event_child_path, bad_return_event_child)
+    assert_exit("child ledger rejects cross-runtime return without parent consume pending wake", run(["--artifact", str(bad_return_event_child_path), "--ruleset", "child-ledger", "--strict"]), 1)
 
     bad_source_status = valid_source_status_registry()
     bad_source_status["sources"][1]["status"] = "invalid"
@@ -1339,7 +1493,7 @@ def assert_text_rules(tmp: Path) -> None:
                 "Dispatch bounded worker, reviewer, discovery, validation, and subagent work inside the lane.",
                 "Do not use the human as a thread launcher for B0/B1/B2-safe child work.",
                 "Human-managed child launchers are fallback only when direct subagent dispatch is unavailable, unsafe, explicitly requested, or requires a separately user-managed session.",
-                "Maintain a child ledger with promptId, taskId, role, authority, effects, subagent id, dispatchStatus, handoffStatus, consumeStatus, and remaining risk.",
+                "Maintain a child ledger with promptId, taskId, role, authority, effects, parentRuntime, childRuntime, runtimeRelation, returnEventStatus, wakeStatus, parentConsumeDuePolicy, subagent id, dispatchStatus, handoffStatus, consumeStatus, and remaining risk.",
                 "Every Frontier reply must end with a recommended next step.",
                 "Do not return to Primary merely because a provisional packet, source baseline, handoff, or consume-result was written.",
                 "`blocked on Primary` is valid only when branchReturnGate is satisfied and every visible remaining gap is needs_final_authority or explicitly_out.",
@@ -1379,10 +1533,22 @@ def assert_text_rules(tmp: Path) -> None:
                                 "role",
                                 "authority",
                                 "effects",
+                                "parentRuntime",
+                                "childRuntime",
+                                "runtimeRelation",
+                                "returnEventStatus",
+                                "wakeStatus",
+                                "parentConsumeDuePolicy",
                                 "dispatchStatus",
                                 "handoffStatus",
                                 "consumeStatus",
                             ]
+                        },
+                        "returnEventProtocol": {
+                            "onChildReturned": "set returnEventStatus to parent_consume_pending until parent consume records a result",
+                            "crossRuntimeWake": "call openaccp notify-return or record notificationBridge wakeStatus queued_for_parent",
+                            "busyParentPolicy": "queue_until_safe_checkpoint",
+                            "acceptanceRule": "child_returned is evidence only, not final acceptance",
                         },
                         "subagentFirst": {"enabled": True},
                         "defaultMode": "continue_until_lane_closure_or_true_final_authority_blocker",
@@ -1508,6 +1674,67 @@ def assert_cli_entrypoints(tmp: Path) -> None:
             run(["--artifact", str(write_target / rel_path), "--ruleset", ruleset, *extra_args, "--strict"]),
             0,
         )
+    bridge_ledger = valid_child_ledger()
+    bridge_ledger["children"][0].update(
+        {
+            "parentRuntime": "codex",
+            "childRuntime": "claude-code",
+            "runtimeRelation": "cross_runtime",
+            "returnEventStatus": "parent_consume_pending",
+            "wakeStatus": "queued_for_parent",
+            "parentConsumeDuePolicy": "next_safe_checkpoint",
+            "notificationBridgeRef": "coordination/runtime-boundary.json#notificationBridge",
+            "consumeStatus": "not_consumed",
+            "parentConsumeRef": "",
+        }
+    )
+    bridge_ledger_path = tmp / "bridge-child-ledger.json"
+    write_json(bridge_ledger_path, bridge_ledger)
+    notify_proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "openaccp",
+            "notify-return",
+            "--child-ledger",
+            str(bridge_ledger_path),
+            "--prompt-id",
+            "PROMPT-WORKER-001",
+        ],
+        cwd=ROOT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        capture_output=True,
+    )
+    assert_exit("python -m openaccp notify-return emits pending consume", notify_proc, 0)
+    if "parent_consume_pending" not in notify_proc.stdout or "queued_for_parent" not in notify_proc.stdout:
+        print("FAIL notify-return output includes pending consume wake state")
+        print(notify_proc.stdout)
+        raise SystemExit(1)
+    print("PASS notify-return output includes pending consume wake state")
+    bad_bridge_ledger = json.loads(json.dumps(bridge_ledger))
+    bad_bridge_ledger["children"][0]["wakeStatus"] = "not_attempted"
+    bad_bridge_ledger_path = tmp / "bad-bridge-child-ledger.json"
+    write_json(bad_bridge_ledger_path, bad_bridge_ledger)
+    bad_notify_proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "openaccp",
+            "notify-return",
+            "--child-ledger",
+            str(bad_bridge_ledger_path),
+            "--prompt-id",
+            "PROMPT-WORKER-001",
+        ],
+        cwd=ROOT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        capture_output=True,
+    )
+    assert_exit("python -m openaccp notify-return rejects unqueued cross-runtime return", bad_notify_proc, 1)
     overwrite_proc = subprocess.run(
         [sys.executable, "-m", "openaccp", "init", str(write_target), "--write"],
         cwd=ROOT,

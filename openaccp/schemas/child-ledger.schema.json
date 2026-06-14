@@ -33,6 +33,35 @@
           "handoffId": { "type": "string", "minLength": 1 },
           "role": { "enum": ["worker", "reviewer", "discovery", "validation", "task-card-only"] },
           "authority": { "enum": ["B0", "B1", "B2"] },
+          "parentRuntime": { "enum": ["codex", "claude-code", "other", "unknown"] },
+          "childRuntime": { "enum": ["codex", "claude-code", "other", "unknown"] },
+          "runtimeRelation": { "enum": ["same_runtime", "cross_runtime", "unknown"] },
+          "returnEventStatus": {
+            "enum": [
+              "not_returned",
+              "child_returned",
+              "parent_consume_pending",
+              "parent_consuming",
+              "consume_result_recorded",
+              "closed",
+              "blocked"
+            ]
+          },
+          "wakeStatus": {
+            "enum": [
+              "not_required",
+              "not_attempted",
+              "queued_for_parent",
+              "wake_requested",
+              "delivered",
+              "unavailable",
+              "failed"
+            ]
+          },
+          "parentConsumeDuePolicy": {
+            "enum": ["not_applicable", "immediate_if_idle", "next_safe_checkpoint", "manual_resume_required"]
+          },
+          "notificationBridgeRef": { "type": "string" },
           "effects": { "type": "array", "items": { "type": "string" } },
           "subagentIdOrToolStatus": { "type": "string", "minLength": 1 },
           "expectedHandoffPath": { "type": "string", "minLength": 1 },
