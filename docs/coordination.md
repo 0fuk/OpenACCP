@@ -36,31 +36,16 @@ OpenACCP uses a small `.openaccp/coordination/` control plane so separate thread
 
 Core artifacts:
 
-- `runtime-boundary.json`: Primary runtime identity, notification bridge policy, repo path, inferred base branch, inferred source roots, inferred test entrypoints, inferred worktree policy, writable/read-only/forbidden paths, side effects, data risk, inference evidence, ambiguity notes, and `b2DispatchGate`.
+- `runtime-boundary.json`: repo path, inferred base branch, inferred source roots, inferred test entrypoints, inferred worktree policy, writable/read-only/forbidden paths, side effects, data risk, inference evidence, ambiguity notes, and `b2DispatchGate`.
 - `current-manifest.json`: current source pack, source status registry, runtime boundary, lane registry, CARD registry, active lanes, and latest consume refs.
 - `sequence-registry.json`: Prompt IDs, Response IDs, handoffs, consumes, cards, active lanes, lifecycle states, and current/latest pointers.
-- `lane-registry.json`: Primary and Frontier lane objectives, project complexity, Primary runtime, Frontier dispatch mode, lane-count reason, lane runtime, same-runtime or cross-runtime relation, notification bridge policy, assigned CARDs, authority, child ledger refs, closure refs, return-gate state, and per-lane `b2DispatchGate`.
-- `child-ledgers/<lane-id>.json`: child worker/reviewer/discovery/validation lifecycle, runtime relation, return event status, wake status, handoff status, and consume status for one lane.
+- `lane-registry.json`: Primary and Frontier lane objectives, project complexity, Frontier dispatch mode, lane-count reason, assigned CARDs, authority, child ledger refs, closure refs, return-gate state, and per-lane `b2DispatchGate`.
+- `child-ledgers/<lane-id>.json`: child worker/reviewer/discovery/validation lifecycle status and consume status for one lane.
 - `source-status-registry.json`: current, reference, deprecated, invalid, and unknown source status with reasons.
 - `decision-registry.json`: owner questions, Primary decisions, waivers, out-of-scope decisions, blockers, and safe defaults.
 - `frontier-closures/<lane-id>.json`: proof that a Frontier lane can continue, close, or return to Primary. Open lanes use `laneProgressPacketRef`; `primaryReadyPacketRef` appears only when the return gate is ready for Primary.
 
 Primary establishes the runtime boundary before B2 Frontier dispatch. The user provides the repo path; Primary infers base branch, source roots, test entrypoints, writable scope, and worktree policy from the repo before asking follow-up questions. If repo path is missing, ambiguous, or explicitly `no repo yet`, Primary asks for the repo path or records `no repo yet` and continues safe B0/B1 packaging. A Frontier can still run coordination-only or read-only B2 work, while product-write B2 dispatch requires both runtime `b2DispatchGate` and lane `b2DispatchGate` to be ready for product-write work. Frontier treats unresolved product-write readiness as an implementation-worker boundary, not as a reason to hand stage progress back to Primary.
-
-Primary also declares its agent runtime during startup: `codex`, `claude-code`, `other`, or `unknown`. When Primary signs a Frontier lane, it declares the Frontier runtime too. Same-runtime lanes can use the runtime's native subagent/thread flow. Cross-runtime lanes use the notification bridge policy recorded in `runtime-boundary.json` and `lane-registry.json`.
-
-## Return Event Protocol
-
-A returned child handoff is evidence, not acceptance. OpenACCP records the return event in the existing control plane:
-
-1. The child ledger moves the child to `dispatchStatus: returned`.
-2. If the handoff is present and not yet consumed, the ledger records `returnEventStatus: parent_consume_pending` or `parent_consuming`.
-3. The ledger records `parentRuntime`, `childRuntime`, and `runtimeRelation`.
-4. If the parent and child run in different tools, the ledger records `notificationBridgeRef`, `parentConsumeDuePolicy`, and a `wakeStatus` such as `queued_for_parent`, `wake_requested`, or `delivered`.
-5. The bridge command `openaccp notify-return` can read the existing child ledger and emit the parent consume payload. If the parent is busy, the event stays queued until the next safe checkpoint.
-6. Parent consume records `parentConsumeRef` and moves the return event to `consume_result_recorded`, `closed`, or `blocked`.
-
-This prevents the human owner from becoming the event bus. Humans still own authority decisions; routine returned-handoff delivery belongs to the coordination state and bridge policy.
 
 ## Subagents
 

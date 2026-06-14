@@ -49,31 +49,7 @@ Authority level: B2 lane-local unless Primary explicitly narrows the lane. B3 fi
     "requiredFields": ["base", "worktree", "branch", "allowedFiles", "verification", "handoffPath", "dataRisk", "resourceUse", "noDispatchReason"]
   },
   "childLedger": {
-    "requiredFields": [
-      "promptId",
-      "taskId",
-      "role",
-      "authority",
-      "effects",
-      "parentRuntime",
-      "childRuntime",
-      "runtimeRelation",
-      "returnEventStatus",
-      "wakeStatus",
-      "parentConsumeDuePolicy",
-      "subagentIdOrToolStatus",
-      "expectedHandoffPath",
-      "dispatchStatus",
-      "handoffStatus",
-      "consumeStatus",
-      "remainingRisk"
-    ]
-  },
-  "returnEventProtocol": {
-    "onChildReturned": "set returnEventStatus to parent_consume_pending until the parent orchestrator records consume_result_recorded, closed, or blocked",
-    "crossRuntimeWake": "call openaccp notify-return or record notificationBridge wakeStatus queued_for_parent when parent and child runtimes differ",
-    "busyParentPolicy": "queue_until_safe_checkpoint",
-    "acceptanceRule": "child_returned is evidence only, not final acceptance"
+    "requiredFields": ["promptId", "taskId", "role", "authority", "effects", "subagentIdOrToolStatus", "expectedHandoffPath", "dispatchStatus", "handoffStatus", "consumeStatus", "remainingRisk"]
   },
   "subagentFirst": {
     "enabled": true,
@@ -96,10 +72,6 @@ Every status-like reply must use `formal-report-openaccp` structure or include a
 
 - Prompt ID:
 - Preferred language:
-- Parent runtime:
-- Frontier runtime:
-- Runtime relation:
-- notificationBridgeRef:
 - Source pack:
 - Scope boundary:
 - Lane objective:
@@ -134,9 +106,7 @@ Do not use the human as a thread launcher for B0/B1/B2-safe child work. Default 
 
 Short downstream chat launchers are fallback only. Use them only when direct subagent dispatch is unavailable, unsafe, explicitly requested, or when the child must run in a separately user-managed session. When fallback is truly required, write the short launcher to disk and print it in chat as a fenced `prompt` block. Label it `Fallback launcher`, explain why direct dispatch was not used, and tell the human exactly which new left-sidebar thread to create and where to paste the block. A `.short.md` link, attachment, file list, or `Get-Content` command is not enough.
 
-Maintain a child ledger with promptId, taskId, role, authority, effects, parentRuntime, childRuntime, runtimeRelation, returnEventStatus, wakeStatus, parentConsumeDuePolicy, subagent id or tool status, expected handoff path, dispatchStatus, handoffStatus, consumeStatus, and remaining risk. Add responseId when the child returns and handoffId when the handoff is present.
-
-When a child returns evidence, record the return in the child ledger before reporting progress. A returned child handoff is not accepted until the parent consumes it. If `handoffStatus` is `present` and `consumeStatus` is `not_consumed`, set `returnEventStatus` to `parent_consume_pending` or `parent_consuming`. If parentRuntime and childRuntime differ, set `runtimeRelation` to `cross_runtime`, record `notificationBridgeRef`, set `wakeStatus` to `queued_for_parent`, `wake_requested`, `delivered`, `unavailable`, or `failed`, and run or queue `openaccp notify-return` from the existing child-ledger path. If the parent is busy, queue the notification until the next safe checkpoint and keep the pending consume visible in the ledger.
+Maintain a child ledger with promptId, taskId, role, authority, effects, subagent id or tool status, expected handoff path, dispatchStatus, handoffStatus, consumeStatus, and remaining risk. Add responseId when the child returns and handoffId when the handoff is present.
 
 Do not return to Primary merely because a provisional packet, source baseline, task-card draft, owner-question matrix, handoff, or consume-result was written. Those artifacts are intermediate lane evidence. If they expose more B0/B1/B2-safe work, continue discovery, packaging, dispatch, review, consume, and reclassification inside this Frontier thread.
 

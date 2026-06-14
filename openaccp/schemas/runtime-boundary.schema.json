@@ -7,8 +7,6 @@
     "schemaVersion",
     "artifactType",
     "boundaryId",
-    "runtimeIdentity",
-    "notificationBridge",
     "workingDirectory",
     "productRepoStatus",
     "productRepoPath",
@@ -32,30 +30,6 @@
     "schemaVersion": { "const": "openaccp-runtime-boundary.v1" },
     "artifactType": { "const": "runtime-boundary" },
     "boundaryId": { "type": "string", "minLength": 1 },
-    "runtimeIdentity": {
-      "type": "object",
-      "required": ["primaryRuntime", "primaryRuntimeConfidence", "detectionEvidence", "currentThreadRef"],
-      "properties": {
-        "primaryRuntime": { "enum": ["codex", "claude-code", "other", "unknown"] },
-        "primaryRuntimeConfidence": { "enum": ["detected", "declared", "unknown"] },
-        "detectionEvidence": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
-        "currentThreadRef": { "type": "string", "minLength": 1 }
-      },
-      "additionalProperties": true
-    },
-    "notificationBridge": {
-      "type": "object",
-      "required": ["state", "supportedRuntimes", "wakePolicy", "busyPolicy", "failurePolicy", "bridgeCommand"],
-      "properties": {
-        "state": { "enum": ["available", "unavailable", "not_configured", "not_applicable"] },
-        "supportedRuntimes": { "type": "array", "items": { "enum": ["codex", "claude-code", "other", "unknown"] } },
-        "wakePolicy": { "enum": ["same_runtime_native", "cross_runtime_bridge", "ledger_only", "manual_fallback"] },
-        "busyPolicy": { "enum": ["queue_until_safe_checkpoint", "immediate_if_idle", "not_applicable"] },
-        "failurePolicy": { "enum": ["record_parent_consume_pending", "record_pending_consume", "manual_fallback"] },
-        "bridgeCommand": { "type": "string", "minLength": 1 }
-      },
-      "additionalProperties": true
-    },
     "workingDirectory": { "type": "string", "minLength": 1 },
     "productRepoStatus": { "enum": ["found", "provided", "missing", "not_applicable"] },
     "productRepoPath": { "type": "string" },

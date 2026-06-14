@@ -156,20 +156,6 @@ def starter_files(target: Path) -> dict[Path, str]:
                 "schemaVersion": "openaccp-runtime-boundary.v1",
                 "artifactType": "runtime-boundary",
                 "boundaryId": "RB-001",
-                "runtimeIdentity": {
-                    "primaryRuntime": "unknown",
-                    "primaryRuntimeConfidence": "unknown",
-                    "detectionEvidence": ["Starter package created before Primary runtime detection."],
-                    "currentThreadRef": "unknown",
-                },
-                "notificationBridge": {
-                    "state": "not_configured",
-                    "supportedRuntimes": ["codex", "claude-code"],
-                    "wakePolicy": "ledger_only",
-                    "busyPolicy": "queue_until_safe_checkpoint",
-                    "failurePolicy": "record_parent_consume_pending",
-                    "bridgeCommand": "openaccp notify-return",
-                },
                 "workingDirectory": str(target),
                 "productRepoStatus": "missing",
                 "productRepoPath": "",
@@ -232,7 +218,6 @@ def starter_files(target: Path) -> dict[Path, str]:
                 "schemaVersion": "openaccp-lane-registry.v1",
                 "artifactType": "lane-registry",
                 "registryId": "LANES-001",
-                "primaryRuntime": "unknown",
                 "projectComplexity": "bootstrap",
                 "frontierDispatchMode": "pre_frontier",
                 "dispatchChannel": "agent_thread_spawn",
@@ -242,8 +227,6 @@ def starter_files(target: Path) -> dict[Path, str]:
                         "laneId": "primary",
                         "objective": "Bootstrap source-driven coordination.",
                         "role": "primary",
-                        "runtime": "unknown",
-                        "runtimeRelation": "same_runtime",
                         "status": "active",
                         "currentPromptId": "PROMPT-BOOTSTRAP-001",
                         "authorityLevel": "B3",
@@ -323,94 +306,6 @@ def starter_files(target: Path) -> dict[Path, str]:
     }
 
 
-def load_json_file(path: Path) -> dict[str, Any] | None:
-    try:
-        data = json.loads(path.read_text(encoding="utf-8-sig"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-        print(f"Failed to read JSON: {path}: {exc}", file=sys.stderr)
-        return None
-    if not isinstance(data, dict):
-        print(f"Expected a JSON object: {path}", file=sys.stderr)
-        return None
-    return data
-
-
-def return_notification_payload(
-    ledger: dict[str, Any],
-    ledger_path: Path,
-    prompt_id: str = "",
-    parent_runtime_override: str = "",
-) -> tuple[dict[str, Any], list[str]]:
-    errors: list[str] = []
-    pending: list[dict[str, Any]] = []
-    for child in ledger.get("children", []):
-        if not isinstance(child, dict):
-            continue
-        if prompt_id and child.get("promptId") != prompt_id:
-            continue
-        is_pending_return = (
-            child.get("dispatchStatus") == "returned"
-            and child.get("handoffStatus") == "present"
-            and child.get("consumeStatus") == "not_consumed"
-        )
-        if not is_pending_return:
-            continue
-        return_status = child.get("returnEventStatus")
-        wake_status = child.get("wakeStatus")
-        runtime_relation = child.get("runtimeRelation")
-        if return_status not in {"parent_consume_pending", "parent_consuming"}:
-            errors.append(f"{child.get('promptId', '<missing-prompt-id>')}: returnEventStatus must be parent_consume_pending or parent_consuming")
-        if runtime_relation == "cross_runtime" and wake_status in {"", None, "not_required", "not_attempted"}:
-            errors.append(f"{child.get('promptId', '<missing-prompt-id>')}: cross-runtime return must be queued, requested, delivered, unavailable, or failed")
-        pending.append(
-            {
-                "promptId": child.get("promptId", ""),
-                "responseId": child.get("responseId", ""),
-                "taskId": child.get("taskId", ""),
-                "handoffId": child.get("handoffId", ""),
-                "parentRuntime": parent_runtime_override or child.get("parentRuntime", ""),
-                "childRuntime": child.get("childRuntime", ""),
-                "runtimeRelation": runtime_relation,
-                "returnEventStatus": return_status,
-                "wakeStatus": wake_status,
-                "parentConsumeDuePolicy": child.get("parentConsumeDuePolicy", ""),
-                "notificationBridgeRef": child.get("notificationBridgeRef", ""),
-                "expectedConsumeAction": "parent_consume_pending",
-            }
-        )
-    status = "pending" if pending else "no_pending"
-    payload = {
-        "schemaVersion": "openaccp-return-notification.v1",
-        "artifactType": "return-notification",
-        "status": status,
-        "childLedgerPath": str(ledger_path),
-        "ledgerId": ledger.get("ledgerId", ""),
-        "laneId": ledger.get("laneId", ""),
-        "pendingConsumes": pending,
-        "dispatchAdvice": "resume parent consume if idle; otherwise queue until the next safe checkpoint",
-    }
-    return payload, errors
-
-
-def notify_return_command(args: argparse.Namespace) -> int:
-    ledger_path = Path(args.child_ledger)
-    ledger = load_json_file(ledger_path)
-    if ledger is None:
-        return 1
-    payload, errors = return_notification_payload(
-        ledger,
-        ledger_path,
-        prompt_id=args.prompt_id,
-        parent_runtime_override=args.parent_runtime,
-    )
-    if errors:
-        for error in errors:
-            print(error, file=sys.stderr)
-        return 1
-    print(json.dumps(payload, indent=2 if args.pretty else None, ensure_ascii=False))
-    return 0
-
-
 def init_command(args: argparse.Namespace) -> int:
     target = Path(args.target)
     files = starter_files(target)
@@ -442,12 +337,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     init_parser.add_argument("target", help="Target directory for starter artifacts.")
     init_parser.add_argument("--write", action="store_true", help="Create files. Without this flag, init is a dry run.")
     init_parser.set_defaults(func=init_command)
-    notify_parser = subparsers.add_parser("notify-return", help="Build a parent consume notification from an OpenACCP child ledger.")
-    notify_parser.add_argument("--child-ledger", required=True, help="Path to .openaccp/coordination/child-ledgers/<lane-id>.json.")
-    notify_parser.add_argument("--prompt-id", default="", help="Optional child Prompt ID filter.")
-    notify_parser.add_argument("--parent-runtime", default="", help="Optional parent runtime override for the notification payload.")
-    notify_parser.add_argument("--pretty", action="store_true", help="Pretty-print the notification JSON.")
-    notify_parser.set_defaults(func=notify_return_command)
     return parser.parse_args(argv)
 
 

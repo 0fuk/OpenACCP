@@ -29,8 +29,6 @@ Primary must not treat validator pass, worker claims, Frontier synthesis, or rev
 - Current source pack, PRD, spec, facts path, or uploaded materials:
 - Preferred language:
 - Product repo path:
-- Primary runtime identity:
-- Notification bridge policy:
 - Primary-inferred base branch:
 - Primary-inferred source roots:
 - Primary-inferred test entrypoints:
@@ -50,32 +48,30 @@ Every status-like reply must use `formal-report-openaccp` structure with stable 
 ## Startup Checks
 
 1. Read the current source pack, PRD, spec, facts path, or uploaded materials first.
-2. Detect or declare the Primary runtime before dispatching any Frontier. Record whether this Primary is running in `codex`, `claude-code`, `other`, or `unknown`; record detection evidence and the current thread/session locator when available.
-3. Inspect the working directory and product repo path before dispatching any Frontier.
-4. Create or refresh `.openaccp/coordination/runtime-boundary.json` before dispatching any Frontier. Use the product repo path as the product code entry point. If the user wrote `no repo yet`, keep product-write B2 closed and continue planning/readiness work. The runtime boundary must include `runtimeIdentity` and `notificationBridge`.
-5. Infer runtime fields before asking the user for more details:
+2. Inspect the working directory and product repo path before dispatching any Frontier.
+3. Create or refresh `.openaccp/coordination/runtime-boundary.json` before dispatching any Frontier. Use the product repo path as the product code entry point. If the user wrote `no repo yet`, keep product-write B2 closed and continue planning/readiness work.
+4. Infer runtime fields before asking the user for more details:
    - infer product repo path from the provided repo path, or from the working directory only when it is a Git repo or contains exactly one clear product repo;
    - infer base branch from `origin/HEAD`, current branch, configured upstream, CI hints, or protected/default branch clues;
    - infer source roots from repo layout, package metadata, project config, and common source directories;
    - infer test entrypoints from package scripts, `pyproject.toml`, test config, Makefile, CI workflows, and common test commands;
    - infer worktree policy conservatively from Git availability, repo state, filesystem safety, and owner rules.
-6. Ask the user only when repo path is missing, repo candidates are ambiguous, or inferred base branch, writable scope, test entrypoints, or worktree policy conflict or create product/security risk. Do not ask the user to supply base branch, writable scope, test entrypoints, or worktree policy as default setup fields.
-7. Record inference evidence, confidence, ambiguities, writable paths, read-only paths, forbidden paths, data risk, side-effect policy, and `b2DispatchGate`. Record the `runtimeBoundaryRef` in the current manifest and lane registry.
-8. Explain B0/B1/B2/B3 in the preferred language:
+5. Ask the user only when repo path is missing, repo candidates are ambiguous, or inferred base branch, writable scope, test entrypoints, or worktree policy conflict or create product/security risk. Do not ask the user to supply base branch, writable scope, test entrypoints, or worktree policy as default setup fields.
+6. Record inference evidence, confidence, ambiguities, writable paths, read-only paths, forbidden paths, data risk, side-effect policy, and `b2DispatchGate`. Record the `runtimeBoundaryRef` in the current manifest and lane registry.
+7. Explain B0/B1/B2/B3 in the preferred language:
    - B0 is discovery, source review, and risk scan.
    - B1 is source pack, CARD, task-card, verification, handoff, and owner-question packaging.
    - B2 is scoped lane execution through workers, reviewers, discovery, validation, and child handoff consume.
    - B3 is delegated final authority. Primary may act only on decisions listed in `delegatedFinalAuthority`; production launch, public publication, customer-visible release, and risk waiver stay with the human owner by default.
-9. Create or refresh current manifest, source status, invalid or deprecated source list, sequence registry, lane registry, decision registry, and CARD/task-card candidates.
-10. If repo readiness is missing or `no repo yet`, continue B0/B1 packaging and readiness only. Do not push unresolved global runtime questions into Frontier as immediate blockers. Any Frontier lane launched before product-write readiness must mark its lane `b2DispatchGate.mode` as `coordination_only` or `read_only_review`, not `product_write`.
-11. Create CARDs before Frontier dispatch. CARDs must be stable, numbered, specific enough to assign to lanes, and broad enough to cover the actual project domains named in the facts.
-12. For normal or medium/high-complexity product work, prefer 10-20 project-level CARDs. Each CARD may later expand into multiple concrete task cards. Use fewer only for genuinely small projects and record the reason.
-13. Scan the source facts for domain coverage before finalizing CARDs: product workflow, backend/API, data/storage, frontend/UI, desktop/mobile/native/Electron/Tauri surfaces, integrations, auth/security/privacy, migration, testing/QA, observability/CI, docs/release/ops. Create a CARD for a domain only when the facts mention or imply it; do not invent UI/Electron/mobile/compliance work for projects that do not have it. If the spec explicitly mentions UI, frontend, Electron, desktop shell, mobile, or another surface, CARD coverage for that surface is required.
-14. Group CARDs into 2-5 Frontier lanes based on complexity, risk, dependencies, and parallel safety. Default to at least two Frontier lanes when at least two safe independent CARD clusters exist.
-15. For every selected Frontier, declare its runtime as `codex`, `claude-code`, `other`, or `unknown`. Compare it with the Primary runtime and record `runtimeRelation` in lane registry as `same_runtime` or `cross_runtime`. A cross-runtime Frontier must carry `notificationBridgePolicy` with `busyPolicy: queue_until_safe_checkpoint` and a `bridgeRef` to `.openaccp/coordination/runtime-boundary.json#notificationBridge`.
-16. Write full Frontier prompt records only for selected lanes. Each Frontier prompt record must include the `openaccp-frontier-orchestration-contract.v1` JSON block.
-17. Validate each Frontier prompt record with the `frontier-contract` ruleset before direct dispatch or manual fallback.
-18. Write every selected short Frontier launcher to disk, then dispatch selected Frontier lanes directly when the runtime supports agent/thread spawn or one-click launch. If direct dispatch is unavailable, print each selected short Frontier launcher in its own fenced `prompt` block as manual fallback. File links to `.short.md` launchers are evidence only and must not replace manual fallback prompt blocks.
+8. Create or refresh current manifest, source status, invalid or deprecated source list, sequence registry, lane registry, decision registry, and CARD/task-card candidates.
+9. If repo readiness is missing or `no repo yet`, continue B0/B1 packaging and readiness only. Do not push unresolved global runtime questions into Frontier as immediate blockers. Any Frontier lane launched before product-write readiness must mark its lane `b2DispatchGate.mode` as `coordination_only` or `read_only_review`, not `product_write`.
+10. Create CARDs before Frontier dispatch. CARDs must be stable, numbered, specific enough to assign to lanes, and broad enough to cover the actual project domains named in the facts.
+11. For normal or medium/high-complexity product work, prefer 10-20 project-level CARDs. Each CARD may later expand into multiple concrete task cards. Use fewer only for genuinely small projects and record the reason.
+12. Scan the source facts for domain coverage before finalizing CARDs: product workflow, backend/API, data/storage, frontend/UI, desktop/mobile/native/Electron/Tauri surfaces, integrations, auth/security/privacy, migration, testing/QA, observability/CI, docs/release/ops. Create a CARD for a domain only when the facts mention or imply it; do not invent UI/Electron/mobile/compliance work for projects that do not have it. If the spec explicitly mentions UI, frontend, Electron, desktop shell, mobile, or another surface, CARD coverage for that surface is required.
+13. Group CARDs into 2-5 Frontier lanes based on complexity, risk, dependencies, and parallel safety. Default to at least two Frontier lanes when at least two safe independent CARD clusters exist.
+14. Write full Frontier prompt records only for selected lanes. Each Frontier prompt record must include the `openaccp-frontier-orchestration-contract.v1` JSON block.
+15. Validate each Frontier prompt record with the `frontier-contract` ruleset before direct dispatch or manual fallback.
+16. Write every selected short Frontier launcher to disk, then dispatch selected Frontier lanes directly when the runtime supports agent/thread spawn or one-click launch. If direct dispatch is unavailable, print each selected short Frontier launcher in its own fenced `prompt` block as manual fallback. File links to `.short.md` launchers are evidence only and must not replace manual fallback prompt blocks.
 
 ## Active Closure Rules
 
@@ -105,7 +101,6 @@ Each Frontier prompt record must include:
 - B2 lane-local authority,
 - forbidden B3 actions,
 - runtimeBoundaryRef,
-- parent runtime, Frontier runtime, runtimeRelation, and notificationBridgePolicy,
 - laneRegistryRef,
 - childLedgerRef,
 - frontierClosureRef,
@@ -116,7 +111,6 @@ Each Frontier prompt record must include:
 - subagent-first worker/reviewer/discovery dispatch rules,
 - a rule that human-managed child launchers are fallback only,
 - `dispatchChannel` policy: `agent_thread_spawn` or `one_click` is the default when available; `manual_paste` is fallback only,
-- return event protocol: returned evidence creates `parent_consume_pending`; cross-runtime returns call or queue `openaccp notify-return`; a child return alone is not final acceptance,
 - child ledger and child handoff consume expectations,
 - human next-step reporting expectations,
 - handoff path and validation expectations.
@@ -128,7 +122,6 @@ Return:
 - startup formal report,
 - current facts and gaps,
 - runtime boundary, current manifest, lane registry, source status registry, decision registry, and sequence registry status,
-- Primary runtime identity, selected Frontier runtimes, same-runtime or cross-runtime relation, and notification bridge policy,
 - CARD list, CARD coverage gaps, or CARD creation blocker,
 - one recommended Primary next action,
 - two to five Frontier Orchestrator lanes for normal or medium/high-complexity projects based on CARD and lane analysis, dispatched directly when available. One Frontier is allowed only for a clearly small project, a single safe independent lane, or an explicit user request, and the report must state that reason. If direct dispatch is unavailable, return manual fallback short launchers as copyable fenced `prompt` blocks.

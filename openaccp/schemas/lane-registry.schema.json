@@ -3,12 +3,11 @@
   "$id": "https://openaccp.dev/schemas/lane-registry.schema.json",
   "title": "OpenACCP Lane Registry",
   "type": "object",
-  "required": ["schemaVersion", "artifactType", "registryId", "primaryRuntime", "projectComplexity", "frontierDispatchMode", "frontierDispatchReason", "lanes"],
+  "required": ["schemaVersion", "artifactType", "registryId", "projectComplexity", "frontierDispatchMode", "frontierDispatchReason", "lanes"],
   "properties": {
     "schemaVersion": { "const": "openaccp-lane-registry.v1" },
     "artifactType": { "const": "lane-registry" },
     "registryId": { "type": "string", "minLength": 1 },
-    "primaryRuntime": { "enum": ["codex", "claude-code", "other", "unknown"] },
     "projectComplexity": { "enum": ["bootstrap", "small", "normal", "medium", "medium-high", "high", "unknown"] },
     "frontierDispatchMode": { "enum": ["pre_frontier", "single_frontier", "multi_frontier"] },
     "dispatchChannel": { "enum": ["agent_thread_spawn", "one_click", "manual_paste"] },
@@ -22,8 +21,6 @@
           "laneId",
           "objective",
           "role",
-          "runtime",
-          "runtimeRelation",
           "status",
           "currentPromptId",
           "authorityLevel",
@@ -38,8 +35,6 @@
           "laneId": { "type": "string", "minLength": 1 },
           "objective": { "type": "string", "minLength": 1 },
           "role": { "enum": ["primary", "frontier"] },
-          "runtime": { "enum": ["codex", "claude-code", "other", "unknown"] },
-          "runtimeRelation": { "enum": ["same_runtime", "cross_runtime", "unknown"] },
           "status": { "enum": ["prepared", "active", "open", "closed", "blocked_on_primary", "blocked_on_human", "cancelled"] },
           "currentPromptId": { "type": "string", "minLength": 1 },
           "authorityLevel": { "enum": ["B0", "B1", "B2", "B3"] },
@@ -47,18 +42,6 @@
           "runtimeBoundaryRef": { "type": "string", "minLength": 1 },
           "childLedgerRef": { "type": "string", "minLength": 1 },
           "latestConsumeRefs": { "type": "array", "items": { "type": "string" } },
-          "notificationBridgePolicy": {
-            "type": "object",
-            "required": ["state", "wakePolicy", "busyPolicy", "failurePolicy", "bridgeRef"],
-            "properties": {
-              "state": { "enum": ["not_required", "required", "active", "queued", "unavailable"] },
-              "wakePolicy": { "enum": ["same_runtime_native", "cross_runtime_bridge", "ledger_only", "manual_fallback"] },
-              "busyPolicy": { "enum": ["queue_until_safe_checkpoint", "immediate_if_idle", "not_applicable"] },
-              "failurePolicy": { "enum": ["record_parent_consume_pending", "record_pending_consume", "manual_fallback"] },
-              "bridgeRef": { "type": "string" }
-            },
-            "additionalProperties": true
-          },
           "b2DispatchGate": {
             "type": "object",
             "required": ["mode", "state", "reason"],

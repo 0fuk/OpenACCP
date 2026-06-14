@@ -78,31 +78,7 @@ Frontier prompt records should carry this machine-readable contract block, updat
     "requiredFields": ["base", "worktree", "branch", "allowedFiles", "verification", "handoffPath", "dataRisk", "resourceUse", "noDispatchReason"]
   },
   "childLedger": {
-    "requiredFields": [
-      "promptId",
-      "taskId",
-      "role",
-      "authority",
-      "effects",
-      "parentRuntime",
-      "childRuntime",
-      "runtimeRelation",
-      "returnEventStatus",
-      "wakeStatus",
-      "parentConsumeDuePolicy",
-      "subagentIdOrToolStatus",
-      "expectedHandoffPath",
-      "dispatchStatus",
-      "handoffStatus",
-      "consumeStatus",
-      "remainingRisk"
-    ]
-  },
-  "returnEventProtocol": {
-    "onChildReturned": "set returnEventStatus to parent_consume_pending until the parent orchestrator records consume_result_recorded, closed, or blocked",
-    "crossRuntimeWake": "call openaccp notify-return or record notificationBridge wakeStatus queued_for_parent when parent and child runtimes differ",
-    "busyParentPolicy": "queue_until_safe_checkpoint",
-    "acceptanceRule": "child_returned is evidence only, not final acceptance"
+    "requiredFields": ["promptId", "taskId", "role", "authority", "effects", "subagentIdOrToolStatus", "expectedHandoffPath", "dispatchStatus", "handoffStatus", "consumeStatus", "remainingRisk"]
   },
   "subagentFirst": {
     "enabled": true,
@@ -177,7 +153,7 @@ Default order:
 1. Continue simple B0/B1 orchestration directly in the current Frontier thread.
 2. When a bounded worker, reviewer, discovery, validation, or task-card-only task can reduce lane risk, dispatch it through available subagent or delegation tools from the current Frontier thread.
 3. Write full child prompt records to disk when useful for audit, reproducibility, or a tool-backed child handoff. The on-disk prompt record is evidence and control surface; it is not a reason to ask the human to open another thread.
-4. Maintain a child ledger with promptId, taskId, role, authority, effects, parentRuntime, childRuntime, runtimeRelation, returnEventStatus, wakeStatus, parentConsumeDuePolicy, subagent id or tool status, expected handoff path, dispatchStatus, handoffStatus, consumeStatus, and remaining risk. Add responseId when the child returns and handoffId when the handoff is present.
+4. Maintain a child ledger with promptId, taskId, role, authority, effects, subagent id or tool status, expected handoff path, dispatchStatus, handoffStatus, consumeStatus, and remaining risk. Add responseId when the child returns and handoffId when the handoff is present.
 5. Consume child handoffs before claiming lane progress, then reclassify the remaining gaps.
 
 Short downstream chat launchers are fallback only. Use them only when direct subagent dispatch is unavailable, unsafe in the current environment, explicitly requested by Primary or the human owner, or when the child must run in a separately user-managed session. When returning a fallback launcher, write it to disk, print it in chat as a fenced `prompt` block, label it `Fallback launcher`, state why direct dispatch was unavailable or unsafe, and include the exact recommended next step.
@@ -189,19 +165,6 @@ Do not return to Primary or the human merely because a child prompt package was 
 If Frontier dispatched a child subagent, Frontier must consume the child handoff before claiming lane progress. A child handoff being present is not enough.
 
 A bundle is complete only when every child dispatch is returned, failed, or cancelled and each present handoff has been consumed or explicitly rejected.
-
-## Return Event Protocol
-
-A child return is an event, not acceptance. When a child returns a handoff, reviewer result, or report:
-
-1. Update the existing child ledger before writing progress claims.
-2. If `handoffStatus` is `present` and `consumeStatus` is `not_consumed`, set `returnEventStatus` to `parent_consume_pending` or `parent_consuming`.
-3. Record `parentRuntime`, `childRuntime`, and `runtimeRelation`.
-4. If `runtimeRelation` is `cross_runtime`, record `notificationBridgeRef`, set `wakeStatus` to `queued_for_parent`, `wake_requested`, `delivered`, `unavailable`, or `failed`, and run or queue `openaccp notify-return` from the existing child-ledger path.
-5. If the parent orchestrator is busy, queue the notification until the next safe checkpoint. Keep the pending consume visible in the ledger.
-6. When the parent consumes or rejects the evidence, record `parentConsumeRef` and move `returnEventStatus` to `consume_result_recorded`, `closed`, or `blocked`.
-
-Do not ask the human to act as the event bus for returned child work. Human help is for authority decisions or unavailable runtime bridges, not routine returned-handoff delivery.
 
 ## Launcher Inputs
 

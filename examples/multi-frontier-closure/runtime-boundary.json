@@ -2,20 +2,6 @@
   "schemaVersion": "openaccp-runtime-boundary.v1",
   "artifactType": "runtime-boundary",
   "boundaryId": "RB-DEMO-001",
-  "runtimeIdentity": {
-    "primaryRuntime": "codex",
-    "primaryRuntimeConfidence": "declared",
-    "detectionEvidence": ["Fixture declares Codex as the Primary runtime."],
-    "currentThreadRef": "fixture-primary-thread"
-  },
-  "notificationBridge": {
-    "state": "available",
-    "supportedRuntimes": ["codex", "claude-code"],
-    "wakePolicy": "cross_runtime_bridge",
-    "busyPolicy": "queue_until_safe_checkpoint",
-    "failurePolicy": "record_parent_consume_pending",
-    "bridgeCommand": "openaccp notify-return"
-  },
   "workingDirectory": "examples/multi-frontier-closure",
   "productRepoStatus": "not_applicable",
   "productRepoPath": "",

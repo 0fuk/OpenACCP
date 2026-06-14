@@ -2,20 +2,6 @@
   "schemaVersion": "openaccp-runtime-boundary.v1",
   "artifactType": "runtime-boundary",
   "boundaryId": "RB-001",
-  "runtimeIdentity": {
-    "primaryRuntime": "unknown",
-    "primaryRuntimeConfidence": "unknown",
-    "detectionEvidence": ["Primary has not declared its runtime yet."],
-    "currentThreadRef": "unknown"
-  },
-  "notificationBridge": {
-    "state": "not_configured",
-    "supportedRuntimes": ["codex", "claude-code"],
-    "wakePolicy": "ledger_only",
-    "busyPolicy": "queue_until_safe_checkpoint",
-    "failurePolicy": "record_parent_consume_pending",
-    "bridgeCommand": "openaccp notify-return"
-  },
   "workingDirectory": "<working-directory>",
   "productRepoStatus": "missing",
   "productRepoPath": "",

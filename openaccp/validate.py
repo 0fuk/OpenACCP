@@ -254,8 +254,6 @@ REQUIRED_FIELDS: dict[str, list[str]] = {
         "schemaVersion",
         "artifactType",
         "boundaryId",
-        "runtimeIdentity",
-        "notificationBridge",
         "workingDirectory",
         "productRepoStatus",
         "productRepoPath",
@@ -279,7 +277,6 @@ REQUIRED_FIELDS: dict[str, list[str]] = {
         "schemaVersion",
         "artifactType",
         "registryId",
-        "primaryRuntime",
         "projectComplexity",
         "frontierDispatchMode",
         "frontierDispatchReason",
@@ -368,25 +365,6 @@ AUTHORITY_LEVELS = {"B0", "B1", "B2", "B3"}
 HANDOFF_AUTHORITY_LEVELS = {"B0", "B1", "B2"}
 RISK_LEVELS = {"low", "medium", "high"}
 ROLES = {"primary", "frontier", "worker", "reviewer", "discovery", "human-owner"}
-AGENT_RUNTIMES = {"codex", "claude-code", "other", "unknown"}
-RUNTIME_CONFIDENCE_LEVELS = {"detected", "declared", "unknown"}
-RUNTIME_RELATIONS = {"same_runtime", "cross_runtime", "unknown"}
-NOTIFICATION_BRIDGE_STATES = {"available", "unavailable", "not_configured", "not_applicable"}
-NOTIFICATION_WAKE_POLICIES = {"same_runtime_native", "cross_runtime_bridge", "ledger_only", "manual_fallback"}
-NOTIFICATION_BUSY_POLICIES = {"queue_until_safe_checkpoint", "immediate_if_idle", "not_applicable"}
-NOTIFICATION_FAILURE_POLICIES = {"record_parent_consume_pending", "record_pending_consume", "manual_fallback"}
-LANE_BRIDGE_STATES = {"not_required", "required", "active", "queued", "unavailable"}
-RETURN_EVENT_STATUSES = {
-    "not_returned",
-    "child_returned",
-    "parent_consume_pending",
-    "parent_consuming",
-    "consume_result_recorded",
-    "closed",
-    "blocked",
-}
-WAKE_STATUSES = {"not_required", "not_attempted", "queued_for_parent", "wake_requested", "delivered", "unavailable", "failed"}
-PARENT_CONSUME_DUE_POLICIES = {"not_applicable", "immediate_if_idle", "next_safe_checkpoint", "manual_resume_required"}
 ROLE_MAX_AUTHORITY = {
     "primary": "B3",
     "human-owner": "B3",
@@ -1642,14 +1620,6 @@ def validate_frontier_contract_text(text: str, report: Report) -> None:
         report.add("FRONTIER_CHILD_LEDGER", "blocking", "pass", "Frontier contract requires child ledger identifiers and lifecycle status.")
     else:
         report.add("FRONTIER_CHILD_LEDGER", "blocking", "fail", "Frontier contract must require a child ledger with promptId, taskId, dispatchStatus, and handoffStatus.")
-    if all(term in text for term in ["parentRuntime", "childRuntime", "runtimeRelation", "returnEventStatus", "wakeStatus"]):
-        report.add("FRONTIER_RETURN_EVENT_FIELDS", "blocking", "pass", "Frontier contract records runtime-aware return event fields.")
-    else:
-        report.add("FRONTIER_RETURN_EVENT_FIELDS", "blocking", "fail", "Frontier contract must require parentRuntime, childRuntime, runtimeRelation, returnEventStatus, and wakeStatus in returned child lifecycle records.")
-    if "parent_consume_pending" in text and ("notify-return" in text or "notificationBridge" in text):
-        report.add("FRONTIER_RETURN_EVENT_TRIGGER", "blocking", "pass", "Frontier contract records a parent consume trigger for returned evidence.")
-    else:
-        report.add("FRONTIER_RETURN_EVENT_TRIGGER", "blocking", "fail", "Frontier contract must create parent_consume_pending and use notificationBridge or openaccp notify-return for returned evidence.")
     if re.search(r"(?is)(?:every|all)\s+Frontier\s+repl(?:y|ies).{0,160}(?:end|finish).{0,160}(?:recommended\s+next\s+step|\u4e0b\u4e00\u6b65\u5efa\u8bae)", text) or re.search(
         r"(?is)(?:end|finish).{0,160}(?:every|all)\s+Frontier\s+repl(?:y|ies).{0,160}(?:recommended\s+next\s+step|\u4e0b\u4e00\u6b65\u5efa\u8bae)",
         text,
@@ -1707,7 +1677,6 @@ def validate_frontier_contract_block(text: str, report: Report) -> None:
         "coordinationRefs",
         "worktreeDecision",
         "childLedger",
-        "returnEventProtocol",
         "subagentFirst",
         "defaultMode",
         "continuationPolicy",
@@ -1772,22 +1741,7 @@ def validate_frontier_contract_block(text: str, report: Report) -> None:
         report.add("FRONTIER_CONTRACT_SUBAGENT_FIRST", "blocking", "fail", "Contract must set subagentFirst true or {enabled: true}.")
     child_ledger = contract.get("childLedger", {})
     ledger_fields = set(child_ledger.get("requiredFields", [])) if isinstance(child_ledger, dict) and isinstance(child_ledger.get("requiredFields"), list) else set()
-    ledger_required = {
-        "promptId",
-        "taskId",
-        "role",
-        "authority",
-        "effects",
-        "dispatchStatus",
-        "handoffStatus",
-        "consumeStatus",
-        "parentRuntime",
-        "childRuntime",
-        "runtimeRelation",
-        "returnEventStatus",
-        "wakeStatus",
-        "parentConsumeDuePolicy",
-    }
+    ledger_required = {"promptId", "taskId", "role", "authority", "effects", "dispatchStatus", "handoffStatus", "consumeStatus"}
     missing_ledger = sorted(ledger_required - ledger_fields)
     if missing_ledger:
         report.add("FRONTIER_CONTRACT_CHILD_LEDGER", "blocking", "fail", "childLedger missing fields: " + ", ".join(missing_ledger))
@@ -1803,17 +1757,6 @@ def validate_frontier_contract_block(text: str, report: Report) -> None:
             "blocking",
             "fail",
             "branchReturnGate must only allow return when remaining gaps are needs_final_authority or explicitly_out.",
-        )
-    return_event = contract.get("returnEventProtocol", {})
-    return_event_text = json.dumps(return_event, ensure_ascii=False)
-    if isinstance(return_event, dict) and "parent_consume_pending" in return_event_text and ("notificationBridge" in return_event_text or "notify-return" in return_event_text):
-        report.add("FRONTIER_CONTRACT_RETURN_EVENT_PROTOCOL", "blocking", "pass", "returnEventProtocol connects child return to parent consume pending.")
-    else:
-        report.add(
-            "FRONTIER_CONTRACT_RETURN_EVENT_PROTOCOL",
-            "blocking",
-            "fail",
-            "returnEventProtocol must mark returned evidence as parent_consume_pending and trigger notificationBridge/openaccp notify-return when cross-runtime.",
         )
 
 
@@ -2403,81 +2346,11 @@ def validate_machine_summary(data: dict[str, Any], report: Report) -> None:
             report.add("LOCATOR_TARGET", "blocking", "fail", "locator must include id or path.", loc)
 
 
-def validate_runtime_identity(data: dict[str, Any], report: Report) -> None:
-    identity = data.get("runtimeIdentity")
-    if not isinstance(identity, dict):
-        report.add("RUNTIME_IDENTITY_OBJECT", "blocking", "fail", "runtimeIdentity must declare the Primary runtime.")
-        return
-    report.add("RUNTIME_IDENTITY_OBJECT", "blocking", "pass", "runtimeIdentity is present.")
-    primary_runtime = identity.get("primaryRuntime")
-    confidence = identity.get("primaryRuntimeConfidence")
-    evidence = identity.get("detectionEvidence")
-    thread_ref = str(identity.get("currentThreadRef", "")).strip()
-    if primary_runtime not in AGENT_RUNTIMES:
-        report.add("PRIMARY_RUNTIME", "blocking", "fail", "runtimeIdentity.primaryRuntime must be codex, claude-code, other, or unknown.")
-    else:
-        report.add("PRIMARY_RUNTIME", "blocking", "pass", "Primary runtime is declared.")
-    if confidence not in RUNTIME_CONFIDENCE_LEVELS:
-        report.add("PRIMARY_RUNTIME_CONFIDENCE", "blocking", "fail", "primaryRuntimeConfidence must be detected, declared, or unknown.")
-    else:
-        report.add("PRIMARY_RUNTIME_CONFIDENCE", "blocking", "pass", "Primary runtime confidence is declared.")
-    if not isinstance(evidence, list) or not any(str(item).strip() for item in evidence):
-        report.add("PRIMARY_RUNTIME_EVIDENCE", "blocking", "fail", "detectionEvidence must include at least one evidence note.")
-    else:
-        report.add("PRIMARY_RUNTIME_EVIDENCE", "blocking", "pass", "Primary runtime evidence is present.")
-    if not thread_ref:
-        report.add("PRIMARY_RUNTIME_THREAD_REF", "blocking", "fail", "currentThreadRef must identify the current Primary session or say unknown.")
-    else:
-        report.add("PRIMARY_RUNTIME_THREAD_REF", "blocking", "pass", "Primary runtime thread reference is present.")
-
-
-def validate_notification_bridge(data: dict[str, Any], report: Report) -> None:
-    bridge = data.get("notificationBridge")
-    if not isinstance(bridge, dict):
-        report.add("NOTIFICATION_BRIDGE_OBJECT", "blocking", "fail", "notificationBridge must describe return-event wakeup behavior.")
-        return
-    report.add("NOTIFICATION_BRIDGE_OBJECT", "blocking", "pass", "notificationBridge is present.")
-    state = bridge.get("state")
-    wake_policy = bridge.get("wakePolicy")
-    busy_policy = bridge.get("busyPolicy")
-    failure_policy = bridge.get("failurePolicy")
-    supported = bridge.get("supportedRuntimes")
-    command = str(bridge.get("bridgeCommand", "")).strip()
-    if state not in NOTIFICATION_BRIDGE_STATES:
-        report.add("NOTIFICATION_BRIDGE_STATE", "blocking", "fail", "notificationBridge.state is invalid.")
-    else:
-        report.add("NOTIFICATION_BRIDGE_STATE", "blocking", "pass", "notificationBridge.state is valid.")
-    if wake_policy not in NOTIFICATION_WAKE_POLICIES:
-        report.add("NOTIFICATION_BRIDGE_WAKE_POLICY", "blocking", "fail", "notificationBridge.wakePolicy is invalid.")
-    else:
-        report.add("NOTIFICATION_BRIDGE_WAKE_POLICY", "blocking", "pass", "notificationBridge.wakePolicy is valid.")
-    if busy_policy not in NOTIFICATION_BUSY_POLICIES:
-        report.add("NOTIFICATION_BRIDGE_BUSY_POLICY", "blocking", "fail", "notificationBridge.busyPolicy is invalid.")
-    else:
-        report.add("NOTIFICATION_BRIDGE_BUSY_POLICY", "blocking", "pass", "notificationBridge.busyPolicy is valid.")
-    if failure_policy not in NOTIFICATION_FAILURE_POLICIES:
-        report.add("NOTIFICATION_BRIDGE_FAILURE_POLICY", "blocking", "fail", "notificationBridge.failurePolicy is invalid.")
-    else:
-        report.add("NOTIFICATION_BRIDGE_FAILURE_POLICY", "blocking", "pass", "notificationBridge.failurePolicy is valid.")
-    if not isinstance(supported, list) or any(runtime not in AGENT_RUNTIMES for runtime in supported):
-        report.add("NOTIFICATION_BRIDGE_SUPPORTED_RUNTIMES", "blocking", "fail", "supportedRuntimes must list known runtime values.")
-    elif state == "available" and len(set(supported)) < 2:
-        report.add("NOTIFICATION_BRIDGE_SUPPORTED_RUNTIMES", "blocking", "fail", "available cross-runtime bridge must support at least two runtimes.")
-    else:
-        report.add("NOTIFICATION_BRIDGE_SUPPORTED_RUNTIMES", "blocking", "pass", "supportedRuntimes are valid.")
-    if state == "available" and not command:
-        report.add("NOTIFICATION_BRIDGE_COMMAND", "blocking", "fail", "available notificationBridge requires bridgeCommand.")
-    else:
-        report.add("NOTIFICATION_BRIDGE_COMMAND", "blocking", "pass", "notificationBridge command policy is valid.")
-
-
 def validate_runtime_boundary(data: dict[str, Any], report: Report) -> None:
     if data.get("artifactType") != "runtime-boundary":
         report.add("ARTIFACT_TYPE", "blocking", "fail", "artifactType must be runtime-boundary.")
     else:
         report.add("ARTIFACT_TYPE", "blocking", "pass", "artifactType is runtime-boundary.")
-    validate_runtime_identity(data, report)
-    validate_notification_bridge(data, report)
     product_statuses = {"found", "provided", "missing", "not_applicable"}
     if data.get("productRepoStatus") not in product_statuses:
         report.add("PRODUCT_REPO_STATUS", "blocking", "fail", "productRepoStatus must be found, provided, missing, or not_applicable.")
@@ -2569,11 +2442,6 @@ def validate_lane_registry(data: dict[str, Any], report: Report) -> None:
         report.add("LANES_NON_EMPTY", "blocking", "fail", "lanes must be a non-empty array.")
         return
     report.add("LANES_NON_EMPTY", "blocking", "pass", "lanes is non-empty.")
-    primary_runtime = data.get("primaryRuntime")
-    if primary_runtime not in AGENT_RUNTIMES:
-        report.add("LANE_PRIMARY_RUNTIME", "blocking", "fail", "primaryRuntime must be codex, claude-code, other, or unknown.")
-    else:
-        report.add("LANE_PRIMARY_RUNTIME", "blocking", "pass", "primaryRuntime is declared.")
     validate_lane_registry_dispatch_policy(data, lanes, report)
     statuses = {"prepared", "active", "open", "closed", "blocked_on_primary", "blocked_on_human", "cancelled"}
     for idx, lane in enumerate(lanes):
@@ -2585,8 +2453,6 @@ def validate_lane_registry(data: dict[str, Any], report: Report) -> None:
             "laneId",
             "objective",
             "role",
-            "runtime",
-            "runtimeRelation",
             "status",
             "currentPromptId",
             "authorityLevel",
@@ -2604,7 +2470,6 @@ def validate_lane_registry(data: dict[str, Any], report: Report) -> None:
             report.add("LANE_REQUIRED_FIELDS", "blocking", "pass", "lane has required fields.", loc)
         if lane.get("role") not in {"primary", "frontier"}:
             report.add("LANE_ROLE", "blocking", "fail", "lane role must be primary or frontier.", loc)
-        validate_lane_runtime_policy(lane, str(primary_runtime), report, loc)
         if lane.get("authorityLevel") not in AUTHORITY_LEVELS:
             report.add("LANE_AUTHORITY", "blocking", "fail", "lane authorityLevel must be B0, B1, B2, or B3.", loc)
         validate_role_authority(lane.get("role"), lane.get("authorityLevel"), report, "LANE_ROLE_AUTHORITY", loc)
@@ -2640,68 +2505,6 @@ def validate_lane_registry(data: dict[str, Any], report: Report) -> None:
         if not isinstance(return_gate.get("latestConsumeRefs"), list):
             report.add("LANE_RETURN_GATE_CONSUMES", "blocking", "fail", "returnGateStatus.latestConsumeRefs must be an array.", loc)
         validate_lane_return_gate_consistency(lane, return_gate, report, loc)
-
-
-def validate_lane_runtime_policy(lane: dict[str, Any], primary_runtime: str, report: Report, loc: str) -> None:
-    runtime = lane.get("runtime")
-    relation = lane.get("runtimeRelation")
-    role = lane.get("role")
-    if runtime not in AGENT_RUNTIMES:
-        report.add("LANE_RUNTIME", "blocking", "fail", "lane.runtime must be codex, claude-code, other, or unknown.", loc)
-        return
-    report.add("LANE_RUNTIME", "blocking", "pass", "lane.runtime is valid.", loc)
-    if relation not in RUNTIME_RELATIONS:
-        report.add("LANE_RUNTIME_RELATION", "blocking", "fail", "lane.runtimeRelation must be same_runtime, cross_runtime, or unknown.", loc)
-        return
-    if primary_runtime not in AGENT_RUNTIMES:
-        report.add("LANE_RUNTIME_RELATION", "blocking", "fail", "lane runtime relation cannot be checked without valid primaryRuntime.", loc)
-        return
-    expected_relation = "unknown"
-    if runtime != "unknown" and primary_runtime != "unknown":
-        expected_relation = "same_runtime" if runtime == primary_runtime else "cross_runtime"
-    if role == "primary":
-        if runtime != primary_runtime:
-            report.add("LANE_PRIMARY_RUNTIME_MATCH", "blocking", "fail", "Primary lane runtime must match lane-registry primaryRuntime.", loc)
-        elif relation != "same_runtime":
-            report.add("LANE_PRIMARY_RUNTIME_MATCH", "blocking", "fail", "Primary lane runtimeRelation must be same_runtime.", loc)
-        else:
-            report.add("LANE_PRIMARY_RUNTIME_MATCH", "blocking", "pass", "Primary lane runtime matches primaryRuntime.", loc)
-        return
-    if expected_relation != "unknown" and relation != expected_relation:
-        report.add("LANE_RUNTIME_RELATION", "blocking", "fail", "lane.runtimeRelation does not match primaryRuntime and lane.runtime.", loc)
-        return
-    report.add("LANE_RUNTIME_RELATION", "blocking", "pass", "lane.runtimeRelation is consistent.", loc)
-    policy = lane.get("notificationBridgePolicy")
-    if relation == "cross_runtime":
-        if not isinstance(policy, dict):
-            report.add("LANE_CROSS_RUNTIME_BRIDGE_POLICY", "blocking", "fail", "cross-runtime Frontier lanes require notificationBridgePolicy.", loc)
-            return
-        report.add("LANE_CROSS_RUNTIME_BRIDGE_POLICY", "blocking", "pass", "cross-runtime Frontier has notificationBridgePolicy.", loc)
-        required = ["state", "wakePolicy", "busyPolicy", "failurePolicy", "bridgeRef"]
-        missing = [field for field in required if field not in policy or not str(policy.get(field, "")).strip()]
-        if missing:
-            report.add("LANE_BRIDGE_POLICY_FIELDS", "blocking", "fail", "notificationBridgePolicy missing fields: " + ", ".join(missing), loc)
-        else:
-            report.add("LANE_BRIDGE_POLICY_FIELDS", "blocking", "pass", "notificationBridgePolicy has required fields.", loc)
-        if policy.get("state") not in LANE_BRIDGE_STATES or policy.get("state") == "not_required":
-            report.add("LANE_BRIDGE_POLICY_STATE", "blocking", "fail", "cross-runtime notificationBridgePolicy.state must require or activate a bridge.", loc)
-        else:
-            report.add("LANE_BRIDGE_POLICY_STATE", "blocking", "pass", "cross-runtime notificationBridgePolicy.state is valid.", loc)
-        if policy.get("wakePolicy") == "same_runtime_native" or policy.get("wakePolicy") not in NOTIFICATION_WAKE_POLICIES:
-            report.add("LANE_BRIDGE_WAKE_POLICY", "blocking", "fail", "cross-runtime lanes cannot use same_runtime_native wakePolicy.", loc)
-        else:
-            report.add("LANE_BRIDGE_WAKE_POLICY", "blocking", "pass", "cross-runtime wakePolicy is valid.", loc)
-        if policy.get("busyPolicy") != "queue_until_safe_checkpoint":
-            report.add("LANE_BRIDGE_BUSY_POLICY", "blocking", "fail", "cross-runtime returns must queue while the parent is busy.", loc)
-        else:
-            report.add("LANE_BRIDGE_BUSY_POLICY", "blocking", "pass", "cross-runtime busyPolicy queues safely.", loc)
-    elif isinstance(policy, dict):
-        if policy.get("state") not in LANE_BRIDGE_STATES:
-            report.add("LANE_BRIDGE_POLICY_STATE", "blocking", "fail", "notificationBridgePolicy.state is invalid.", loc)
-        elif policy.get("state") == "required" and relation == "same_runtime":
-            report.add("LANE_BRIDGE_POLICY_STATE", "blocking", "fail", "same-runtime lanes should not require a cross-runtime bridge.", loc)
-        else:
-            report.add("LANE_BRIDGE_POLICY_STATE", "blocking", "pass", "same-runtime bridge policy is compatible.", loc)
 
 
 def validate_lane_registry_dispatch_policy(data: dict[str, Any], lanes: list[Any], report: Report) -> None:
@@ -2874,81 +2677,6 @@ def validate_child_ledger(data: dict[str, Any], report: Report) -> None:
             report.add("CHILD_CONSUME_LIFECYCLE", "blocking", "fail", "present handoffs must be consumed, rejected, or marked not_consumed.", loc)
         if child.get("fallbackLauncherReason") and child.get("dispatchStatus") not in {"not_started", "startup_provided"}:
             report.add("CHILD_FALLBACK_REASON", "blocking", "fail", "fallbackLauncherReason should only be used before direct dispatch succeeds.", loc)
-        validate_child_return_event_policy(child, report, loc)
-
-
-def validate_child_return_event_policy(child: dict[str, Any], report: Report, loc: str) -> None:
-    dispatch_status = child.get("dispatchStatus")
-    handoff_status = child.get("handoffStatus")
-    consume_status = child.get("consumeStatus")
-    requires_return_protocol = dispatch_status == "returned" or handoff_status == "present" or consume_status in {"consumed", "rejected"}
-    if not requires_return_protocol:
-        return
-    required = ["parentRuntime", "childRuntime", "runtimeRelation", "returnEventStatus", "wakeStatus", "parentConsumeDuePolicy"]
-    missing = [field for field in required if field not in child or not str(child.get(field, "")).strip()]
-    if missing:
-        report.add("CHILD_RETURN_EVENT_FIELDS", "blocking", "fail", "returned child lifecycle missing fields: " + ", ".join(missing), loc)
-        return
-    report.add("CHILD_RETURN_EVENT_FIELDS", "blocking", "pass", "returned child lifecycle fields are present.", loc)
-    parent_runtime = child.get("parentRuntime")
-    child_runtime = child.get("childRuntime")
-    relation = child.get("runtimeRelation")
-    return_status = child.get("returnEventStatus")
-    wake_status = child.get("wakeStatus")
-    due_policy = child.get("parentConsumeDuePolicy")
-    if parent_runtime not in AGENT_RUNTIMES or child_runtime not in AGENT_RUNTIMES:
-        report.add("CHILD_RUNTIME_VALUES", "blocking", "fail", "parentRuntime and childRuntime must be known runtime values.", loc)
-        return
-    report.add("CHILD_RUNTIME_VALUES", "blocking", "pass", "parentRuntime and childRuntime are valid.", loc)
-    if relation not in RUNTIME_RELATIONS:
-        report.add("CHILD_RUNTIME_RELATION", "blocking", "fail", "runtimeRelation is invalid.", loc)
-        return
-    expected_relation = "unknown"
-    if parent_runtime != "unknown" and child_runtime != "unknown":
-        expected_relation = "same_runtime" if parent_runtime == child_runtime else "cross_runtime"
-    if expected_relation != "unknown" and relation != expected_relation:
-        report.add("CHILD_RUNTIME_RELATION", "blocking", "fail", "runtimeRelation does not match parentRuntime and childRuntime.", loc)
-    else:
-        report.add("CHILD_RUNTIME_RELATION", "blocking", "pass", "runtimeRelation is consistent.", loc)
-    if return_status not in RETURN_EVENT_STATUSES:
-        report.add("CHILD_RETURN_EVENT_STATUS", "blocking", "fail", "returnEventStatus is invalid.", loc)
-    else:
-        report.add("CHILD_RETURN_EVENT_STATUS", "blocking", "pass", "returnEventStatus is valid.", loc)
-    if wake_status not in WAKE_STATUSES:
-        report.add("CHILD_WAKE_STATUS", "blocking", "fail", "wakeStatus is invalid.", loc)
-    else:
-        report.add("CHILD_WAKE_STATUS", "blocking", "pass", "wakeStatus is valid.", loc)
-    if due_policy not in PARENT_CONSUME_DUE_POLICIES:
-        report.add("CHILD_PARENT_CONSUME_DUE_POLICY", "blocking", "fail", "parentConsumeDuePolicy is invalid.", loc)
-    else:
-        report.add("CHILD_PARENT_CONSUME_DUE_POLICY", "blocking", "pass", "parentConsumeDuePolicy is valid.", loc)
-    if handoff_status == "present" and consume_status == "not_consumed":
-        if return_status not in {"parent_consume_pending", "parent_consuming"}:
-            report.add("CHILD_PENDING_CONSUME_STATE", "blocking", "fail", "present unconsumed handoffs must be marked parent_consume_pending or parent_consuming.", loc)
-        else:
-            report.add("CHILD_PENDING_CONSUME_STATE", "blocking", "pass", "present unconsumed handoff is visible as pending consume.", loc)
-        if due_policy == "not_applicable":
-            report.add("CHILD_PENDING_CONSUME_DUE", "blocking", "fail", "pending consume entries require a real parentConsumeDuePolicy.", loc)
-        else:
-            report.add("CHILD_PENDING_CONSUME_DUE", "blocking", "pass", "pending consume due policy is recorded.", loc)
-        if relation == "cross_runtime":
-            if not str(child.get("notificationBridgeRef", "")).strip():
-                report.add("CHILD_CROSS_RUNTIME_BRIDGE_REF", "blocking", "fail", "cross-runtime returned children require notificationBridgeRef.", loc)
-            else:
-                report.add("CHILD_CROSS_RUNTIME_BRIDGE_REF", "blocking", "pass", "cross-runtime returned child names the bridge policy.", loc)
-            if wake_status in {"not_required", "not_attempted"}:
-                report.add("CHILD_CROSS_RUNTIME_WAKE", "blocking", "fail", "cross-runtime returned children must queue, request, deliver, or record bridge failure.", loc)
-            else:
-                report.add("CHILD_CROSS_RUNTIME_WAKE", "blocking", "pass", "cross-runtime returned child has a wake/queue state.", loc)
-    if consume_status in {"consumed", "rejected"}:
-        if not str(child.get("parentConsumeRef", "")).strip():
-            report.add("CHILD_PARENT_CONSUME_REF", "blocking", "fail", "consumed or rejected child handoffs require parentConsumeRef.", loc)
-        else:
-            report.add("CHILD_PARENT_CONSUME_REF", "blocking", "pass", "parentConsumeRef is present.", loc)
-        if return_status not in {"consume_result_recorded", "closed", "blocked"}:
-            report.add("CHILD_CONSUME_RESULT_STATE", "blocking", "fail", "consumed or rejected child handoffs require consume_result_recorded, closed, or blocked returnEventStatus.", loc)
-        else:
-            report.add("CHILD_CONSUME_RESULT_STATE", "blocking", "pass", "consume result state is recorded.", loc)
 
 
 def validate_source_status_registry(data: dict[str, Any], report: Report) -> None:
