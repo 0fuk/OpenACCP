@@ -18,6 +18,7 @@
 - Formal reports now require `Response ID`, `Response log path`, role-aware rows, numeric progress, and evidence details.
 - Authority charters now include data risk limits, resource-use limits, allowed inputs/outputs, forbidden side effects, and stop conditions.
 - Current manifests and sequence registries now track active lanes, superseded or cancelled prompts, consume records, and latest consume refs.
+- Coordination readiness now uses `execution-boundary` and `executionBoundaryRef` across schemas, templates, examples, validator rules, and startup docs.
 - Startup and Frontier launcher instructions now use on-disk launcher files as the audit source, direct agent/thread dispatch as the default when available, and copyable chat `prompt` blocks as manual fallback. File links or `Get-Content` commands are rejected as manual fallback substitutes.
 - Launcher-output validation now requires explicit direct-dispatch success evidence. Bare mentions such as a failed `agent_thread_spawn` attempt no longer bypass manual fallback launcher checks.
 - README now uses a human-readable onboarding flow with concrete user personas, manual Primary/Frontier startup guidance, skill descriptions, artifact communication, B0/B1/B2/B3 explanations, and core OpenACCP technology summaries.

@@ -10,7 +10,7 @@
   "deprecatedSourceRefs": [],
   "sequenceRegistryRef": "sequence-registry.json",
   "laneRegistryRef": "lane-registry.json",
-  "runtimeBoundaryRef": "runtime-boundary.json",
+  "executionBoundaryRef": "execution-boundary.json",
   "sourceStatusRegistryRef": "source-status-registry.json",
   "cardRegistryRef": "card-registry.md",
   "activeLanes": [

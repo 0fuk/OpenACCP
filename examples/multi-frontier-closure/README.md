@@ -6,7 +6,7 @@ Validate:
 
 ```bash
 python tools/openaccp_validate.py --artifact examples/multi-frontier-closure/source-pack.json --ruleset source-pack --strict
-python tools/openaccp_validate.py --artifact examples/multi-frontier-closure/runtime-boundary.json --ruleset runtime-boundary --strict
+python tools/openaccp_validate.py --artifact examples/multi-frontier-closure/execution-boundary.json --ruleset execution-boundary --strict
 python tools/openaccp_validate.py --artifact examples/multi-frontier-closure/current-manifest.json --ruleset current-manifest --strict
 python tools/openaccp_validate.py --artifact examples/multi-frontier-closure/sequence-registry.json --ruleset sequence-registry --strict
 python tools/openaccp_validate.py --artifact examples/multi-frontier-closure/lane-registry.json --ruleset lane-registry --strict

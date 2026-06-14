@@ -68,7 +68,7 @@ Frontier prompt records should carry this machine-readable contract block, updat
     "rule": "Return to Primary only after every visible remaining gap is needs_final_authority or explicitly_out and a Primary-ready packet exists. Stage evidence uses a lane-progress packet and does not require Primary consume by default."
   },
   "coordinationRefs": {
-    "runtimeBoundaryRef": ".openaccp/coordination/runtime-boundary.json",
+    "executionBoundaryRef": ".openaccp/coordination/execution-boundary.json",
     "laneRegistryRef": ".openaccp/coordination/lane-registry.json",
     "childLedgerRef": ".openaccp/coordination/child-ledgers/<lane-id>.json",
     "frontierClosureRef": ".openaccp/coordination/frontier-closures/<lane-id>.json"
@@ -111,7 +111,7 @@ Do not return to Primary merely because a provisional packet, source baseline, t
 
 Use `lane-progress packet` or `frontier-progress packet` for intermediate evidence. These packets are for lane continuity and child consume inside the Frontier. They do not ask Primary to consume. A `Primary-ready packet` is valid only when `branchReturnGate` proves the Frontier has no remaining B0/B1/B2-safe work.
 
-If `runtimeBoundaryRef` says product-write B2 is not ready, treat that as a boundary for implementation workers only. Continue B0/B1/readiness work inside the lane: task-card refinement, verification matrix, owner-question matrix, repo-readiness checklist, worker prompt package, risk review, reviewer dispatch, discovery dispatch, and child handoff consume. Ask Primary only when the runtime boundary explicitly records an ambiguity that affects this lane and no lane-local B0/B1/B2 action can reduce it.
+If `executionBoundaryRef` says product-write B2 is not ready, treat that as a boundary for implementation workers only. Continue B0/B1/readiness work inside the lane: task-card refinement, verification matrix, owner-question matrix, repo-readiness checklist, worker prompt package, risk review, reviewer dispatch, discovery dispatch, and child handoff consume. Ask Primary only when the execution boundary explicitly records an ambiguity that affects this lane and no lane-local B0/B1/B2 action can reduce it.
 
 `blocked on Primary` is valid only when `branchReturnGate` is satisfied, the Primary-ready packet exists, and every visible remaining gap is either `needs_final_authority` or `explicitly_out`. Otherwise, the next step is a Frontier-owned action: discover, package, dispatch, review, consume, reclassify, or apply a conservative default inside the lane authority.
 

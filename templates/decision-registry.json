@@ -8,7 +8,7 @@
       "type": "owner-question",
       "status": "open",
       "question": "What product repo path should Primary inspect? If there is no product repo yet, answer no repo yet. Primary will infer base branch, writable scope, test entrypoints, and worktree policy from the repo when available.",
-      "basisRefs": [".openaccp/coordination/runtime-boundary.json"],
+      "basisRefs": [".openaccp/coordination/execution-boundary.json"],
       "blocks": ["B2 implementation dispatch"],
       "safeDefault": "Continue B0/B1 packaging and discovery only.",
       "authorityRequired": "B3"

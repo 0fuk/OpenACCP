@@ -1,6 +1,6 @@
 {
-  "schemaVersion": "openaccp-runtime-boundary.v1",
-  "artifactType": "runtime-boundary",
+  "schemaVersion": "openaccp-execution-boundary.v1",
+  "artifactType": "execution-boundary",
   "boundaryId": "RB-001",
   "workingDirectory": "<working-directory>",
   "productRepoStatus": "missing",

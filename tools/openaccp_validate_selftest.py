@@ -244,10 +244,10 @@ def valid_authority_charter() -> dict:
     }
 
 
-def valid_runtime_boundary(tmp: Path) -> dict:
+def valid_execution_boundary(tmp: Path) -> dict:
     return {
-        "schemaVersion": "openaccp-runtime-boundary.v1",
-        "artifactType": "runtime-boundary",
+        "schemaVersion": "openaccp-execution-boundary.v1",
+        "artifactType": "execution-boundary",
         "boundaryId": "RB-001",
         "workingDirectory": str(tmp / "work"),
         "productRepoStatus": "found",
@@ -293,7 +293,7 @@ def valid_lane_registry() -> dict:
                 "currentPromptId": "PROMPT-001",
                 "authorityLevel": "B3",
                 "assignedCardIds": ["CARD-001"],
-                "runtimeBoundaryRef": "runtime-boundary.json",
+                "executionBoundaryRef": "execution-boundary.json",
                 "childLedgerRef": "child-ledger.json",
                 "latestConsumeRefs": ["CONSUME-001"],
                 "b2DispatchGate": {
@@ -378,7 +378,7 @@ def valid_decision_registry() -> dict:
                 "type": "owner-question",
                 "status": "open",
                 "question": "Which repo path should Primary inspect if the provided repo path is ambiguous?",
-                "basisRefs": ["runtime-boundary.json"],
+                "basisRefs": ["execution-boundary.json"],
                 "blocks": ["B2 implementation dispatch"],
                 "safeDefault": "Do B0/B1 packaging only.",
                 "authorityRequired": "B3",
@@ -433,7 +433,7 @@ def valid_frontier_progress_closure() -> dict:
     closure["branchState"] = "open"
     closure["gapDecisionMatrix"] = [
         {
-            "gap": "runtime product write is not ready",
+            "gap": "execution product write is not ready",
             "decision": "prepare_package",
             "nextSafeAction": "Frontier continues B1 readiness packaging.",
         }
@@ -455,7 +455,7 @@ def valid_frontier_progress_closure() -> dict:
     closure["worktreeDecision"]["base"] = "unresolved"
     closure["worktreeDecision"]["worktree"] = "not-created"
     closure["worktreeDecision"]["branch"] = "not-created"
-    closure["worktreeDecision"]["noDispatchReason"] = "Product-write runtime boundary is not ready; Frontier continues B0/B1 readiness work."
+    closure["worktreeDecision"]["noDispatchReason"] = "Product-write execution boundary is not ready; Frontier continues B0/B1 readiness work."
     closure["humanNextStep"] = "No human action is needed; Frontier will continue lane-local B0/B1/B2 readiness work."
     return closure
 
@@ -463,7 +463,7 @@ def valid_frontier_progress_closure() -> dict:
 def write_coordination_fixtures(tmp: Path, source_path: Path) -> dict[str, Path]:
     files = {
         "sequence": tmp / "sequence-registry.json",
-        "runtime": tmp / "runtime-boundary.json",
+        "execution": tmp / "execution-boundary.json",
         "lanes": tmp / "lane-registry.json",
         "source_status": tmp / "source-status-registry.json",
         "cards": tmp / "cards.md",
@@ -474,7 +474,7 @@ def write_coordination_fixtures(tmp: Path, source_path: Path) -> dict[str, Path]
         "ready_packet": tmp / "primary-ready-packet.md",
     }
     write_json(files["sequence"], valid_sequence_registry())
-    write_json(files["runtime"], valid_runtime_boundary(tmp))
+    write_json(files["execution"], valid_execution_boundary(tmp))
     write_json(files["lanes"], valid_lane_registry())
     write_json(files["source_status"], valid_source_status_registry())
     write_json(files["child"], valid_child_ledger())
@@ -496,7 +496,7 @@ def write_coordination_fixtures(tmp: Path, source_path: Path) -> dict[str, Path]
             "deprecatedSourceRefs": ["DEP-001"],
             "sequenceRegistryRef": "sequence-registry.json",
             "laneRegistryRef": "lane-registry.json",
-            "runtimeBoundaryRef": "runtime-boundary.json",
+            "executionBoundaryRef": "execution-boundary.json",
             "sourceStatusRegistryRef": "source-status-registry.json",
             "cardRegistryRef": "cards.md",
             "activeLanes": [{"laneId": "primary", "role": "primary", "status": "active", "currentPromptId": "PROMPT-001", "authorityLevel": "B3"}],
@@ -654,7 +654,7 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     bom_sequence_path = tmp / "bom-sequence-registry.json"
     bom_sequence_path.write_bytes(b"\xef\xbb\xbf" + coordination["sequence"].read_bytes())
     assert_exit("sequence registry accepts UTF-8 BOM", run(["--artifact", str(bom_sequence_path), "--ruleset", "sequence-registry", "--strict"]), 0)
-    assert_exit("valid runtime boundary", run(["--artifact", str(coordination["runtime"]), "--ruleset", "runtime-boundary", "--strict"]), 0)
+    assert_exit("valid execution boundary", run(["--artifact", str(coordination["execution"]), "--ruleset", "execution-boundary", "--strict"]), 0)
     assert_exit("valid lane registry", run(["--artifact", str(coordination["lanes"]), "--ruleset", "lane-registry", "--strict"]), 0)
     assert_exit("valid child ledger", run(["--artifact", str(coordination["child"]), "--ruleset", "child-ledger", "--strict"]), 0)
     assert_exit("valid source status registry", run(["--artifact", str(coordination["source_status"]), "--ruleset", "source-status-registry", "--strict"]), 0)
@@ -740,32 +740,32 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     write_json(bad_single_frontier_path, bad_single_frontier)
     assert_exit("lane registry rejects normal project single Frontier without exception", run(["--artifact", str(bad_single_frontier_path), "--ruleset", "lane-registry", "--strict"]), 1)
 
-    bad_runtime = valid_runtime_boundary(tmp)
-    bad_runtime["productRepoStatus"] = "found"
-    bad_runtime["productRepoPath"] = ""
-    bad_runtime_path = tmp / "bad-runtime-boundary.json"
-    write_json(bad_runtime_path, bad_runtime)
-    assert_exit("runtime boundary rejects missing found repo path", run(["--artifact", str(bad_runtime_path), "--ruleset", "runtime-boundary", "--strict"]), 1)
+    bad_execution = valid_execution_boundary(tmp)
+    bad_execution["productRepoStatus"] = "found"
+    bad_execution["productRepoPath"] = ""
+    bad_execution_path = tmp / "bad-execution-boundary.json"
+    write_json(bad_execution_path, bad_execution)
+    assert_exit("execution boundary rejects missing found repo path", run(["--artifact", str(bad_execution_path), "--ruleset", "execution-boundary", "--strict"]), 1)
 
-    blocked_runtime = valid_runtime_boundary(tmp)
-    blocked_runtime["productRepoStatus"] = "missing"
-    blocked_runtime["productRepoPath"] = ""
-    blocked_runtime["baseBranch"] = ""
-    blocked_runtime["sourceRoots"] = []
-    blocked_runtime["testEntrypoints"] = []
-    blocked_runtime["worktreePolicy"] = "unknown"
-    blocked_runtime["b2DispatchGate"] = {
+    blocked_execution = valid_execution_boundary(tmp)
+    blocked_execution["productRepoStatus"] = "missing"
+    blocked_execution["productRepoPath"] = ""
+    blocked_execution["baseBranch"] = ""
+    blocked_execution["sourceRoots"] = []
+    blocked_execution["testEntrypoints"] = []
+    blocked_execution["worktreePolicy"] = "unknown"
+    blocked_execution["b2DispatchGate"] = {
         "state": "coordination_only",
         "allowsProductWrite": False,
         "reason": "Product repo fields are missing.",
         "missingInputs": ["productRepoPath", "baseBranch", "sourceRoots", "testEntrypoints", "worktreePolicy"],
     }
-    blocked_runtime_path = tmp / "blocked-runtime-boundary.json"
-    write_json(blocked_runtime_path, blocked_runtime)
+    blocked_execution_path = tmp / "blocked-execution-boundary.json"
+    write_json(blocked_execution_path, blocked_execution)
     bad_product_write_lane = valid_lane_registry()
     bad_product_write_lane["lanes"][0]["role"] = "frontier"
     bad_product_write_lane["lanes"][0]["authorityLevel"] = "B2"
-    bad_product_write_lane["lanes"][0]["runtimeBoundaryRef"] = "blocked-runtime-boundary.json"
+    bad_product_write_lane["lanes"][0]["executionBoundaryRef"] = "blocked-execution-boundary.json"
     bad_product_write_lane["lanes"][0]["b2DispatchGate"] = {
         "mode": "product_write",
         "state": "ready",
@@ -773,7 +773,7 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     }
     bad_product_write_lane_path = tmp / "bad-product-write-lane.json"
     write_json(bad_product_write_lane_path, bad_product_write_lane)
-    assert_exit("lane registry rejects B2 product write without runtime gate", run(["--artifact", str(bad_product_write_lane_path), "--ruleset", "lane-registry", "--strict"]), 1)
+    assert_exit("lane registry rejects B2 product write without execution gate", run(["--artifact", str(bad_product_write_lane_path), "--ruleset", "lane-registry", "--strict"]), 1)
 
     bad_return_gate = valid_lane_registry()
     bad_return_gate["lanes"][0]["role"] = "frontier"
@@ -886,8 +886,8 @@ def assert_text_rules(tmp: Path) -> None:
             "Preferred language: Chinese",
             "Use human-explain-openaccp for every reply.",
             "Before Frontier dispatch, read facts input, working directory, preferred language, and repo path as the actual product code repository path.",
-            "Resolve runtime boundary and runtimeBoundaryRef before Frontier dispatch. Infer base branch, source roots, test entrypoints, worktree policy, and writable scope from the repo before asking follow-up questions.",
-            "Ask only when runtime inference is ambiguous, risky, or impossible.",
+            "Resolve execution boundary and executionBoundaryRef before Frontier dispatch. Infer base branch, source roots, test entrypoints, worktree policy, and writable scope from the repo before asking follow-up questions.",
+            "Ask only when execution inference is ambiguous, risky, or impossible.",
             "Create 10-20 project-level CARDs for normal or medium/high-complexity work before Frontier dispatch.",
             "Scan product workflow, backend/API, data/storage, frontend/UI, desktop/mobile/native/Electron/Tauri surfaces, integrations, security, testing, CI, release, and ops before finalizing CARDs.",
             "Default to at least two Frontier lanes when two safe independent CARD clusters exist.",
@@ -1365,7 +1365,7 @@ def assert_text_rules(tmp: Path) -> None:
                         },
                         "branchReturnGate": {"rule": "remaining gaps must be needs_final_authority or explicitly_out"},
                         "coordinationRefs": {
-                            "runtimeBoundaryRef": "runtime-boundary.json",
+                            "executionBoundaryRef": "execution-boundary.json",
                             "laneRegistryRef": "lane-registry.json",
                             "childLedgerRef": "child-ledger.json",
                             "frontierClosureRef": "frontier-closure.json",
@@ -1465,7 +1465,7 @@ def assert_cli_entrypoints(tmp: Path) -> None:
     assert_exit("python -m openaccp init dry run", init_proc, 0)
     required_output = [
         "coordination",
-        "runtime-boundary.json",
+        "execution-boundary.json",
         "lane-registry.json",
         "sequence-registry.json",
         "current-manifest.json",
@@ -1494,7 +1494,7 @@ def assert_cli_entrypoints(tmp: Path) -> None:
         ("authority-charter.json", "authority-charter", []),
         ("task-card.json", "task-card", ["--source-pack", str(write_target / "source-pack.json")]),
         ("card-registry.md", "card-registry", []),
-        ("coordination/runtime-boundary.json", "runtime-boundary", []),
+        ("coordination/execution-boundary.json", "execution-boundary", []),
         ("coordination/source-status-registry.json", "source-status-registry", []),
         ("coordination/sequence-registry.json", "sequence-registry", []),
         ("coordination/lane-registry.json", "lane-registry", []),

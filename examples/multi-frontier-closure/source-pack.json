@@ -6,7 +6,7 @@
   ],
   "referenceSources": [],
   "deprecatedSources": [],
-  "readingOrder": ["source-pack.json", "card-registry.md", "runtime-boundary.json", "task-card.json"],
+  "readingOrder": ["source-pack.json", "card-registry.md", "execution-boundary.json", "task-card.json"],
   "conflictPolicy": ["Current sources drive task scope."],
   "scopeBoundaryRef": "scope-boundary.json",
   "openQuestionsRef": "open-questions.md",

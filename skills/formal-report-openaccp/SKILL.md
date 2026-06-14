@@ -69,7 +69,7 @@ OpenACCP is installed and validated. Please send:
 如果工作路径和 repo path 是同一个目录，直接说明即可。如果现在还没有产品 repo，请写 `no repo yet`。如果你想固定后续回复语言，也可以一起告诉我；不写的话我继续使用当前语言。
 ```
 
-After the user provides those setup inputs, the startup agent writes one full Primary prompt record to the working directory. It starts Primary directly when the runtime supports agent/thread spawn or one-click launch. If direct dispatch is unavailable, it returns one short copyable Primary launcher as a fenced `prompt` block and clearly labels it as manual fallback.
+After the user provides those setup inputs, the startup agent writes one full Primary prompt record to the working directory. It starts Primary directly when the agent tool supports agent/thread spawn or one-click launch. If direct dispatch is unavailable, it returns one short copyable Primary launcher as a fenced `prompt` block and clearly labels it as manual fallback.
 
 ## Next Step Rule
 

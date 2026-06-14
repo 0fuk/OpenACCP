@@ -15,6 +15,6 @@
   "allowedInputs": ["Source pack, PRD text, task card, and scope boundary."],
   "allowedOutputs": ["Starter spec, assumptions ledger, handoff, and machine summary."],
   "forbiddenSideEffects": ["External tracker updates.", "Credential use.", "Outbound messages.", "Publication."],
-  "stopConditions": ["The sample text is insufficient for a safe draft.", "Runtime implementation is required."],
+  "stopConditions": ["The sample text is insufficient for a safe draft.", "Product implementation is required."],
   "expiresWhen": "The bootstrap task is completed, amended, rejected, or revoked."
 }

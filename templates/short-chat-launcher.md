@@ -4,7 +4,7 @@ Use this template for the short launcher seed written after the full prompt reco
 
 Do not include the full prompt body in chat. The short launcher only points the new thread to the local prompt record.
 
-The short launcher must be written to disk. When the runtime supports direct dispatch, use the saved launcher as the dispatch seed and record `dispatchChannel: agent_thread_spawn` or `dispatchChannel: one_click`. When direct dispatch is unavailable, print the short launcher in chat as a fenced `prompt` block and record `dispatchChannel: manual_paste`. A saved `.short.md` file is required for audit, but a file link, attachment, file list, or `Get-Content` command is not a substitute for the manual fallback chat block.
+The short launcher must be written to disk. When the agent tool supports direct dispatch, use the saved launcher as the dispatch seed and record `dispatchChannel: agent_thread_spawn` or `dispatchChannel: one_click`. When direct dispatch is unavailable, print the short launcher in chat as a fenced `prompt` block and record `dispatchChannel: manual_paste`. A saved `.short.md` file is required for audit, but a file link, attachment, file list, or `Get-Content` command is not a substitute for the manual fallback chat block.
 
 The first non-empty line is always the launcher title. It is plain text, not a Markdown heading. Use these slots:
 

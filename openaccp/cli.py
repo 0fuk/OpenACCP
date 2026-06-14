@@ -40,12 +40,12 @@ def starter_files(target: Path) -> dict[Path, str]:
                 "schemaVersion": "openaccp-scope-boundary.v1",
                 "artifactType": "scope-boundary",
                 "inScope": ["Draft docs or specs from the current source."],
-                "outOfScope": ["Runtime code changes.", "External side effects."],
+                "outOfScope": ["Product code changes.", "External side effects."],
                 "deferred": ["Production integration."],
                 "requiresHumanApproval": ["Credentials.", "Publication.", "Dependency changes."],
                 "forbiddenActions": ["Use reference-only material as current scope.", "Claim final acceptance."],
                 "stopConditions": ["A real side effect is needed.", "The current source is contradicted."],
-                "scopeLeakExamples": ["Changing runtime behavior.", "Calling an external service."],
+                "scopeLeakExamples": ["Changing product behavior.", "Calling an external service."],
             }
         ),
         target / "assumptions.json": json_text(
@@ -105,7 +105,7 @@ def starter_files(target: Path) -> dict[Path, str]:
                 },
                 "acceptanceCriteria": ["The draft names the current source, assumptions, and open questions."],
                 "verificationPlan": [{"check": "artifact review", "method": "read against task card", "required": True}],
-                "stopConditions": ["Runtime implementation is required.", "A dependency change is required."],
+                "stopConditions": ["Product implementation is required.", "A dependency change is required."],
                 "expectedHandoff": {"artifactType": "handoff", "requiredFields": ["changedArtifacts", "verificationEvidence", "stateClaim"]},
                 "authorityRequired": "B2",
                 "authorityCharterRef": "authority-charter.json",
@@ -151,10 +151,10 @@ def starter_files(target: Path) -> dict[Path, str]:
                 "",
             ]
         ),
-        target / "coordination" / "runtime-boundary.json": json_text(
+        target / "coordination" / "execution-boundary.json": json_text(
             {
-                "schemaVersion": "openaccp-runtime-boundary.v1",
-                "artifactType": "runtime-boundary",
+                "schemaVersion": "openaccp-execution-boundary.v1",
+                "artifactType": "execution-boundary",
                 "boundaryId": "RB-001",
                 "workingDirectory": str(target),
                 "productRepoStatus": "missing",
@@ -231,7 +231,7 @@ def starter_files(target: Path) -> dict[Path, str]:
                         "currentPromptId": "PROMPT-BOOTSTRAP-001",
                         "authorityLevel": "B3",
                         "assignedCardIds": ["CARD-001"],
-                        "runtimeBoundaryRef": "runtime-boundary.json",
+                        "executionBoundaryRef": "execution-boundary.json",
                         "childLedgerRef": "child-ledgers/primary.json",
                         "latestConsumeRefs": [],
                         "b2DispatchGate": {
@@ -272,7 +272,7 @@ def starter_files(target: Path) -> dict[Path, str]:
                         "type": "owner-question",
                         "status": "open",
                         "question": "What product repo path should Primary inspect? If there is no product repo yet, answer no repo yet. Primary will infer base branch, writable scope, test entrypoints, and worktree policy from the repo when available.",
-                        "basisRefs": ["coordination/runtime-boundary.json"],
+                        "basisRefs": ["coordination/execution-boundary.json"],
                         "blocks": ["B2 implementation dispatch"],
                         "safeDefault": "Continue B0/B1 source packaging only.",
                         "authorityRequired": "B3",
@@ -293,7 +293,7 @@ def starter_files(target: Path) -> dict[Path, str]:
                 "deprecatedSourceRefs": [],
                 "sequenceRegistryRef": "sequence-registry.json",
                 "laneRegistryRef": "lane-registry.json",
-                "runtimeBoundaryRef": "runtime-boundary.json",
+                "executionBoundaryRef": "execution-boundary.json",
                 "sourceStatusRegistryRef": "source-status-registry.json",
                 "cardRegistryRef": "../card-registry.md",
                 "activeLanes": [{"laneId": "primary", "role": "primary", "status": "active", "currentPromptId": "PROMPT-BOOTSTRAP-001", "authorityLevel": "B3"}],

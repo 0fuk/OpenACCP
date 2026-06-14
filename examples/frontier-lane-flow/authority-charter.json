@@ -5,7 +5,7 @@
   "grantedRole": "frontier",
   "authorityLevel": "B2",
   "allowedActions": ["Read source pack.", "Prepare docs-only task cards.", "Dispatch docs-only workers.", "Consume child handoffs as provisional evidence."],
-  "forbiddenActions": ["Modify runtime.", "Claim final acceptance.", "Merge or publish documentation."],
+  "forbiddenActions": ["Modify execution.", "Claim final acceptance.", "Merge or publish documentation."],
   "delegationRules": ["Downstream workers need task card, scope, verification, and handoff path.", "Reviewers remain read-only."],
   "finalAuthorityReservedTo": "human-owner",
   "delegatedFinalAuthority": [],
@@ -14,7 +14,7 @@
   "resourceUseLimit": ["Local coordination artifacts and local verification only."],
   "allowedInputs": ["Source pack, assigned CARDs, lane backlog, task cards, child handoffs, and reviewer reports."],
   "allowedOutputs": ["Lane backlog, child prompt records, task cards, provisional consume results, handoffs, lane-progress packet, and Primary-ready packet only when the return gate is ready."],
-  "forbiddenSideEffects": ["Runtime edits by Frontier.", "Credential use.", "Publication.", "Merge or release."],
+  "forbiddenSideEffects": ["Execution edits by Frontier.", "Credential use.", "Publication.", "Merge or release."],
   "stopConditions": ["A remaining gap is B3-only.", "Lane scope is contradicted.", "Data risk exceeds low."],
   "expiresWhen": "The documentation lane is closed or final authority revokes the charter."
 }

@@ -36,8 +36,8 @@ OpenACCP uses a small `.openaccp/coordination/` control plane so separate thread
 
 Core artifacts:
 
-- `runtime-boundary.json`: repo path, inferred base branch, inferred source roots, inferred test entrypoints, inferred worktree policy, writable/read-only/forbidden paths, side effects, data risk, inference evidence, ambiguity notes, and `b2DispatchGate`.
-- `current-manifest.json`: current source pack, source status registry, runtime boundary, lane registry, CARD registry, active lanes, and latest consume refs.
+- `execution-boundary.json`: repo path, inferred base branch, inferred source roots, inferred test entrypoints, inferred worktree policy, writable/read-only/forbidden paths, side effects, data risk, inference evidence, ambiguity notes, and `b2DispatchGate`.
+- `current-manifest.json`: current source pack, source status registry, execution boundary, lane registry, CARD registry, active lanes, and latest consume refs.
 - `sequence-registry.json`: Prompt IDs, Response IDs, handoffs, consumes, cards, active lanes, lifecycle states, and current/latest pointers.
 - `lane-registry.json`: Primary and Frontier lane objectives, project complexity, Frontier dispatch mode, lane-count reason, assigned CARDs, authority, child ledger refs, closure refs, return-gate state, and per-lane `b2DispatchGate`.
 - `child-ledgers/<lane-id>.json`: child worker/reviewer/discovery/validation lifecycle status and consume status for one lane.
@@ -45,7 +45,7 @@ Core artifacts:
 - `decision-registry.json`: owner questions, Primary decisions, waivers, out-of-scope decisions, blockers, and safe defaults.
 - `frontier-closures/<lane-id>.json`: proof that a Frontier lane can continue, close, or return to Primary. Open lanes use `laneProgressPacketRef`; `primaryReadyPacketRef` appears only when the return gate is ready for Primary.
 
-Primary establishes the runtime boundary before B2 Frontier dispatch. The user provides the repo path; Primary infers base branch, source roots, test entrypoints, writable scope, and worktree policy from the repo before asking follow-up questions. If repo path is missing, ambiguous, or explicitly `no repo yet`, Primary asks for the repo path or records `no repo yet` and continues safe B0/B1 packaging. A Frontier can still run coordination-only or read-only B2 work, while product-write B2 dispatch requires both runtime `b2DispatchGate` and lane `b2DispatchGate` to be ready for product-write work. Frontier treats unresolved product-write readiness as an implementation-worker boundary, not as a reason to hand stage progress back to Primary.
+Primary establishes the execution boundary before B2 Frontier dispatch. The user provides the repo path; Primary infers base branch, source roots, test entrypoints, writable scope, and worktree policy from the repo before asking follow-up questions. If repo path is missing, ambiguous, or explicitly `no repo yet`, Primary asks for the repo path or records `no repo yet` and continues safe B0/B1 packaging. A Frontier can still run coordination-only or read-only B2 work, while product-write B2 dispatch requires both execution `b2DispatchGate` and lane `b2DispatchGate` to be ready for product-write work. Frontier treats unresolved product-write readiness as an implementation-worker boundary, not as a reason to hand stage progress back to Primary.
 
 ## Subagents
 
@@ -67,4 +67,4 @@ Frontier keeps worker, reviewer, discovery, validation, and task-card-only child
 
 Parallel work is safer when scopes are disjoint, handoff paths do not collide, reviewers know their targets, and final authority owns integration order.
 
-Parallel work is risky when multiple agents edit the same contract, schema, dependency lock, migration, or runtime policy without a shared plan.
+Parallel work is risky when multiple agents edit the same contract, schema, dependency lock, migration, or execution policy without a shared plan.

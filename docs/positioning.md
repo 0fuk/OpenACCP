@@ -4,7 +4,7 @@ OpenACCP is the delivery protocol around AI coding agents.
 
 It helps teams turn parallel agent work into source-driven, reviewable, and recoverable software delivery. It fits around:
 
-- an agent runtime,
+- an agent tool,
 - an IDE assistant,
 - a prompt collection,
 - a project management app,

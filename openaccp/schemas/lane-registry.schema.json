@@ -25,7 +25,7 @@
           "currentPromptId",
           "authorityLevel",
           "assignedCardIds",
-          "runtimeBoundaryRef",
+          "executionBoundaryRef",
           "childLedgerRef",
           "latestConsumeRefs",
           "returnGateStatus",
@@ -39,7 +39,7 @@
           "currentPromptId": { "type": "string", "minLength": 1 },
           "authorityLevel": { "enum": ["B0", "B1", "B2", "B3"] },
           "assignedCardIds": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
-          "runtimeBoundaryRef": { "type": "string", "minLength": 1 },
+          "executionBoundaryRef": { "type": "string", "minLength": 1 },
           "childLedgerRef": { "type": "string", "minLength": 1 },
           "latestConsumeRefs": { "type": "array", "items": { "type": "string" } },
           "b2DispatchGate": {

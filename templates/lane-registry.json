@@ -15,13 +15,13 @@
       "currentPromptId": "<primary-prompt-id>",
       "authorityLevel": "B3",
       "assignedCardIds": ["CARD-001"],
-      "runtimeBoundaryRef": ".openaccp/coordination/runtime-boundary.json",
+      "executionBoundaryRef": ".openaccp/coordination/execution-boundary.json",
       "childLedgerRef": ".openaccp/coordination/child-ledgers/primary.json",
       "latestConsumeRefs": [],
       "b2DispatchGate": {
         "mode": "coordination_only",
         "state": "ready",
-        "reason": "Primary lane may write coordination artifacts; product-write B2 dispatch requires runtime boundary readiness."
+        "reason": "Primary lane may write coordination artifacts; product-write B2 dispatch requires execution boundary readiness."
       },
       "returnGateStatus": {
         "state": "not_applicable",

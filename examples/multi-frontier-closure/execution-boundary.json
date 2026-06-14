@@ -1,6 +1,6 @@
 {
-  "schemaVersion": "openaccp-runtime-boundary.v1",
-  "artifactType": "runtime-boundary",
+  "schemaVersion": "openaccp-execution-boundary.v1",
+  "artifactType": "execution-boundary",
   "boundaryId": "RB-DEMO-001",
   "workingDirectory": "examples/multi-frontier-closure",
   "productRepoStatus": "not_applicable",

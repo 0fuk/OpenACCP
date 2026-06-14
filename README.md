@@ -72,7 +72,7 @@ After you provide those inputs:
 
 1. Startup writes one full Primary prompt record to your working directory.
 2. Startup writes one short Primary launcher file beside it.
-3. Startup dispatches the Primary thread directly when the runtime supports agent/thread spawn.
+3. Startup dispatches the Primary thread directly when the agent tool supports agent/thread spawn.
 4. If direct dispatch is unavailable, Startup returns one copyable short Primary launcher in chat as a fenced `prompt` block and clearly labels it as the manual fallback.
 
 The full prompt body belongs on disk. Chat carries only the short launcher seed when manual fallback is needed, with file links or attachments used only as supporting references.
@@ -85,18 +85,18 @@ Before v1.0, breaking artifact schema changes bump that artifact's `schemaVersio
 
 GitHub install startup creates **one Primary prompt record first**. Primary creates and dispatches Frontier lanes later after workspace review, CARD creation, and lane analysis.
 
-The Primary thread starts directly when the runtime supports agent/thread spawn. If manual fallback is the only available channel, paste the short Primary launcher into a new thread. Primary then reviews the real workspace and facts before deciding how much parallel coordination is useful.
+The Primary thread starts directly when the agent tool supports agent/thread spawn. If manual fallback is the only available channel, paste the short Primary launcher into a new thread. Primary then reviews the real workspace and facts before deciding how much parallel coordination is useful.
 
 Primary does the coordination work:
 
 1. Read the facts input, working directory, repo path, and preferred language or language fallback.
 2. Classify sources as `current`, `reference`, `deprecated`, or `invalid`.
-3. Create or refresh the source pack, scope boundary, assumptions ledger, runtime boundary, current manifest, source status registry, lane registry, decision registry, sequence registry, and CARD registry.
-4. Resolve the runtime boundary before B2 Frontier dispatch. Primary takes the repo path as the product code entry point, then infers base branch, source roots, test entrypoints, worktree policy, writable/read-only/forbidden paths, side effects, and data risk from Git metadata, repo files, CI files, package metadata, and common project layouts. Primary asks follow-up questions only when inference is ambiguous, risky, or impossible.
+3. Create or refresh the source pack, scope boundary, assumptions ledger, execution boundary, current manifest, source status registry, lane registry, decision registry, sequence registry, and CARD registry.
+4. Resolve the execution boundary before B2 Frontier dispatch. Primary takes the repo path as the product code entry point, then infers base branch, source roots, test entrypoints, worktree policy, writable/read-only/forbidden paths, side effects, and data risk from Git metadata, repo files, CI files, package metadata, and common project layouts. Primary asks follow-up questions only when inference is ambiguous, risky, or impossible.
 5. Split the project into CARDs before dispatching Frontier lanes.
 6. Decide how many Frontier lanes are useful based on project complexity, dependencies, risk, and parallel safety.
 7. Write full Frontier prompt records and short Frontier launchers for selected lanes.
-8. Dispatch selected Frontier lanes directly when the runtime supports it; otherwise print fallback Frontier launchers as copyable fenced `prompt` blocks.
+8. Dispatch selected Frontier lanes directly when the agent tool supports it; otherwise print fallback Frontier launchers as copyable fenced `prompt` blocks.
 
 Primary defaults to **at least two Frontier lanes** for normal or medium-complexity projects when two safe independent CARD clusters exist. It launches one Frontier only when the project is clearly small, only one safe lane exists, or the user explicitly asks for a single lane. Broad or medium-high-complexity projects normally receive two to five Frontier lanes. More than five requires explicit user approval.
 
@@ -114,7 +114,7 @@ Working directory: <where OpenACCP may write .openaccp coordination files>
 Repo path: <actual product Git repository path, or "no repo yet">
 Preferred language: <English / Chinese / your choice>
 
-First review the facts, coordination workbench, and product repo path. Create or refresh the source pack, scope boundary, assumptions ledger, runtime boundary, current manifest, source status registry, lane registry, decision registry, sequence registry, and CARD registry. Infer base branch, source roots, test entrypoints, and worktree policy from the repo before B2 Frontier dispatch; ask only for ambiguous or risky runtime choices. Split the project into enough CARDs to support useful parallel Frontier lanes. Then return a human-readable status report, dispatch selected Frontier lanes directly when possible, and provide manual fallback launchers only when direct dispatch is unavailable.
+First review the facts, coordination workbench, and product repo path. Create or refresh the source pack, scope boundary, assumptions ledger, execution boundary, current manifest, source status registry, lane registry, decision registry, sequence registry, and CARD registry. Infer base branch, source roots, test entrypoints, and worktree policy from the repo before B2 Frontier dispatch; ask only for ambiguous or risky execution choices. Split the project into enough CARDs to support useful parallel Frontier lanes. Then return a human-readable status report, dispatch selected Frontier lanes directly when possible, and provide manual fallback launchers only when direct dispatch is unavailable.
 ```
 
 Manual Frontier launcher:
@@ -165,8 +165,8 @@ Important artifacts:
 | `source pack` | The current fact list. It tells agents what may drive implementation and what is only background. |
 | `scope boundary` | The line between allowed work and forbidden work. |
 | `assumptions ledger` | Explicit assumptions that are not fully proven yet. |
-| `runtime boundary` | Repo path, inferred base branch, source roots, test entrypoints, worktree policy, writable/read-only/forbidden paths, side effects, data risk, and the `b2DispatchGate` that says whether product-write B2 work is ready, blocked, or coordination-only. |
-| `current manifest` | The current coordination anchor: source pack, runtime boundary, source status registry, lane registry, CARD registry, and active lanes. |
+| `execution boundary` | Repo path, inferred base branch, source roots, test entrypoints, worktree policy, writable/read-only/forbidden paths, side effects, data risk, and the `b2DispatchGate` that says whether product-write B2 work is ready, blocked, or coordination-only. |
+| `current manifest` | The current coordination anchor: source pack, execution boundary, source status registry, lane registry, CARD registry, and active lanes. |
 | `sequence registry` | Prompt IDs, Response IDs, handoffs, consumes, cards, active lanes, lifecycle states, and current/latest pointers. |
 | `source status registry` | Current, reference, deprecated, invalid, and unknown sources with reasons and locators. |
 | `lane registry` | Primary and Frontier lanes, project complexity, Frontier dispatch mode, lane-count reason, assigned CARDs, authority, child ledger refs, consume refs, closure refs, return-gate state, and per-lane B2 dispatch mode. |
@@ -221,7 +221,7 @@ Primary scans the facts for product domains before cutting CARDs. Examples inclu
 - frontend/UI surfaces when the facts mention them,
 - desktop/mobile/native/Electron/Tauri surfaces when the facts mention them,
 - data model, storage, migration, import/export, or analytics,
-- integrations, external systems, and platform runtime,
+- integrations, external systems, and platform behavior,
 - authentication, authorization, privacy, compliance, and data risk,
 - testing, QA, accessibility, performance, observability, and CI,
 - docs, release, operations, deployment, and rollback.
@@ -308,13 +308,13 @@ machine summary
 formal report
 ```
 
-Multi-lane coordination adds these artifacts when Primary needs Frontier lanes, runtime boundaries, and shared state:
+Multi-lane coordination adds these artifacts when Primary needs Frontier lanes, execution boundaries, and shared state:
 
 ```text
 scope boundary
 assumptions ledger
 CARD registry
-runtime boundary
+execution boundary
 current manifest
 sequence registry
 lane registry
@@ -344,7 +344,7 @@ examples/    Strict fixtures and concept examples.
 - `examples/primary-two-frontier-kickoff/`: concept example for Primary-generated Frontier launchers after CARD and lane analysis.
 - `examples/primary-orchestrator-flow/`: concept example for final-authority dispatch and consume.
 - `examples/frontier-lane-flow/`: concept example for lane authority.
-- `examples/multi-frontier-closure/`: strict fixture for runtime boundary, lane registry, child ledger, source status, decision registry, and Frontier closure.
+- `examples/multi-frontier-closure/`: strict fixture for execution boundary, lane registry, child ledger, source status, decision registry, and Frontier closure.
 - `examples/multi-worktree-review/`: concept example for multiple workers and reviewer sidecars.
 
 The first two are best for direct validation. The other examples show shape and vocabulary for larger project packages.
@@ -375,7 +375,7 @@ openaccp init ./my-openaccp-package --write
 OpenACCP sits beside the tools that run agents.
 
 - Codex, Claude Code, Aider, OpenHands, and SWE-agent are strong places to run coding work. OpenACCP gives that work a shared source pack, CARDs, authority boundaries, handoffs, reviews, and consume decisions.
-- LangGraph, CrewAI, AutoGen, and the OpenAI Agents SDK help teams build agent runtimes, flows, graphs, tools, and application-level agent behavior. OpenACCP adds the project delivery layer: which facts count, who can act, what evidence came back, and who can accept it.
+- LangGraph, CrewAI, AutoGen, and the OpenAI Agents SDK help teams build agent frameworks, flows, graphs, tools, and application-level agent behavior. OpenACCP adds the project delivery layer: which facts count, who can act, what evidence came back, and who can accept it.
 - Teams can keep their current coding agent or agent framework. OpenACCP gives the surrounding workflow a protocol so parallel work stays traceable, reviewable, and recoverable.
 
 ## Public Package Hygiene

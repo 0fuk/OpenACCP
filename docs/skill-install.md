@@ -39,4 +39,4 @@ After installation, the agent should confirm:
 - The public package validation passes.
 - The startup formal report asks for facts input, working directory, repo path, and preferred language.
 
-After those checks pass, provide your project inputs. The agent should write the full Primary prompt record to disk and start Primary directly when the runtime supports agent/thread spawn or one-click launch. If direct dispatch is unavailable, it should return a copyable short Primary launcher in chat as manual fallback.
+After those checks pass, provide your project inputs. The agent should write the full Primary prompt record to disk and start Primary directly when the agent tool supports agent/thread spawn or one-click launch. If direct dispatch is unavailable, it should return a copyable short Primary launcher in chat as manual fallback.

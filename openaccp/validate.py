@@ -47,7 +47,7 @@ RULESETS = {
     "machine-summary",
     "prompt-record",
     "review-report",
-    "runtime-boundary",
+    "execution-boundary",
     "scope-boundary",
     "sequence-registry",
     "source-pack",
@@ -196,7 +196,7 @@ REQUIRED_FIELDS: dict[str, list[str]] = {
         "deprecatedSourceRefs",
         "sequenceRegistryRef",
         "laneRegistryRef",
-        "runtimeBoundaryRef",
+        "executionBoundaryRef",
         "sourceStatusRegistryRef",
         "cardRegistryRef",
         "activeLanes",
@@ -250,7 +250,7 @@ REQUIRED_FIELDS: dict[str, list[str]] = {
         "claims",
         "nextActions",
     ],
-    "runtime-boundary": [
+    "execution-boundary": [
         "schemaVersion",
         "artifactType",
         "boundaryId",
@@ -336,7 +336,7 @@ ARTIFACT_TYPE_BY_RULESET = {
     "sequence-registry": "sequence-registry",
     "consume-result": "consume-result",
     "machine-summary": "machine-summary",
-    "runtime-boundary": "runtime-boundary",
+    "execution-boundary": "execution-boundary",
     "lane-registry": "lane-registry",
     "child-ledger": "child-ledger",
     "source-status-registry": "source-status-registry",
@@ -983,33 +983,33 @@ def is_primary_prompt_record(text: str) -> bool:
 
 def validate_primary_prompt_contract_text(text: str, report: Report) -> None:
     lowered = text.lower()
-    runtime_terms = [
-        "runtime boundary",
+    execution_terms = [
+        "execution boundary",
         "product repo path",
         "base branch",
         "source roots",
         "test entrypoints",
         "worktree policy",
-        "runtimeboundaryref",
+        "executionboundaryref",
     ]
-    missing_runtime_terms = [term for term in runtime_terms if term not in lowered.replace("-", " ")]
-    if len(missing_runtime_terms) <= 1 and re.search(r"(?i)(before|prior to).{0,80}Frontier|Frontier.{0,80}(before|prior to)", text):
-        report.add("PRIMARY_RUNTIME_BOUNDARY_GATE", "blocking", "pass", "Primary prompt gates Frontier dispatch on runtime boundary.")
+    missing_execution_terms = [term for term in execution_terms if term not in lowered.replace("-", " ")]
+    if len(missing_execution_terms) <= 1 and re.search(r"(?i)(before|prior to).{0,80}Frontier|Frontier.{0,80}(before|prior to)", text):
+        report.add("PRIMARY_EXECUTION_BOUNDARY_GATE", "blocking", "pass", "Primary prompt gates Frontier dispatch on execution boundary.")
     else:
         report.add(
-            "PRIMARY_RUNTIME_BOUNDARY_GATE",
+            "PRIMARY_EXECUTION_BOUNDARY_GATE",
             "blocking",
             "fail",
-            "Primary prompt must resolve runtime boundary before Frontier dispatch: repo path, inferred base branch, source roots, test entrypoints, worktree policy, and runtimeBoundaryRef.",
+            "Primary prompt must resolve execution boundary before Frontier dispatch: repo path, inferred base branch, source roots, test entrypoints, worktree policy, and executionBoundaryRef.",
         )
     if re.search(r"(?is)repo\s+path.{0,220}(actual|real|product|code entry point|git|repository)", text) or re.search(r"产品代码仓库路径|真正的产品\s*Git\s*repo", text):
         report.add("PRIMARY_REPO_PATH_INPUT", "blocking", "pass", "Primary prompt distinguishes repo path as the product code repository.")
     else:
         report.add("PRIMARY_REPO_PATH_INPUT", "blocking", "fail", "Primary prompt must ask for repo path as the actual product code repository path.")
     if re.search(r"(?is)infer.{0,220}(base branch|source roots|test entrypoints|worktree policy)", text) and re.search(r"(?is)ask.{0,120}(only|ambiguous|risk|impossible)", text):
-        report.add("PRIMARY_RUNTIME_INFERENCE", "blocking", "pass", "Primary prompt requires runtime inference before follow-up questions.")
+        report.add("PRIMARY_EXECUTION_INFERENCE", "blocking", "pass", "Primary prompt requires execution inference before follow-up questions.")
     else:
-        report.add("PRIMARY_RUNTIME_INFERENCE", "blocking", "fail", "Primary prompt must infer base branch, writable scope, test entrypoints, and worktree policy before asking follow-up questions.")
+        report.add("PRIMARY_EXECUTION_INFERENCE", "blocking", "fail", "Primary prompt must infer base branch, writable scope, test entrypoints, and worktree policy before asking follow-up questions.")
     if re.search(r"10\s*[-\u2010-\u2015]\s*20|10\s+to\s+20", text):
         report.add("PRIMARY_CARD_COUNT_RULE", "blocking", "pass", "Primary prompt requires 10-20 CARDs for normal or medium/high complexity.")
     else:
@@ -1556,7 +1556,7 @@ def validate_frontier_contract_text(text: str, report: Report) -> None:
         "gapDecisionMatrix",
         "branchReturnGate",
         "worktreeDecision",
-        "runtimeBoundaryRef",
+        "executionBoundaryRef",
         "laneRegistryRef",
         "childLedgerRef",
         "frontierClosureRef",
@@ -1706,13 +1706,13 @@ def validate_frontier_contract_block(text: str, report: Report) -> None:
     else:
         missing_refs = [
             field
-            for field in ["runtimeBoundaryRef", "laneRegistryRef", "childLedgerRef", "frontierClosureRef"]
+            for field in ["executionBoundaryRef", "laneRegistryRef", "childLedgerRef", "frontierClosureRef"]
             if not str(coordination_refs.get(field, "")).strip()
         ]
         if missing_refs:
             report.add("FRONTIER_CONTRACT_COORDINATION_REFS", "blocking", "fail", "coordinationRefs missing refs: " + ", ".join(missing_refs))
         else:
-            report.add("FRONTIER_CONTRACT_COORDINATION_REFS", "blocking", "pass", "coordinationRefs names runtime, lane, child-ledger, and closure refs.")
+            report.add("FRONTIER_CONTRACT_COORDINATION_REFS", "blocking", "pass", "coordinationRefs names execution, lane, child-ledger, and closure refs.")
     backlog = contract.get("backlogScope", {})
     if isinstance(backlog, dict) and backlog.get("seedArtifactsPolicy") == "starting_points_not_exhaustive":
         report.add("FRONTIER_SEED_POLICY", "blocking", "pass", "Seed artifacts are marked as non-exhaustive.")
@@ -2050,7 +2050,7 @@ def validate_current_manifest(data: dict[str, Any], report: Report) -> None:
         "currentSourcePackRef",
         "sequenceRegistryRef",
         "laneRegistryRef",
-        "runtimeBoundaryRef",
+        "executionBoundaryRef",
         "sourceStatusRegistryRef",
         "cardRegistryRef",
     ]:
@@ -2104,7 +2104,7 @@ def validate_manifest_refs_exist(data: dict[str, Any], report: Report) -> None:
         "currentSourcePackRef",
         "sequenceRegistryRef",
         "laneRegistryRef",
-        "runtimeBoundaryRef",
+        "executionBoundaryRef",
         "sourceStatusRegistryRef",
         "cardRegistryRef",
     ]:
@@ -2346,11 +2346,11 @@ def validate_machine_summary(data: dict[str, Any], report: Report) -> None:
             report.add("LOCATOR_TARGET", "blocking", "fail", "locator must include id or path.", loc)
 
 
-def validate_runtime_boundary(data: dict[str, Any], report: Report) -> None:
-    if data.get("artifactType") != "runtime-boundary":
-        report.add("ARTIFACT_TYPE", "blocking", "fail", "artifactType must be runtime-boundary.")
+def validate_execution_boundary(data: dict[str, Any], report: Report) -> None:
+    if data.get("artifactType") != "execution-boundary":
+        report.add("ARTIFACT_TYPE", "blocking", "fail", "artifactType must be execution-boundary.")
     else:
-        report.add("ARTIFACT_TYPE", "blocking", "pass", "artifactType is runtime-boundary.")
+        report.add("ARTIFACT_TYPE", "blocking", "pass", "artifactType is execution-boundary.")
     product_statuses = {"found", "provided", "missing", "not_applicable"}
     if data.get("productRepoStatus") not in product_statuses:
         report.add("PRODUCT_REPO_STATUS", "blocking", "fail", "productRepoStatus must be found, provided, missing, or not_applicable.")
@@ -2373,24 +2373,24 @@ def validate_runtime_boundary(data: dict[str, Any], report: Report) -> None:
     else:
         report.add("DATA_RISK", "blocking", "pass", "dataRisk is valid.")
     if data.get("inferenceStatus") not in {"not_attempted", "inferred", "partially_inferred", "ambiguous", "not_applicable"}:
-        report.add("RUNTIME_INFERENCE_STATUS", "blocking", "fail", "inferenceStatus must be not_attempted, inferred, partially_inferred, ambiguous, or not_applicable.")
+        report.add("EXECUTION_INFERENCE_STATUS", "blocking", "fail", "inferenceStatus must be not_attempted, inferred, partially_inferred, ambiguous, or not_applicable.")
     else:
-        report.add("RUNTIME_INFERENCE_STATUS", "blocking", "pass", "inferenceStatus is valid.")
+        report.add("EXECUTION_INFERENCE_STATUS", "blocking", "pass", "inferenceStatus is valid.")
     if data.get("confidence") not in {"high", "medium", "low", "unknown", "not_applicable"}:
-        report.add("RUNTIME_CONFIDENCE", "blocking", "fail", "confidence must be high, medium, low, unknown, or not_applicable.")
+        report.add("EXECUTION_CONFIDENCE", "blocking", "fail", "confidence must be high, medium, low, unknown, or not_applicable.")
     else:
-        report.add("RUNTIME_CONFIDENCE", "blocking", "pass", "confidence is valid.")
+        report.add("EXECUTION_CONFIDENCE", "blocking", "pass", "confidence is valid.")
     for field_name in ["sourceRoots", "testEntrypoints", "inferredFrom", "ambiguities", "allowedWritablePaths", "readOnlyPaths", "forbiddenPaths", "unresolvedOwnerInputs"]:
         if isinstance(data.get(field_name), list):
             report.add(f"{field_name.upper()}_ARRAY", "blocking", "pass", f"{field_name} is an array.")
         else:
             report.add(f"{field_name.upper()}_ARRAY", "blocking", "fail", f"{field_name} must be an array.")
     if data.get("productRepoStatus") in {"found", "provided"} and data.get("inferenceStatus") in {"not_attempted", "ambiguous"}:
-        report.add("RUNTIME_REPO_INFERENCE", "blocking", "fail", "resolved product repos require runtime inference evidence before B2 planning.")
+        report.add("EXECUTION_REPO_INFERENCE", "blocking", "fail", "resolved product repos require execution inference evidence before B2 planning.")
     elif data.get("productRepoStatus") in {"found", "provided"} and not data.get("inferredFrom"):
-        report.add("RUNTIME_REPO_INFERENCE", "blocking", "fail", "resolved product repos require inferredFrom evidence.")
+        report.add("EXECUTION_REPO_INFERENCE", "blocking", "fail", "resolved product repos require inferredFrom evidence.")
     else:
-        report.add("RUNTIME_REPO_INFERENCE", "blocking", "pass", "runtime inference state is compatible with product repo status.")
+        report.add("EXECUTION_REPO_INFERENCE", "blocking", "pass", "execution inference state is compatible with product repo status.")
     gate = data.get("b2DispatchGate")
     if not isinstance(gate, dict):
         report.add("B2_DISPATCH_GATE_OBJECT", "blocking", "fail", "b2DispatchGate must be an object.")
@@ -2411,25 +2411,25 @@ def validate_runtime_boundary(data: dict[str, Any], report: Report) -> None:
     if not isinstance(gate.get("missingInputs"), list):
         report.add("B2_DISPATCH_GATE_MISSING_INPUTS", "blocking", "fail", "b2DispatchGate.missingInputs must be an array.")
     ready_for_product_write = gate.get("state") == "ready" or gate.get("allowsProductWrite") is True
-    missing_runtime = []
+    missing_execution = []
     if data.get("productRepoStatus") not in {"found", "provided"}:
-        missing_runtime.append("productRepoStatus")
+        missing_execution.append("productRepoStatus")
     if not str(data.get("productRepoPath", "")).strip():
-        missing_runtime.append("productRepoPath")
+        missing_execution.append("productRepoPath")
     if not str(data.get("baseBranch", "")).strip():
-        missing_runtime.append("baseBranch")
+        missing_execution.append("baseBranch")
     if not data.get("sourceRoots"):
-        missing_runtime.append("sourceRoots")
+        missing_execution.append("sourceRoots")
     if not data.get("testEntrypoints"):
-        missing_runtime.append("testEntrypoints")
+        missing_execution.append("testEntrypoints")
     if data.get("worktreePolicy") == "unknown":
-        missing_runtime.append("worktreePolicy")
-    if ready_for_product_write and missing_runtime:
-        report.add("B2_PRODUCT_WRITE_RUNTIME_READY", "blocking", "fail", "B2 product-write dispatch requires runtime fields: " + ", ".join(missing_runtime))
+        missing_execution.append("worktreePolicy")
+    if ready_for_product_write and missing_execution:
+        report.add("B2_PRODUCT_WRITE_EXECUTION_READY", "blocking", "fail", "B2 product-write dispatch requires execution fields: " + ", ".join(missing_execution))
     elif ready_for_product_write:
-        report.add("B2_PRODUCT_WRITE_RUNTIME_READY", "blocking", "pass", "B2 product-write runtime fields are ready.")
+        report.add("B2_PRODUCT_WRITE_EXECUTION_READY", "blocking", "pass", "B2 product-write execution fields are ready.")
     else:
-        report.add("B2_PRODUCT_WRITE_RUNTIME_READY", "blocking", "pass", "B2 product-write is not allowed by this runtime boundary.")
+        report.add("B2_PRODUCT_WRITE_EXECUTION_READY", "blocking", "pass", "B2 product-write is not allowed by this execution boundary.")
 
 
 def validate_lane_registry(data: dict[str, Any], report: Report) -> None:
@@ -2457,7 +2457,7 @@ def validate_lane_registry(data: dict[str, Any], report: Report) -> None:
             "currentPromptId",
             "authorityLevel",
             "assignedCardIds",
-            "runtimeBoundaryRef",
+            "executionBoundaryRef",
             "childLedgerRef",
             "latestConsumeRefs",
             "returnGateStatus",
@@ -2576,18 +2576,18 @@ def validate_lane_b2_dispatch_gate(lane: dict[str, Any], report: Report, loc: st
         if state != "ready":
             report.add("LANE_B2_PRODUCT_WRITE_GATE", "blocking", "fail", "B2 product_write lanes require b2DispatchGate.state ready.", loc)
             return
-        runtime_ref = lane.get("runtimeBoundaryRef")
-        runtime_path = resolve_ref(Path(report.artifact).parent, str(runtime_ref))
-        runtime_report = Report(str(runtime_path), "runtime-boundary")
-        runtime_data = load_json(runtime_path, runtime_report) if runtime_path.exists() else None
-        if not isinstance(runtime_data, dict):
-            report.add("LANE_B2_PRODUCT_WRITE_RUNTIME_REF", "blocking", "fail", "B2 product_write lane requires a readable runtimeBoundaryRef.", str(runtime_path))
+        execution_ref = lane.get("executionBoundaryRef")
+        execution_path = resolve_ref(Path(report.artifact).parent, str(execution_ref))
+        execution_report = Report(str(execution_path), "execution-boundary")
+        execution_data = load_json(execution_path, execution_report) if execution_path.exists() else None
+        if not isinstance(execution_data, dict):
+            report.add("LANE_B2_PRODUCT_WRITE_EXECUTION_REF", "blocking", "fail", "B2 product_write lane requires a readable executionBoundaryRef.", str(execution_path))
             return
-        runtime_gate = runtime_data.get("b2DispatchGate")
-        if not isinstance(runtime_gate, dict) or runtime_gate.get("state") != "ready" or runtime_gate.get("allowsProductWrite") is not True:
-            report.add("LANE_B2_PRODUCT_WRITE_RUNTIME_GATE", "blocking", "fail", "B2 product_write lane requires runtime b2DispatchGate ready with allowsProductWrite true.", str(runtime_path))
+        execution_gate = execution_data.get("b2DispatchGate")
+        if not isinstance(execution_gate, dict) or execution_gate.get("state") != "ready" or execution_gate.get("allowsProductWrite") is not True:
+            report.add("LANE_B2_PRODUCT_WRITE_EXECUTION_GATE", "blocking", "fail", "B2 product_write lane requires execution b2DispatchGate ready with allowsProductWrite true.", str(execution_path))
         else:
-            report.add("LANE_B2_PRODUCT_WRITE_RUNTIME_GATE", "blocking", "pass", "B2 product_write lane is backed by a ready runtime boundary.", str(runtime_path))
+            report.add("LANE_B2_PRODUCT_WRITE_EXECUTION_GATE", "blocking", "pass", "B2 product_write lane is backed by a ready execution boundary.", str(execution_path))
     elif lane.get("authorityLevel") == "B2":
         report.add("LANE_B2_PRODUCT_WRITE_GATE", "blocking", "pass", "B2 lane is not allowed to write product code by this lane gate.", loc)
 
@@ -3351,8 +3351,8 @@ def validate_json_artifact(args: argparse.Namespace) -> Report:
         validate_consume_result(data, report)
     elif args.ruleset == "machine-summary":
         validate_machine_summary(data, report)
-    elif args.ruleset == "runtime-boundary":
-        validate_runtime_boundary(data, report)
+    elif args.ruleset == "execution-boundary":
+        validate_execution_boundary(data, report)
     elif args.ruleset == "lane-registry":
         validate_lane_registry(data, report)
     elif args.ruleset == "child-ledger":

@@ -13,7 +13,7 @@ Primary should already have:
 - repo path: the actual product Git repository path, or `no repo yet`,
 - preferred language or current conversation language fallback,
 - current manifest or manifest draft,
-- runtime boundary with Primary-inferred Git branch, base branch, source roots, writable scope, test entrypoints, worktree policy, and worker-editable files,
+- execution boundary with Primary-inferred Git branch, base branch, source roots, writable scope, test entrypoints, worktree policy, and worker-editable files,
 - CARD/task-card candidates.
 
 If no facts path exists yet, the user can upload project materials instead. If the working directory and repo path are the same, the user can say so. If no product repo exists yet, the user can say `no repo yet`; Primary then keeps product-write B2 closed and continues planning, packaging, and readiness work.
@@ -37,7 +37,7 @@ Write the full launcher prompt records to disk first, preferably under:
 <working-directory>/.openaccp/launchers/
 ```
 
-Then dispatch selected Frontier lanes directly when the runtime supports agent/thread spawn or one-click launch. Do not paste the full prompt bodies into chat.
+Then dispatch selected Frontier lanes directly when the agent tool supports agent/thread spawn or one-click launch. Do not paste the full prompt bodies into chat.
 
 The short launcher files must also be written to disk for audit. If direct dispatch is unavailable, the chat response must include the exact short launcher text in fenced `prompt` blocks as manual fallback. Do not give only file links, attachments, file lists, or `Get-Content` commands.
 
@@ -82,7 +82,7 @@ Working directory: <user-provided path>
 Facts input: <user-provided source pack, PRD, spec, facts path, or uploaded materials>
 Repo path: <actual product Git repo path, or no repo yet>
 Preferred language: <user-provided language>
-Runtime boundary: <Primary-inferred base branch, source roots, writable scope, test entrypoints, and worktree policy>
+Execution boundary: <Primary-inferred base branch, source roots, writable scope, test entrypoints, and worktree policy>
 CARDs: <CARD list created by Primary>
 Goal: decide source status, authority boundaries, and lane split.
 Next action: dispatch the selected B2 Frontier lanes and consume their provisional evidence.
@@ -97,7 +97,7 @@ Lane: <lane 01 objective>
 Working directory: <user-provided path>
 Facts input: <user-provided source pack, PRD, spec, facts path, or uploaded materials>
 Repo path: <actual product Git repo path, or no repo yet>
-Runtime boundary: <Primary-inferred fields and b2DispatchGate>
+Execution boundary: <Primary-inferred fields and b2DispatchGate>
 Assigned CARDs: <CARD ids>
 Goal: discover gaps, prepare task cards, and identify safe worker packages for lane 01.
 ```
@@ -111,7 +111,7 @@ Lane: <lane 02 objective>
 Working directory: <user-provided path>
 Facts input: <user-provided source pack, PRD, spec, facts path, or uploaded materials>
 Repo path: <actual product Git repo path, or no repo yet>
-Runtime boundary: <Primary-inferred fields and b2DispatchGate>
+Execution boundary: <Primary-inferred fields and b2DispatchGate>
 Assigned CARDs: <CARD ids>
 Goal: discover gaps, prepare task cards, and identify safe worker packages for lane 02.
 ```

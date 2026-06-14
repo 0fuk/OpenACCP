@@ -15,7 +15,7 @@
     "deprecatedSourceRefs",
     "sequenceRegistryRef",
     "laneRegistryRef",
-    "runtimeBoundaryRef",
+    "executionBoundaryRef",
     "sourceStatusRegistryRef",
     "cardRegistryRef",
     "activeLanes",
@@ -35,7 +35,7 @@
     "deprecatedSourceRefs": { "type": "array", "items": { "type": "string" } },
     "sequenceRegistryRef": { "type": "string", "minLength": 1 },
     "laneRegistryRef": { "type": "string", "minLength": 1 },
-    "runtimeBoundaryRef": { "type": "string", "minLength": 1 },
+    "executionBoundaryRef": { "type": "string", "minLength": 1 },
     "sourceStatusRegistryRef": { "type": "string", "minLength": 1 },
     "cardRegistryRef": { "type": "string", "minLength": 1 },
     "activeLanes": {

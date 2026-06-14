@@ -15,7 +15,7 @@
       "currentPromptId": "PROMPT-FRONTIER-DOCS-001",
       "authorityLevel": "B2",
       "assignedCardIds": ["CARD-001"],
-      "runtimeBoundaryRef": "runtime-boundary.json",
+      "executionBoundaryRef": "execution-boundary.json",
       "childLedgerRef": "child-ledgers/frontier-docs.json",
       "latestConsumeRefs": ["CONSUME-DOCS-001"],
       "b2DispatchGate": {
