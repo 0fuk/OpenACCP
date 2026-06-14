@@ -11,7 +11,7 @@
     "primaryRuntime": { "enum": ["codex", "claude-code", "other", "unknown"] },
     "projectComplexity": { "enum": ["bootstrap", "small", "normal", "medium", "medium-high", "high", "unknown"] },
     "frontierDispatchMode": { "enum": ["pre_frontier", "single_frontier", "multi_frontier"] },
-    "dispatchChannel": { "enum": ["agent_thread_spawn", "one_click", "runtime_bridge", "manual_paste"] },
+    "dispatchChannel": { "enum": ["agent_thread_spawn", "one_click", "manual_paste"] },
     "frontierDispatchReason": { "type": "string", "minLength": 1 },
     "lanes": {
       "type": "array",
@@ -40,7 +40,6 @@
           "role": { "enum": ["primary", "frontier"] },
           "runtime": { "enum": ["codex", "claude-code", "other", "unknown"] },
           "runtimeRelation": { "enum": ["same_runtime", "cross_runtime", "unknown"] },
-          "dispatchChannel": { "enum": ["agent_thread_spawn", "one_click", "runtime_bridge", "manual_paste"] },
           "status": { "enum": ["prepared", "active", "open", "closed", "blocked_on_primary", "blocked_on_human", "cancelled"] },
           "currentPromptId": { "type": "string", "minLength": 1 },
           "authorityLevel": { "enum": ["B0", "B1", "B2", "B3"] },

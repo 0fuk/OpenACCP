@@ -32,7 +32,6 @@ except ImportError:  # pragma: no cover - fallback covers source checkouts witho
 RULESETS = {
     "authority-charter",
     "assumption-ledger",
-    "bridge-event",
     "card-registry",
     "child-ledger",
     "consume-result",
@@ -326,22 +325,6 @@ REQUIRED_FIELDS: dict[str, list[str]] = {
         "worktreeDecision",
         "humanNextStep",
     ],
-    "bridge-event": [
-        "schemaVersion",
-        "artifactType",
-        "eventId",
-        "direction",
-        "eventType",
-        "status",
-        "parentRuntime",
-        "childRuntime",
-        "runtimeRelation",
-        "sourceRef",
-        "targetRef",
-        "createdAt",
-        "expectedAction",
-        "busyPolicy",
-    ],
 }
 
 ARTIFACT_TYPE_BY_RULESET = {
@@ -362,7 +345,6 @@ ARTIFACT_TYPE_BY_RULESET = {
     "source-status-registry": "source-status-registry",
     "decision-registry": "decision-registry",
     "frontier-closure": "frontier-closure",
-    "bridge-event": "bridge-event",
 }
 
 FINAL_STATE_CLAIMS = {
@@ -405,11 +387,6 @@ RETURN_EVENT_STATUSES = {
 }
 WAKE_STATUSES = {"not_required", "not_attempted", "queued_for_parent", "wake_requested", "delivered", "unavailable", "failed"}
 PARENT_CONSUME_DUE_POLICIES = {"not_applicable", "immediate_if_idle", "next_safe_checkpoint", "manual_resume_required"}
-DISPATCH_CHANNELS = {"agent_thread_spawn", "one_click", "manual_paste", "runtime_bridge"}
-NATIVE_DISPATCH_CHANNELS = {"agent_thread_spawn", "one_click"}
-BRIDGE_EVENT_DIRECTIONS = {"child_to_parent", "parent_to_child"}
-BRIDGE_EVENT_TYPES = {"parent_consume_pending", "frontier_dispatch_requested"}
-BRIDGE_EVENT_STATUSES = {"queued", "wake_requested", "delivered", "adapter_unavailable", "failed", "cancelled"}
 ROLE_MAX_AUTHORITY = {
     "primary": "B3",
     "human-owner": "B3",
@@ -1388,13 +1365,9 @@ def launcher_output_dispatch_channel(text: str) -> str:
     )
     if explicit:
         raw = explicit.group(1).strip().lower().replace("-", "_")
-        if raw in DISPATCH_CHANNELS:
+        if raw in {"agent_thread_spawn", "one_click", "manual_paste"}:
             return raw
     return "manual_paste"
-
-
-def launcher_output_runtime_relation(text: str) -> str:
-    return launcher_output_runtime_relation_safe(text)
 
 
 def launcher_output_has_dispatch_success(text: str, dispatch_channel: str) -> bool:
@@ -1405,51 +1378,13 @@ def launcher_output_has_dispatch_success(text: str, dispatch_channel: str) -> bo
     if dispatch_channel == "one_click":
         pattern = rf"(?im)^\s*(?:[-*]\s*)?(?:Launch|Dispatch|One[- ]click)\s+result\s*[:：]\s*`?{success_terms}`?\.?\s*$"
         return bool(re.search(pattern, text))
-    if dispatch_channel == "runtime_bridge":
-        return launcher_output_has_bridge_success(text)
     return False
-
-
-def launcher_output_has_bridge_success(text: str) -> bool:
-    result_ok = False
-    event_ok = False
-    success_values = {"queued", "wake_requested", "delivered", "dispatch_requested", "started", "success", "succeeded", "ok"}
-    for line in text.splitlines():
-        stripped = re.sub(r"^[-*]\s*", "", line.strip())
-        result_match = re.match(r"(?i)^Bridge\s+result\s*[:：]\s*`?([A-Za-z0-9_-]+)`?\.?\s*$", stripped)
-        if result_match and result_match.group(1).strip().lower() in success_values:
-            result_ok = True
-        event_match = re.match(r"(?i)^Bridge\s+event(?:\s+(?:id|path))?\s*[:：]\s*`?(.+?)`?\s*$", stripped)
-        if event_match and event_match.group(1).strip():
-            event_ok = True
-    return result_ok and event_ok
-
-
-def launcher_output_runtime_relation_safe(text: str) -> str:
-    for line in text.splitlines():
-        stripped = re.sub(r"^[-*]\s*", "", line.strip())
-        match = re.match(r"(?i)^(?:runtimeRelation|runtime\s+relation)\s*[:：]\s*`?([A-Za-z0-9_-]+)`?\s*$", stripped)
-        if match:
-            raw = match.group(1).strip().lower().replace("-", "_")
-            return raw if raw in RUNTIME_RELATIONS else "unknown"
-    return "unknown"
 
 
 def validate_launcher_output_text(text: str, report: Report) -> None:
     dispatch_channel = launcher_output_dispatch_channel(text)
-    runtime_relation = launcher_output_runtime_relation_safe(text)
-    direct_dispatch = dispatch_channel in (NATIVE_DISPATCH_CHANNELS | {"runtime_bridge"})
+    direct_dispatch = dispatch_channel in {"agent_thread_spawn", "one_click"}
     report.add("DISPATCH_CHANNEL", "blocking", "pass", f"Launcher output dispatch channel is {dispatch_channel}.")
-    if runtime_relation == "cross_runtime" and dispatch_channel in NATIVE_DISPATCH_CHANNELS:
-        report.add(
-            "CROSS_RUNTIME_DISPATCH_CHANNEL",
-            "blocking",
-            "fail",
-            "Cross-runtime launcher output must use runtime_bridge or manual_paste, not native direct spawn.",
-        )
-        direct_dispatch = False
-    elif runtime_relation == "cross_runtime" and dispatch_channel == "runtime_bridge":
-        report.add("CROSS_RUNTIME_DISPATCH_CHANNEL", "blocking", "pass", "Cross-runtime launcher output uses runtime_bridge.")
     if direct_dispatch and launcher_output_has_dispatch_success(text, dispatch_channel):
         report.add("DIRECT_DISPATCH_RESULT", "blocking", "pass", f"{dispatch_channel} output includes direct dispatch success evidence.")
     elif direct_dispatch:
@@ -1714,7 +1649,7 @@ def validate_frontier_contract_text(text: str, report: Report) -> None:
     if "parent_consume_pending" in text and ("notify-return" in text or "notificationBridge" in text):
         report.add("FRONTIER_RETURN_EVENT_TRIGGER", "blocking", "pass", "Frontier contract records a parent consume trigger for returned evidence.")
     else:
-        report.add("FRONTIER_RETURN_EVENT_TRIGGER", "blocking", "fail", "Frontier contract must create parent_consume_pending and use notificationBridge, bridge-events.jsonl, or openaccp notify-return for returned evidence.")
+        report.add("FRONTIER_RETURN_EVENT_TRIGGER", "blocking", "fail", "Frontier contract must create parent_consume_pending and use notificationBridge or openaccp notify-return for returned evidence.")
     if re.search(r"(?is)(?:every|all)\s+Frontier\s+repl(?:y|ies).{0,160}(?:end|finish).{0,160}(?:recommended\s+next\s+step|\u4e0b\u4e00\u6b65\u5efa\u8bae)", text) or re.search(
         r"(?is)(?:end|finish).{0,160}(?:every|all)\s+Frontier\s+repl(?:y|ies).{0,160}(?:recommended\s+next\s+step|\u4e0b\u4e00\u6b65\u5efa\u8bae)",
         text,
@@ -1878,7 +1813,7 @@ def validate_frontier_contract_block(text: str, report: Report) -> None:
             "FRONTIER_CONTRACT_RETURN_EVENT_PROTOCOL",
             "blocking",
             "fail",
-            "returnEventProtocol must mark returned evidence as parent_consume_pending and trigger notificationBridge, bridge-events.jsonl, or openaccp notify-return when cross-runtime.",
+            "returnEventProtocol must mark returned evidence as parent_consume_pending and trigger notificationBridge/openaccp notify-return when cross-runtime.",
         )
 
 
@@ -2536,63 +2471,6 @@ def validate_notification_bridge(data: dict[str, Any], report: Report) -> None:
         report.add("NOTIFICATION_BRIDGE_COMMAND", "blocking", "pass", "notificationBridge command policy is valid.")
 
 
-def validate_bridge_event(data: dict[str, Any], report: Report) -> None:
-    if data.get("artifactType") != "bridge-event":
-        report.add("ARTIFACT_TYPE", "blocking", "fail", "artifactType must be bridge-event.")
-    else:
-        report.add("ARTIFACT_TYPE", "blocking", "pass", "artifactType is bridge-event.")
-    direction = data.get("direction")
-    event_type = data.get("eventType")
-    status = data.get("status")
-    parent_runtime = data.get("parentRuntime")
-    child_runtime = data.get("childRuntime")
-    relation = data.get("runtimeRelation")
-    expected_action = data.get("expectedAction")
-    busy_policy = data.get("busyPolicy")
-    if direction not in BRIDGE_EVENT_DIRECTIONS:
-        report.add("BRIDGE_EVENT_DIRECTION", "blocking", "fail", "direction must be child_to_parent or parent_to_child.")
-    else:
-        report.add("BRIDGE_EVENT_DIRECTION", "blocking", "pass", "direction is valid.")
-    if event_type not in BRIDGE_EVENT_TYPES:
-        report.add("BRIDGE_EVENT_TYPE", "blocking", "fail", "eventType is invalid.")
-    else:
-        report.add("BRIDGE_EVENT_TYPE", "blocking", "pass", "eventType is valid.")
-    if status not in BRIDGE_EVENT_STATUSES:
-        report.add("BRIDGE_EVENT_STATUS", "blocking", "fail", "status is invalid.")
-    else:
-        report.add("BRIDGE_EVENT_STATUS", "blocking", "pass", "status is valid.")
-    if parent_runtime not in AGENT_RUNTIMES or child_runtime not in AGENT_RUNTIMES:
-        report.add("BRIDGE_EVENT_RUNTIME", "blocking", "fail", "parentRuntime and childRuntime must be known runtime values.")
-    else:
-        report.add("BRIDGE_EVENT_RUNTIME", "blocking", "pass", "parentRuntime and childRuntime are valid.")
-    if relation not in RUNTIME_RELATIONS:
-        report.add("BRIDGE_EVENT_RUNTIME_RELATION", "blocking", "fail", "runtimeRelation is invalid.")
-    else:
-        expected_relation = "unknown"
-        if parent_runtime != "unknown" and child_runtime != "unknown":
-            expected_relation = "same_runtime" if parent_runtime == child_runtime else "cross_runtime"
-        if expected_relation != "unknown" and relation != expected_relation:
-            report.add("BRIDGE_EVENT_RUNTIME_RELATION", "blocking", "fail", "runtimeRelation does not match parentRuntime and childRuntime.")
-        else:
-            report.add("BRIDGE_EVENT_RUNTIME_RELATION", "blocking", "pass", "runtimeRelation is consistent.")
-    if direction == "child_to_parent" and event_type != "parent_consume_pending":
-        report.add("BRIDGE_EVENT_DIRECTION_TYPE", "blocking", "fail", "child_to_parent bridge events must represent parent_consume_pending.")
-    elif direction == "parent_to_child" and event_type != "frontier_dispatch_requested":
-        report.add("BRIDGE_EVENT_DIRECTION_TYPE", "blocking", "fail", "parent_to_child bridge events must represent frontier_dispatch_requested.")
-    else:
-        report.add("BRIDGE_EVENT_DIRECTION_TYPE", "blocking", "pass", "direction and eventType match.")
-    if direction == "child_to_parent" and expected_action != "consume_returned_child":
-        report.add("BRIDGE_EVENT_EXPECTED_ACTION", "blocking", "fail", "child_to_parent events must expect consume_returned_child.")
-    elif direction == "parent_to_child" and expected_action != "start_frontier":
-        report.add("BRIDGE_EVENT_EXPECTED_ACTION", "blocking", "fail", "parent_to_child events must expect start_frontier.")
-    else:
-        report.add("BRIDGE_EVENT_EXPECTED_ACTION", "blocking", "pass", "expectedAction matches direction.")
-    if relation == "cross_runtime" and busy_policy != "queue_until_safe_checkpoint":
-        report.add("BRIDGE_EVENT_BUSY_POLICY", "blocking", "fail", "cross-runtime bridge events must queue while the target runtime is busy.")
-    else:
-        report.add("BRIDGE_EVENT_BUSY_POLICY", "blocking", "pass", "busyPolicy is valid for the runtime relation.")
-
-
 def validate_runtime_boundary(data: dict[str, Any], report: Report) -> None:
     if data.get("artifactType") != "runtime-boundary":
         report.add("ARTIFACT_TYPE", "blocking", "fail", "artifactType must be runtime-boundary.")
@@ -2726,7 +2604,7 @@ def validate_lane_registry(data: dict[str, Any], report: Report) -> None:
             report.add("LANE_REQUIRED_FIELDS", "blocking", "pass", "lane has required fields.", loc)
         if lane.get("role") not in {"primary", "frontier"}:
             report.add("LANE_ROLE", "blocking", "fail", "lane role must be primary or frontier.", loc)
-        validate_lane_runtime_policy(lane, str(primary_runtime), str(data.get("dispatchChannel", "")).strip().lower(), report, loc)
+        validate_lane_runtime_policy(lane, str(primary_runtime), report, loc)
         if lane.get("authorityLevel") not in AUTHORITY_LEVELS:
             report.add("LANE_AUTHORITY", "blocking", "fail", "lane authorityLevel must be B0, B1, B2, or B3.", loc)
         validate_role_authority(lane.get("role"), lane.get("authorityLevel"), report, "LANE_ROLE_AUTHORITY", loc)
@@ -2764,7 +2642,7 @@ def validate_lane_registry(data: dict[str, Any], report: Report) -> None:
         validate_lane_return_gate_consistency(lane, return_gate, report, loc)
 
 
-def validate_lane_runtime_policy(lane: dict[str, Any], primary_runtime: str, registry_dispatch_channel: str, report: Report, loc: str) -> None:
+def validate_lane_runtime_policy(lane: dict[str, Any], primary_runtime: str, report: Report, loc: str) -> None:
     runtime = lane.get("runtime")
     relation = lane.get("runtimeRelation")
     role = lane.get("role")
@@ -2789,21 +2667,12 @@ def validate_lane_runtime_policy(lane: dict[str, Any], primary_runtime: str, reg
         else:
             report.add("LANE_PRIMARY_RUNTIME_MATCH", "blocking", "pass", "Primary lane runtime matches primaryRuntime.", loc)
         return
-    effective_dispatch_channel = str(lane.get("dispatchChannel") or registry_dispatch_channel or "").strip().lower()
-    if effective_dispatch_channel and effective_dispatch_channel not in DISPATCH_CHANNELS:
-        report.add("LANE_EFFECTIVE_DISPATCH_CHANNEL", "blocking", "fail", "lane dispatchChannel is invalid.", loc)
-    elif effective_dispatch_channel:
-        report.add("LANE_EFFECTIVE_DISPATCH_CHANNEL", "blocking", "pass", f"lane dispatchChannel resolves to {effective_dispatch_channel}.", loc)
     if expected_relation != "unknown" and relation != expected_relation:
         report.add("LANE_RUNTIME_RELATION", "blocking", "fail", "lane.runtimeRelation does not match primaryRuntime and lane.runtime.", loc)
         return
     report.add("LANE_RUNTIME_RELATION", "blocking", "pass", "lane.runtimeRelation is consistent.", loc)
     policy = lane.get("notificationBridgePolicy")
     if relation == "cross_runtime":
-        if effective_dispatch_channel in NATIVE_DISPATCH_CHANNELS:
-            report.add("LANE_CROSS_RUNTIME_DISPATCH_CHANNEL", "blocking", "fail", "cross-runtime Frontier lanes must use runtime_bridge or manual_paste, not native direct spawn.", loc)
-        elif effective_dispatch_channel in {"runtime_bridge", "manual_paste", ""}:
-            report.add("LANE_CROSS_RUNTIME_DISPATCH_CHANNEL", "blocking", "pass", "cross-runtime Frontier dispatch channel is bridge-aware or fallback-safe.", loc)
         if not isinstance(policy, dict):
             report.add("LANE_CROSS_RUNTIME_BRIDGE_POLICY", "blocking", "fail", "cross-runtime Frontier lanes require notificationBridgePolicy.", loc)
             return
@@ -2842,7 +2711,7 @@ def validate_lane_registry_dispatch_policy(data: dict[str, Any], lanes: list[Any
     reason = str(data.get("frontierDispatchReason", "")).strip()
     valid_complexities = {"bootstrap", "small", "normal", "medium", "medium-high", "high", "unknown"}
     valid_modes = {"pre_frontier", "single_frontier", "multi_frontier"}
-    valid_channels = {""} | DISPATCH_CHANNELS
+    valid_channels = {"", "agent_thread_spawn", "one_click", "manual_paste"}
     if complexity not in valid_complexities:
         report.add("LANE_DISPATCH_POLICY_COMPLEXITY", "blocking", "fail", "projectComplexity must be bootstrap, small, normal, medium, medium-high, high, or unknown.")
     else:
@@ -2851,7 +2720,7 @@ def validate_lane_registry_dispatch_policy(data: dict[str, Any], lanes: list[Any
         report.add("LANE_DISPATCH_POLICY_MODE", "blocking", "fail", "frontierDispatchMode must be pre_frontier, single_frontier, or multi_frontier.")
         return
     if channel not in valid_channels:
-        report.add("LANE_DISPATCH_CHANNEL", "blocking", "fail", "dispatchChannel must be agent_thread_spawn, one_click, runtime_bridge, or manual_paste when present.")
+        report.add("LANE_DISPATCH_CHANNEL", "blocking", "fail", "dispatchChannel must be agent_thread_spawn, one_click, or manual_paste when present.")
     else:
         report.add("LANE_DISPATCH_CHANNEL", "blocking", "pass", "dispatchChannel is valid or intentionally omitted.")
     if not reason:
@@ -3766,8 +3635,6 @@ def validate_json_artifact(args: argparse.Namespace) -> Report:
         validate_decision_registry(data, report)
     elif args.ruleset == "frontier-closure":
         validate_frontier_closure(data, report)
-    elif args.ruleset == "bridge-event":
-        validate_bridge_event(data, report)
     return report
 
 

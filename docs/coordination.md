@@ -36,11 +36,10 @@ OpenACCP uses a small `.openaccp/coordination/` control plane so separate thread
 
 Core artifacts:
 
-- `runtime-boundary.json`: Primary runtime identity, notification bridge policy, bridge event queue, repo path, inferred base branch, inferred source roots, inferred test entrypoints, inferred worktree policy, writable/read-only/forbidden paths, side effects, data risk, inference evidence, ambiguity notes, and `b2DispatchGate`.
+- `runtime-boundary.json`: Primary runtime identity, notification bridge policy, repo path, inferred base branch, inferred source roots, inferred test entrypoints, inferred worktree policy, writable/read-only/forbidden paths, side effects, data risk, inference evidence, ambiguity notes, and `b2DispatchGate`.
 - `current-manifest.json`: current source pack, source status registry, runtime boundary, lane registry, CARD registry, active lanes, and latest consume refs.
 - `sequence-registry.json`: Prompt IDs, Response IDs, handoffs, consumes, cards, active lanes, lifecycle states, and current/latest pointers.
-- `lane-registry.json`: Primary and Frontier lane objectives, project complexity, Primary runtime, Frontier dispatch mode, dispatch channel, lane-count reason, lane runtime, same-runtime or cross-runtime relation, notification bridge policy, assigned CARDs, authority, child ledger refs, closure refs, return-gate state, and per-lane `b2DispatchGate`.
-- `bridge-events.jsonl`: cross-runtime notification queue. `parent_to_child` events request Frontier startup; `child_to_parent` events request parent consume.
+- `lane-registry.json`: Primary and Frontier lane objectives, project complexity, Primary runtime, Frontier dispatch mode, lane-count reason, lane runtime, same-runtime or cross-runtime relation, notification bridge policy, assigned CARDs, authority, child ledger refs, closure refs, return-gate state, and per-lane `b2DispatchGate`.
 - `child-ledgers/<lane-id>.json`: child worker/reviewer/discovery/validation lifecycle, runtime relation, return event status, wake status, handoff status, and consume status for one lane.
 - `source-status-registry.json`: current, reference, deprecated, invalid, and unknown source status with reasons.
 - `decision-registry.json`: owner questions, Primary decisions, waivers, out-of-scope decisions, blockers, and safe defaults.
@@ -48,18 +47,7 @@ Core artifacts:
 
 Primary establishes the runtime boundary before B2 Frontier dispatch. The user provides the repo path; Primary infers base branch, source roots, test entrypoints, writable scope, and worktree policy from the repo before asking follow-up questions. If repo path is missing, ambiguous, or explicitly `no repo yet`, Primary asks for the repo path or records `no repo yet` and continues safe B0/B1 packaging. A Frontier can still run coordination-only or read-only B2 work, while product-write B2 dispatch requires both runtime `b2DispatchGate` and lane `b2DispatchGate` to be ready for product-write work. Frontier treats unresolved product-write readiness as an implementation-worker boundary, not as a reason to hand stage progress back to Primary.
 
-Primary also declares its agent runtime during startup: `codex`, `claude-code`, `other`, or `unknown`. When Primary signs a Frontier lane, it declares the Frontier runtime too. Same-runtime lanes can use the runtime's native subagent/thread flow. Cross-runtime lanes use `runtime_bridge`, the notification bridge policy recorded in `runtime-boundary.json` and `lane-registry.json`, and the shared `bridge-events.jsonl` queue.
-
-## Cross-Runtime Dispatch
-
-OpenACCP supports both directions without making the human owner act as the event bus:
-
-1. Primary writes the Frontier prompt record and short launcher to disk.
-2. Primary records the Frontier runtime and `runtimeRelation` in `lane-registry.json`.
-3. If the Frontier runtime differs from Primary, the effective `dispatchChannel` is `runtime_bridge` or `manual_paste`. Native `agent_thread_spawn` and `one_click` are same-runtime channels.
-4. Primary calls or queues `openaccp notify-dispatch --lane-registry <path> --lane-id <lane> --event-log <working-directory>/.openaccp/coordination/bridge-events.jsonl`.
-5. The bridge event records `direction: parent_to_child`, `eventType: frontier_dispatch_requested`, target runtime, prompt record, short launcher, and `busyPolicy: queue_until_safe_checkpoint`.
-6. A runtime adapter may wake the target tool. If no adapter is available, the event remains visible in the queue and manual fallback can be used deliberately.
+Primary also declares its agent runtime during startup: `codex`, `claude-code`, `other`, or `unknown`. When Primary signs a Frontier lane, it declares the Frontier runtime too. Same-runtime lanes can use the runtime's native subagent/thread flow. Cross-runtime lanes use the notification bridge policy recorded in `runtime-boundary.json` and `lane-registry.json`.
 
 ## Return Event Protocol
 
@@ -69,7 +57,7 @@ A returned child handoff is evidence, not acceptance. OpenACCP records the retur
 2. If the handoff is present and not yet consumed, the ledger records `returnEventStatus: parent_consume_pending` or `parent_consuming`.
 3. The ledger records `parentRuntime`, `childRuntime`, and `runtimeRelation`.
 4. If the parent and child run in different tools, the ledger records `notificationBridgeRef`, `parentConsumeDuePolicy`, and a `wakeStatus` such as `queued_for_parent`, `wake_requested`, or `delivered`.
-5. The bridge command `openaccp notify-return --child-ledger <path> --event-log <working-directory>/.openaccp/coordination/bridge-events.jsonl` reads the existing child ledger and appends a `child_to_parent` consume event. If the parent is busy, the event stays queued until the next safe checkpoint.
+5. The bridge command `openaccp notify-return` can read the existing child ledger and emit the parent consume payload. If the parent is busy, the event stays queued until the next safe checkpoint.
 6. Parent consume records `parentConsumeRef` and moves the return event to `consume_result_recorded`, `closed`, or `blocked`.
 
 This prevents the human owner from becoming the event bus. Humans still own authority decisions; routine returned-handoff delivery belongs to the coordination state and bridge policy.

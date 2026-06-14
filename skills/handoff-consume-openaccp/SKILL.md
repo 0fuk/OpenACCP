@@ -9,7 +9,7 @@ Validate structure, check scope against task card, review verification evidence,
 
 Handoff presence is not acceptance.
 
-A returned child handoff should be visible in the parent ledger as `parent_consume_pending` until a consume result is recorded. If the child and parent run in different runtimes, the return should also carry a `notificationBridgeRef` and a wake state such as `queued_for_parent`, `wake_requested`, or `delivered`. The bridge may wake the parent or queue the consume event through `.openaccp/coordination/bridge-events.jsonl`, but it never creates final acceptance by itself.
+A returned child handoff should be visible in the parent ledger as `parent_consume_pending` until a consume result is recorded. If the child and parent run in different runtimes, the return should also carry a `notificationBridgeRef` and a wake state such as `queued_for_parent`, `wake_requested`, or `delivered`. The bridge may wake the parent or queue the consume event, but it never creates final acceptance by itself.
 
 Every consume should produce or return a `consume-result` artifact. Frontier consume results are provisional unless Primary explicitly granted final authority, which should not be the default. Final consume results belong to Primary or the human owner.
 

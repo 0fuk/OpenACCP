@@ -163,24 +163,15 @@ Recommended file names:
 - `<working-directory>/.openaccp/launchers/primary-orchestrator.prompt.md`
 - `<working-directory>/.openaccp/launchers/primary-orchestrator.short.md`
 
-The chat output must not contain the full prompt body. When the runtime supports agent/thread spawn, dispatch the Primary directly from the short launcher seed and record `dispatchChannel: agent_thread_spawn`. When direct dispatch is unavailable, chat contains one short copyable Primary launcher that points to the on-disk prompt record and is clearly labeled as the manual fallback.
+The chat output must not contain the full prompt body. When the runtime supports agent/thread spawn, dispatch the Primary directly from the short launcher seed and record `dispatchChannel: agent_thread_spawn`. When direct dispatch is unavailable, chat must contain one short copyable Primary launcher that points to the on-disk prompt record and is clearly labeled as the manual fallback.
 
 Writing the `.short.md` file is required for audit. For `agent_thread_spawn` or `one_click`, the file is the dispatch seed and no human copy/paste is required. For `manual_paste`, the agent must read or construct the short launcher and paste its exact contents into the chat as a fenced `prompt` block. A file link, file attachment, file list, or `Get-Content` command is not a usable manual fallback.
 
-Use this interaction shape for same-runtime direct dispatch:
+Use this interaction shape for direct dispatch:
 
 1. Tell the user which full Primary prompt record file was written.
 2. State `Dispatch channel: agent_thread_spawn` or `Dispatch channel: one_click`.
-3. State `Runtime relation: same_runtime` when the output is launching a child or Frontier lane.
-4. State a successful result line, such as `Spawn result: dispatched` for `agent_thread_spawn` or `Launch result: started` for `one_click`. If dispatch failed, switch to manual fallback instead of claiming direct dispatch.
-
-Use this interaction shape for cross-runtime bridge dispatch:
-
-1. Tell the user which full Frontier prompt record file was written.
-2. State `Dispatch channel: runtime_bridge`.
-3. State `Runtime relation: cross_runtime`.
-4. State a successful bridge result line such as `Bridge result: queued`.
-5. State the bridge event id or path, such as `Bridge event: .openaccp/coordination/bridge-events.jsonl#<event-id>`.
+3. State a successful result line, such as `Spawn result: dispatched` for `agent_thread_spawn` or `Launch result: started` for `one_click`. If dispatch failed, switch to manual fallback instead of claiming direct dispatch.
 
 Use this interaction shape for manual fallback:
 
@@ -240,18 +231,18 @@ Primary must first:
 7. Create CARDs before Frontier dispatch. For normal or medium/high-complexity product work, prefer 10-20 project-level CARDs. Use fewer only for genuinely small projects and record why.
 8. Scan the facts for domain coverage before finalizing CARDs: product workflow, backend/API, data/storage, frontend/UI, desktop/mobile/native/Electron/Tauri surfaces, integrations, auth/security/privacy, migration, testing/QA, observability/CI, docs/release/ops, and project-specific domains. Create CARDs only for domains present in the facts, but never miss a domain the facts explicitly name.
 9. Group CARDs into Frontier lanes based on complexity, risk, dependencies, and parallel safety. Default to at least two Frontier lanes when two safe independent CARD clusters exist; use one only for small/single-lane/user-request cases with a stated reason; use two to five for medium/high complexity when parallel work is useful.
-10. Declare each selected Frontier runtime, runtime relation, dispatch channel, and notification bridge policy in lane registry.
+10. Declare each selected Frontier runtime, runtime relation, and notification bridge policy in lane registry.
 11. Write full Frontier prompt records to disk only for the lanes it decides are useful.
 12. Validate each full Frontier prompt record with the `frontier-contract` ruleset before direct dispatch or manual fallback.
 13. Write each short Frontier launcher to disk for audit, then dispatch each selected Frontier directly when the runtime supports it. If direct dispatch is unavailable, print each selected Frontier launcher in its own fenced `prompt` block in chat as manual fallback.
 
-When Primary dispatches same-runtime Frontier lanes directly, the response records `dispatchChannel: agent_thread_spawn` or `dispatchChannel: one_click`, `Runtime relation: same_runtime`, and the lane IDs that were started. When Primary dispatches a cross-runtime Frontier, the response records `dispatchChannel: runtime_bridge`, `Runtime relation: cross_runtime`, `Bridge result`, and the bridge event locator. When no direct or bridge channel is available, the response records `dispatchChannel: manual_paste`, explains why fallback is needed, and includes the preferred-language left-sidebar thread instruction plus one copyable `prompt` block for each selected Frontier.
+When Primary dispatches Frontier lanes directly, the response records `dispatchChannel: agent_thread_spawn` or `dispatchChannel: one_click` and names the lane IDs that were started. When Primary cannot dispatch directly, the response records `dispatchChannel: manual_paste`, explains why direct dispatch was unavailable, and includes the preferred-language left-sidebar thread instruction plus one copyable `prompt` block for each selected Frontier.
 
 Frontier lanes default to B2 lane-local authority. A B2 Frontier may actively run B0 discovery, B1 packaging, B2 scoped worker/reviewer/subagent dispatch, child handoff consume, provisional lane evidence synthesis, and closure proof inside its assigned lane. B3 decisions go to Primary only when listed in Primary's `delegatedFinalAuthority`; production launch, public publication, customer-visible release, and risk waiver stay with the human owner by default.
 
 Inside a Frontier lane, worker/reviewer/discovery/validation child work is dispatched by that Frontier through available subagent or delegation tools. Human-opened child worker or reviewer threads are fallback paths. If direct dispatch is unavailable or unsafe, the Frontier may return a short `Fallback launcher`, but it must write that launcher to disk, print it in chat as a fenced `prompt` block, explain why direct dispatch was unavailable or unsafe, and give one exact recommended next step.
 
-Returned child evidence follows the return event protocol. If a child returns in another runtime, the child ledger records `parent_consume_pending`, `notificationBridgeRef`, and a wake state such as `queued_for_parent`; `openaccp notify-return --child-ledger <path> --event-log <working-directory>/.openaccp/coordination/bridge-events.jsonl` appends the parent consume event. Primary can also wake a cross-runtime Frontier with `openaccp notify-dispatch --lane-registry <path> --lane-id <lane> --event-log <working-directory>/.openaccp/coordination/bridge-events.jsonl`. The bridge wakes or queues lifecycle work while final authority stays with Primary or the human owner.
+Returned child evidence follows the return event protocol. If a child returns in another runtime, the child ledger records `parent_consume_pending`, `notificationBridgeRef`, and a wake state such as `queued_for_parent`; `openaccp notify-return` can emit the parent consume payload from the existing child-ledger path. The bridge wakes or queues the parent consume step while final authority stays with Primary or the human owner.
 
 Primary and Frontier maintain machine-readable coordination state:
 

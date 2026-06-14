@@ -72,7 +72,7 @@ Every status-like reply must use `formal-report-openaccp` structure with stable 
 12. For normal or medium/high-complexity product work, prefer 10-20 project-level CARDs. Each CARD may later expand into multiple concrete task cards. Use fewer only for genuinely small projects and record the reason.
 13. Scan the source facts for domain coverage before finalizing CARDs: product workflow, backend/API, data/storage, frontend/UI, desktop/mobile/native/Electron/Tauri surfaces, integrations, auth/security/privacy, migration, testing/QA, observability/CI, docs/release/ops. Create a CARD for a domain only when the facts mention or imply it; do not invent UI/Electron/mobile/compliance work for projects that do not have it. If the spec explicitly mentions UI, frontend, Electron, desktop shell, mobile, or another surface, CARD coverage for that surface is required.
 14. Group CARDs into 2-5 Frontier lanes based on complexity, risk, dependencies, and parallel safety. Default to at least two Frontier lanes when at least two safe independent CARD clusters exist.
-15. For every selected Frontier, declare its runtime as `codex`, `claude-code`, `other`, or `unknown`. Compare it with the Primary runtime and record `runtimeRelation` in lane registry as `same_runtime` or `cross_runtime`. Same-runtime Frontier lanes may use `agent_thread_spawn` or `one_click`. Cross-runtime Frontier lanes must use `runtime_bridge` or `manual_paste`, must carry `notificationBridgePolicy` with `busyPolicy: queue_until_safe_checkpoint`, and must reference `.openaccp/coordination/runtime-boundary.json#notificationBridge`.
+15. For every selected Frontier, declare its runtime as `codex`, `claude-code`, `other`, or `unknown`. Compare it with the Primary runtime and record `runtimeRelation` in lane registry as `same_runtime` or `cross_runtime`. A cross-runtime Frontier must carry `notificationBridgePolicy` with `busyPolicy: queue_until_safe_checkpoint` and a `bridgeRef` to `.openaccp/coordination/runtime-boundary.json#notificationBridge`.
 16. Write full Frontier prompt records only for selected lanes. Each Frontier prompt record must include the `openaccp-frontier-orchestration-contract.v1` JSON block.
 17. Validate each Frontier prompt record with the `frontier-contract` ruleset before direct dispatch or manual fallback.
 18. Write every selected short Frontier launcher to disk, then dispatch selected Frontier lanes directly when the runtime supports agent/thread spawn or one-click launch. If direct dispatch is unavailable, print each selected short Frontier launcher in its own fenced `prompt` block as manual fallback. File links to `.short.md` launchers are evidence only and must not replace manual fallback prompt blocks.
@@ -115,8 +115,8 @@ Each Frontier prompt record must include:
 - worktreeDecision,
 - subagent-first worker/reviewer/discovery dispatch rules,
 - a rule that human-managed child launchers are fallback only,
-- `dispatchChannel` policy: same-runtime uses `agent_thread_spawn` or `one_click` when available; cross-runtime uses `runtime_bridge`; `manual_paste` is fallback only,
-- return event protocol: returned evidence creates `parent_consume_pending`; cross-runtime dispatch uses `openaccp notify-dispatch`; cross-runtime returns call or queue `openaccp notify-return`; a child return alone is not final acceptance,
+- `dispatchChannel` policy: `agent_thread_spawn` or `one_click` is the default when available; `manual_paste` is fallback only,
+- return event protocol: returned evidence creates `parent_consume_pending`; cross-runtime returns call or queue `openaccp notify-return`; a child return alone is not final acceptance,
 - child ledger and child handoff consume expectations,
 - human next-step reporting expectations,
 - handoff path and validation expectations.
@@ -128,7 +128,7 @@ Return:
 - startup formal report,
 - current facts and gaps,
 - runtime boundary, current manifest, lane registry, source status registry, decision registry, and sequence registry status,
-- Primary runtime identity, selected Frontier runtimes, same-runtime or cross-runtime relation, dispatch channel, and notification bridge policy,
+- Primary runtime identity, selected Frontier runtimes, same-runtime or cross-runtime relation, and notification bridge policy,
 - CARD list, CARD coverage gaps, or CARD creation blocker,
 - one recommended Primary next action,
 - two to five Frontier Orchestrator lanes for normal or medium/high-complexity projects based on CARD and lane analysis, dispatched directly when available. One Frontier is allowed only for a clearly small project, a single safe independent lane, or an explicit user request, and the report must state that reason. If direct dispatch is unavailable, return manual fallback short launchers as copyable fenced `prompt` blocks.
