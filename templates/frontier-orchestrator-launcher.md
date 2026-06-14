@@ -160,7 +160,7 @@ Short downstream chat launchers are fallback only. Use them only when direct sub
 
 Maintain a child ledger with promptId, taskId, role, authority, effects, parentRuntime, childRuntime, runtimeRelation, returnEventStatus, wakeStatus, parentConsumeDuePolicy, subagent id or tool status, expected handoff path, dispatchStatus, handoffStatus, consumeStatus, and remaining risk. Add responseId when the child returns and handoffId when the handoff is present. Consume child handoffs before claiming lane progress.
 
-When a child returns evidence, record the return before reporting progress. A present handoff with `consumeStatus: not_consumed` should be visible as `parent_consume_pending` or `parent_consuming`. Cross-runtime returns should carry `notificationBridgeRef` and a wake state such as `queued_for_parent`, `wake_requested`, or `delivered`; use `openaccp notify-return` from the existing child-ledger path when the bridge is needed.
+When a child returns evidence, record the return before reporting progress. A present handoff with `consumeStatus: not_consumed` should be visible as `parent_consume_pending` or `parent_consuming`. Cross-runtime returns should carry `notificationBridgeRef` and a wake state such as `queued_for_parent`, `wake_requested`, or `delivered`; use `openaccp notify-return --child-ledger <path> --event-log <working-directory>/.openaccp/coordination/bridge-events.jsonl` from the existing child-ledger path when the bridge is needed.
 
 Do not wait for Primary while B0/B1/B2-safe work remains. Missing facts usually trigger B0 discovery. Missing scope usually triggers B1 packaging. Complete scoped execution fields trigger B2 worker or reviewer dispatch.
 

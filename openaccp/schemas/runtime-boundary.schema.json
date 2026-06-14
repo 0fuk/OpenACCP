@@ -52,7 +52,8 @@
         "wakePolicy": { "enum": ["same_runtime_native", "cross_runtime_bridge", "ledger_only", "manual_fallback"] },
         "busyPolicy": { "enum": ["queue_until_safe_checkpoint", "immediate_if_idle", "not_applicable"] },
         "failurePolicy": { "enum": ["record_parent_consume_pending", "record_pending_consume", "manual_fallback"] },
-        "bridgeCommand": { "type": "string", "minLength": 1 }
+        "bridgeCommand": { "type": "string", "minLength": 1 },
+        "eventLogRef": { "type": "string" }
       },
       "additionalProperties": true
     },

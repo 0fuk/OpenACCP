@@ -261,7 +261,8 @@ def valid_runtime_boundary(tmp: Path) -> dict:
             "wakePolicy": "cross_runtime_bridge",
             "busyPolicy": "queue_until_safe_checkpoint",
             "failurePolicy": "record_parent_consume_pending",
-            "bridgeCommand": "openaccp notify-return",
+            "bridgeCommand": "openaccp notify-return / openaccp notify-dispatch",
+            "eventLogRef": "coordination/bridge-events.jsonl",
         },
         "workingDirectory": str(tmp / "work"),
         "productRepoStatus": "found",
@@ -336,6 +337,7 @@ def valid_cross_runtime_lane_registry() -> dict:
     registry = valid_lane_registry()
     registry["projectComplexity"] = "normal"
     registry["frontierDispatchMode"] = "multi_frontier"
+    registry["dispatchChannel"] = "runtime_bridge"
     registry["frontierDispatchReason"] = "Normal project uses two bounded Frontier lanes."
     registry["lanes"] = [
         registry["lanes"][0],
@@ -345,6 +347,7 @@ def valid_cross_runtime_lane_registry() -> dict:
             "role": "frontier",
             "runtime": "claude-code",
             "runtimeRelation": "cross_runtime",
+            "dispatchChannel": "runtime_bridge",
             "status": "prepared",
             "currentPromptId": "PROMPT-FRONTIER-UI-001",
             "authorityLevel": "B2",
@@ -380,6 +383,7 @@ def valid_cross_runtime_lane_registry() -> dict:
             "role": "frontier",
             "runtime": "codex",
             "runtimeRelation": "same_runtime",
+            "dispatchChannel": "agent_thread_spawn",
             "status": "prepared",
             "currentPromptId": "PROMPT-FRONTIER-PLATFORM-001",
             "authorityLevel": "B2",
@@ -928,6 +932,17 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     write_json(bad_cross_runtime_lanes_path, bad_cross_runtime_lanes)
     assert_exit("lane registry rejects cross-runtime Frontier without bridge policy", run(["--artifact", str(bad_cross_runtime_lanes_path), "--ruleset", "lane-registry", "--strict"]), 1)
 
+    bad_cross_runtime_direct_dispatch = valid_cross_runtime_lane_registry()
+    bad_cross_runtime_direct_dispatch["dispatchChannel"] = "agent_thread_spawn"
+    bad_cross_runtime_direct_dispatch["lanes"][1]["dispatchChannel"] = "agent_thread_spawn"
+    bad_cross_runtime_direct_dispatch_path = tmp / "bad-cross-runtime-direct-dispatch.json"
+    write_json(bad_cross_runtime_direct_dispatch_path, bad_cross_runtime_direct_dispatch)
+    assert_exit(
+        "lane registry rejects cross-runtime Frontier direct spawn claim",
+        run(["--artifact", str(bad_cross_runtime_direct_dispatch_path), "--ruleset", "lane-registry", "--strict"]),
+        1,
+    )
+
     bad_return_event_child = valid_child_ledger()
     bad_return_event_child["children"][0].update(
         {
@@ -1184,6 +1199,7 @@ def assert_text_rules(tmp: Path) -> None:
         "\n".join(
             [
                 "Dispatch channel: agent_thread_spawn",
+                "Runtime relation: same_runtime",
                 "Primary directly spawned Frontier 01 from the on-disk prompt record.",
                 "Prompt ID: openaccp-frontier-demo-lane-01",
                 "Spawn result: dispatched.",
@@ -1193,11 +1209,43 @@ def assert_text_rules(tmp: Path) -> None:
     )
     assert_exit("launcher output allows auto dispatch without paste block", run(["--artifact", str(auto_launcher_output_path), "--ruleset", "launcher-output", "--strict"]), 0)
 
+    bridge_launcher_output_path = tmp / "runtime-bridge-launcher-output.md"
+    bridge_launcher_output_path.write_text(
+        "\n".join(
+            [
+                "Dispatch channel: runtime_bridge",
+                "Runtime relation: cross_runtime",
+                "Primary queued Frontier 01 through the OpenACCP bridge event queue.",
+                "Prompt ID: openaccp-frontier-demo-lane-01",
+                "Bridge result: queued.",
+                "Bridge event: BRIDGE-EVENT-001",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    assert_exit("launcher output allows cross-runtime bridge dispatch without paste block", run(["--artifact", str(bridge_launcher_output_path), "--ruleset", "launcher-output", "--strict"]), 0)
+
+    cross_runtime_direct_output_path = tmp / "cross-runtime-direct-launcher-output.md"
+    cross_runtime_direct_output_path.write_text(
+        "\n".join(
+            [
+                "Dispatch channel: agent_thread_spawn",
+                "Runtime relation: cross_runtime",
+                "Primary claimed to directly spawn a different-runtime Frontier.",
+                "Prompt ID: openaccp-frontier-demo-lane-01",
+                "Spawn result: dispatched.",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    assert_exit("launcher output rejects cross-runtime direct spawn claim", run(["--artifact", str(cross_runtime_direct_output_path), "--ruleset", "launcher-output", "--strict"]), 1)
+
     one_click_launcher_output_path = tmp / "one-click-launcher-output.md"
     one_click_launcher_output_path.write_text(
         "\n".join(
             [
                 "Dispatch channel: one_click",
+                "Runtime relation: same_runtime",
                 "Primary opened Frontier 01 from the saved short launcher seed.",
                 "Prompt ID: openaccp-frontier-demo-lane-01",
                 "Launch result: started.",
@@ -1546,7 +1594,7 @@ def assert_text_rules(tmp: Path) -> None:
                         },
                         "returnEventProtocol": {
                             "onChildReturned": "set returnEventStatus to parent_consume_pending until parent consume records a result",
-                            "crossRuntimeWake": "call openaccp notify-return or record notificationBridge wakeStatus queued_for_parent",
+                            "crossRuntimeWake": "call openaccp notify-return --child-ledger <path> --event-log <working-directory>/.openaccp/coordination/bridge-events.jsonl or record notificationBridge wakeStatus queued_for_parent",
                             "busyParentPolicy": "queue_until_safe_checkpoint",
                             "acceptanceRule": "child_returned is evidence only, not final acceptance",
                         },
@@ -1690,6 +1738,7 @@ def assert_cli_entrypoints(tmp: Path) -> None:
     )
     bridge_ledger_path = tmp / "bridge-child-ledger.json"
     write_json(bridge_ledger_path, bridge_ledger)
+    bridge_event_log = tmp / ".openaccp" / "coordination" / "bridge-events.jsonl"
     notify_proc = subprocess.run(
         [
             sys.executable,
@@ -1700,6 +1749,8 @@ def assert_cli_entrypoints(tmp: Path) -> None:
             str(bridge_ledger_path),
             "--prompt-id",
             "PROMPT-WORKER-001",
+            "--event-log",
+            str(bridge_event_log),
         ],
         cwd=ROOT,
         text=True,
@@ -1713,6 +1764,53 @@ def assert_cli_entrypoints(tmp: Path) -> None:
         print(notify_proc.stdout)
         raise SystemExit(1)
     print("PASS notify-return output includes pending consume wake state")
+    if not bridge_event_log.exists():
+        print("FAIL notify-return writes bridge event queue")
+        raise SystemExit(1)
+    return_event = json.loads(bridge_event_log.read_text(encoding="utf-8").strip().splitlines()[-1])
+    if return_event.get("direction") != "child_to_parent" or return_event.get("eventType") != "parent_consume_pending":
+        print("FAIL notify-return bridge event has child_to_parent parent consume shape")
+        print(return_event)
+        raise SystemExit(1)
+    print("PASS notify-return writes bridge event queue")
+
+    dispatch_registry = valid_cross_runtime_lane_registry()
+    dispatch_registry_path = tmp / "dispatch-lane-registry.json"
+    write_json(dispatch_registry_path, dispatch_registry)
+    notify_dispatch_proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "openaccp",
+            "notify-dispatch",
+            "--lane-registry",
+            str(dispatch_registry_path),
+            "--lane-id",
+            "frontier-ui",
+            "--event-log",
+            str(bridge_event_log),
+            "--prompt-record",
+            ".openaccp/launchers/frontier-ui.prompt.md",
+            "--short-launcher",
+            ".openaccp/launchers/frontier-ui.short.md",
+        ],
+        cwd=ROOT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        capture_output=True,
+    )
+    assert_exit("python -m openaccp notify-dispatch queues cross-runtime Frontier", notify_dispatch_proc, 0)
+    dispatch_event = json.loads(bridge_event_log.read_text(encoding="utf-8").strip().splitlines()[-1])
+    if dispatch_event.get("direction") != "parent_to_child" or dispatch_event.get("eventType") != "frontier_dispatch_requested":
+        print("FAIL notify-dispatch bridge event has parent_to_child dispatch shape")
+        print(dispatch_event)
+        raise SystemExit(1)
+    print("PASS notify-dispatch writes bridge event queue")
+
+    dispatch_event_path = tmp / "dispatch-bridge-event.json"
+    write_json(dispatch_event_path, dispatch_event)
+    assert_exit("bridge event validates", run(["--artifact", str(dispatch_event_path), "--ruleset", "bridge-event", "--strict"]), 0)
     bad_bridge_ledger = json.loads(json.dumps(bridge_ledger))
     bad_bridge_ledger["children"][0]["wakeStatus"] = "not_attempted"
     bad_bridge_ledger_path = tmp / "bad-bridge-child-ledger.json"

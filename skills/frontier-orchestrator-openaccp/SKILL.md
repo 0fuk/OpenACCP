@@ -100,7 +100,7 @@ Frontier prompt records should carry this machine-readable contract block, updat
   },
   "returnEventProtocol": {
     "onChildReturned": "set returnEventStatus to parent_consume_pending until the parent orchestrator records consume_result_recorded, closed, or blocked",
-    "crossRuntimeWake": "call openaccp notify-return or record notificationBridge wakeStatus queued_for_parent when parent and child runtimes differ",
+    "crossRuntimeWake": "call openaccp notify-return --child-ledger <path> --event-log <working-directory>/.openaccp/coordination/bridge-events.jsonl or record notificationBridge wakeStatus queued_for_parent when parent and child runtimes differ",
     "busyParentPolicy": "queue_until_safe_checkpoint",
     "acceptanceRule": "child_returned is evidence only, not final acceptance"
   },
@@ -197,7 +197,7 @@ A child return is an event, not acceptance. When a child returns a handoff, revi
 1. Update the existing child ledger before writing progress claims.
 2. If `handoffStatus` is `present` and `consumeStatus` is `not_consumed`, set `returnEventStatus` to `parent_consume_pending` or `parent_consuming`.
 3. Record `parentRuntime`, `childRuntime`, and `runtimeRelation`.
-4. If `runtimeRelation` is `cross_runtime`, record `notificationBridgeRef`, set `wakeStatus` to `queued_for_parent`, `wake_requested`, `delivered`, `unavailable`, or `failed`, and run or queue `openaccp notify-return` from the existing child-ledger path.
+4. If `runtimeRelation` is `cross_runtime`, record `notificationBridgeRef`, set `wakeStatus` to `queued_for_parent`, `wake_requested`, `delivered`, `unavailable`, or `failed`, and run or queue `openaccp notify-return --child-ledger <path> --event-log <working-directory>/.openaccp/coordination/bridge-events.jsonl` from the existing child-ledger path.
 5. If the parent orchestrator is busy, queue the notification until the next safe checkpoint. Keep the pending consume visible in the ledger.
 6. When the parent consumes or rejects the evidence, record `parentConsumeRef` and move `returnEventStatus` to `consume_result_recorded`, `closed`, or `blocked`.
 

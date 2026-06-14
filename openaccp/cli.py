@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,24 @@ except ImportError:  # pragma: no cover - supports direct script execution
 
 def json_text(data: dict[str, Any]) -> str:
     return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+
+
+def utc_now_text() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def event_part(value: object, fallback: str = "unknown") -> str:
+    text = str(value or fallback).strip().lower()
+    cleaned = "".join(ch if ch.isalnum() else "-" for ch in text).strip("-")
+    while "--" in cleaned:
+        cleaned = cleaned.replace("--", "-")
+    return cleaned or fallback
+
+
+def append_jsonl_event(event_log: Path, event: dict[str, Any]) -> None:
+    event_log.parent.mkdir(parents=True, exist_ok=True)
+    with event_log.open("a", encoding="utf-8", newline="\n") as handle:
+        handle.write(json.dumps(event, ensure_ascii=False, sort_keys=True) + "\n")
 
 
 def starter_files(target: Path) -> dict[Path, str]:
@@ -168,7 +187,8 @@ def starter_files(target: Path) -> dict[Path, str]:
                     "wakePolicy": "ledger_only",
                     "busyPolicy": "queue_until_safe_checkpoint",
                     "failurePolicy": "record_parent_consume_pending",
-                    "bridgeCommand": "openaccp notify-return",
+                    "bridgeCommand": "openaccp notify-return / openaccp notify-dispatch",
+                    "eventLogRef": "coordination/bridge-events.jsonl",
                 },
                 "workingDirectory": str(target),
                 "productRepoStatus": "missing",
@@ -392,6 +412,70 @@ def return_notification_payload(
     return payload, errors
 
 
+def bridge_status_from_wake_status(wake_status: object) -> str:
+    value = str(wake_status or "").strip()
+    if value == "delivered":
+        return "delivered"
+    if value == "wake_requested":
+        return "wake_requested"
+    if value == "unavailable":
+        return "adapter_unavailable"
+    if value == "failed":
+        return "failed"
+    return "queued"
+
+
+def busy_policy_from_due_policy(due_policy: object) -> str:
+    value = str(due_policy or "").strip()
+    if value == "immediate_if_idle":
+        return "immediate_if_idle"
+    if value in {"not_applicable", ""}:
+        return "not_applicable"
+    return "queue_until_safe_checkpoint"
+
+
+def return_bridge_events(payload: dict[str, Any], ledger_path: Path) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    ledger_id = event_part(payload.get("ledgerId"), "ledger")
+    lane_id = payload.get("laneId", "")
+    for idx, pending in enumerate(payload.get("pendingConsumes", []), start=1):
+        if not isinstance(pending, dict):
+            continue
+        prompt_id = pending.get("promptId", "")
+        event_id = "bridge-child-to-parent-" + "-".join(
+            [
+                event_part(lane_id, "lane"),
+                event_part(prompt_id, f"pending-{idx}"),
+                event_part(pending.get("handoffId") or pending.get("responseId") or ledger_id, "return"),
+            ]
+        )
+        events.append(
+            {
+                "schemaVersion": "openaccp-bridge-event.v1",
+                "artifactType": "bridge-event",
+                "eventId": event_id,
+                "direction": "child_to_parent",
+                "eventType": "parent_consume_pending",
+                "status": bridge_status_from_wake_status(pending.get("wakeStatus")),
+                "parentRuntime": pending.get("parentRuntime", ""),
+                "childRuntime": pending.get("childRuntime", ""),
+                "runtimeRelation": pending.get("runtimeRelation", "unknown"),
+                "laneId": lane_id,
+                "promptId": prompt_id,
+                "responseId": pending.get("responseId", ""),
+                "taskId": pending.get("taskId", ""),
+                "handoffId": pending.get("handoffId", ""),
+                "sourceRef": f"{ledger_path}#{prompt_id or idx}",
+                "targetRef": pending.get("notificationBridgeRef", "") or "parent-orchestrator",
+                "createdAt": utc_now_text(),
+                "expectedAction": "consume_returned_child",
+                "busyPolicy": busy_policy_from_due_policy(pending.get("parentConsumeDuePolicy")),
+                "finalAuthorityNote": "Bridge events request consume only; final acceptance remains with Primary or the human owner.",
+            }
+        )
+    return events
+
+
 def notify_return_command(args: argparse.Namespace) -> int:
     ledger_path = Path(args.child_ledger)
     ledger = load_json_file(ledger_path)
@@ -407,6 +491,108 @@ def notify_return_command(args: argparse.Namespace) -> int:
         for error in errors:
             print(error, file=sys.stderr)
         return 1
+    events = return_bridge_events(payload, ledger_path)
+    if args.event_log:
+        event_log = Path(args.event_log)
+        for event in events:
+            append_jsonl_event(event_log, event)
+        payload["bridgeEventLog"] = str(event_log)
+    payload["bridgeEvents"] = events
+    print(json.dumps(payload, indent=2 if args.pretty else None, ensure_ascii=False))
+    return 0
+
+
+def find_lane(lane_registry: dict[str, Any], lane_id: str) -> dict[str, Any] | None:
+    for lane in lane_registry.get("lanes", []):
+        if isinstance(lane, dict) and lane.get("laneId") == lane_id:
+            return lane
+    return None
+
+
+def dispatch_bridge_event(
+    lane_registry: dict[str, Any],
+    lane_registry_path: Path,
+    lane: dict[str, Any],
+    prompt_record: str = "",
+    short_launcher: str = "",
+) -> tuple[dict[str, Any], list[str]]:
+    errors: list[str] = []
+    lane_id = str(lane.get("laneId", "")).strip()
+    parent_runtime = lane_registry.get("primaryRuntime", "")
+    child_runtime = lane.get("runtime", "")
+    relation = lane.get("runtimeRelation", "unknown")
+    dispatch_channel = str(lane.get("dispatchChannel") or lane_registry.get("dispatchChannel", "")).strip()
+    if lane.get("role") != "frontier":
+        errors.append(f"{lane_id or '<missing-lane-id>'}: notify-dispatch requires a Frontier lane")
+    if relation == "cross_runtime" and dispatch_channel in {"agent_thread_spawn", "one_click"}:
+        errors.append(f"{lane_id}: cross-runtime dispatch must use runtime_bridge or manual_paste, not {dispatch_channel}")
+    bridge_policy = lane.get("notificationBridgePolicy")
+    if relation == "cross_runtime" and not isinstance(bridge_policy, dict):
+        errors.append(f"{lane_id}: cross-runtime dispatch requires notificationBridgePolicy")
+    status = "queued" if relation == "cross_runtime" else "delivered"
+    event_id = "bridge-parent-to-child-" + "-".join(
+        [
+            event_part(lane_id, "lane"),
+            event_part(lane.get("currentPromptId"), "prompt"),
+        ]
+    )
+    event = {
+        "schemaVersion": "openaccp-bridge-event.v1",
+        "artifactType": "bridge-event",
+        "eventId": event_id,
+        "direction": "parent_to_child",
+        "eventType": "frontier_dispatch_requested",
+        "status": status,
+        "parentRuntime": parent_runtime,
+        "childRuntime": child_runtime,
+        "runtimeRelation": relation,
+        "laneId": lane_id,
+        "promptId": lane.get("currentPromptId", ""),
+        "sourceRef": f"{lane_registry_path}#{lane_id}",
+        "targetRef": prompt_record or short_launcher or str(lane.get("childLedgerRef", "")) or "frontier-orchestrator",
+        "createdAt": utc_now_text(),
+        "expectedAction": "start_frontier",
+        "busyPolicy": "queue_until_safe_checkpoint" if relation == "cross_runtime" else "not_applicable",
+        "finalAuthorityNote": "Bridge dispatch starts or queues a Frontier lane only; B3 final authority remains with Primary or the human owner.",
+        "promptRecordRef": prompt_record,
+        "shortLauncherRef": short_launcher,
+    }
+    return event, errors
+
+
+def notify_dispatch_command(args: argparse.Namespace) -> int:
+    lane_registry_path = Path(args.lane_registry)
+    lane_registry = load_json_file(lane_registry_path)
+    if lane_registry is None:
+        return 1
+    lane = find_lane(lane_registry, args.lane_id)
+    if lane is None:
+        print(f"Lane not found: {args.lane_id}", file=sys.stderr)
+        return 1
+    event, errors = dispatch_bridge_event(
+        lane_registry,
+        lane_registry_path,
+        lane,
+        prompt_record=args.prompt_record,
+        short_launcher=args.short_launcher,
+    )
+    if errors:
+        for error in errors:
+            print(error, file=sys.stderr)
+        return 1
+    if args.event_log:
+        event_log = Path(args.event_log)
+        append_jsonl_event(event_log, event)
+    payload = {
+        "schemaVersion": "openaccp-dispatch-notification.v1",
+        "artifactType": "dispatch-notification",
+        "status": event["status"],
+        "laneRegistryPath": str(lane_registry_path),
+        "laneId": args.lane_id,
+        "bridgeEventLog": str(Path(args.event_log)) if args.event_log else "",
+        "bridgeEvent": event,
+        "dispatchAdvice": "start the cross-runtime Frontier if idle; otherwise keep the event queued until the next safe checkpoint",
+    }
     print(json.dumps(payload, indent=2 if args.pretty else None, ensure_ascii=False))
     return 0
 
@@ -446,8 +632,17 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     notify_parser.add_argument("--child-ledger", required=True, help="Path to .openaccp/coordination/child-ledgers/<lane-id>.json.")
     notify_parser.add_argument("--prompt-id", default="", help="Optional child Prompt ID filter.")
     notify_parser.add_argument("--parent-runtime", default="", help="Optional parent runtime override for the notification payload.")
+    notify_parser.add_argument("--event-log", default="", help="Optional .openaccp/coordination/bridge-events.jsonl queue to append child_to_parent events.")
     notify_parser.add_argument("--pretty", action="store_true", help="Pretty-print the notification JSON.")
     notify_parser.set_defaults(func=notify_return_command)
+    dispatch_parser = subparsers.add_parser("notify-dispatch", help="Queue a cross-runtime Frontier dispatch event from a lane registry.")
+    dispatch_parser.add_argument("--lane-registry", required=True, help="Path to .openaccp/coordination/lane-registry.json.")
+    dispatch_parser.add_argument("--lane-id", required=True, help="Frontier lane id to dispatch.")
+    dispatch_parser.add_argument("--event-log", default="", help="Optional .openaccp/coordination/bridge-events.jsonl queue to append parent_to_child events.")
+    dispatch_parser.add_argument("--prompt-record", default="", help="Prompt record path for the target Frontier.")
+    dispatch_parser.add_argument("--short-launcher", default="", help="Short launcher path for the target Frontier.")
+    dispatch_parser.add_argument("--pretty", action="store_true", help="Pretty-print the notification JSON.")
+    dispatch_parser.set_defaults(func=notify_dispatch_command)
     return parser.parse_args(argv)
 
 

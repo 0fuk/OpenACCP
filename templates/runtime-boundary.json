@@ -14,7 +14,8 @@
     "wakePolicy": "ledger_only",
     "busyPolicy": "queue_until_safe_checkpoint",
     "failurePolicy": "record_parent_consume_pending",
-    "bridgeCommand": "openaccp notify-return"
+    "bridgeCommand": "openaccp notify-return / openaccp notify-dispatch",
+    "eventLogRef": ".openaccp/coordination/bridge-events.jsonl"
   },
   "workingDirectory": "<working-directory>",
   "productRepoStatus": "missing",

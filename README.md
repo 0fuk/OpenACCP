@@ -161,7 +161,7 @@ Primary
   -> accepts, rejects, amends, splits follow-up, or asks for a B3 human decision
 ```
 
-When the parent and child run in different tools, OpenACCP keeps the event visible in the same `.openaccp/coordination` control plane. The child ledger records `parent_consume_pending`, the lane registry points at the notification bridge policy, and `openaccp notify-return` can emit the parent consume payload. If the parent is busy, the event stays queued until the next safe checkpoint.
+When the parent and child run in different tools, OpenACCP keeps the event visible in the same `.openaccp/coordination` control plane. The lane registry records whether a Frontier is same-runtime or cross-runtime. Same-runtime lanes can use native `agent_thread_spawn` or `one_click`. Cross-runtime lanes use `runtime_bridge`: Primary queues a `parent_to_child` dispatch event with `openaccp notify-dispatch`, and a returned Frontier queues a `child_to_parent` consume event with `openaccp notify-return`. Both directions append to `.openaccp/coordination/bridge-events.jsonl`. If the target runtime is busy, the event stays queued until the next safe checkpoint.
 
 Important artifacts:
 
@@ -170,11 +170,11 @@ Important artifacts:
 | `source pack` | The current fact list. It tells agents what may drive implementation and what is only background. |
 | `scope boundary` | The line between allowed work and forbidden work. |
 | `assumptions ledger` | Explicit assumptions that are not fully proven yet. |
-| `runtime boundary` | Primary runtime identity, notification bridge policy, repo path, inferred base branch, source roots, test entrypoints, worktree policy, writable/read-only/forbidden paths, side effects, data risk, and the `b2DispatchGate` that says whether product-write B2 work is ready, blocked, or coordination-only. |
+| `runtime boundary` | Primary runtime identity, notification bridge policy, bridge event queue, repo path, inferred base branch, source roots, test entrypoints, worktree policy, writable/read-only/forbidden paths, side effects, data risk, and the `b2DispatchGate` that says whether product-write B2 work is ready, blocked, or coordination-only. |
 | `current manifest` | The current coordination anchor: source pack, runtime boundary, source status registry, lane registry, CARD registry, and active lanes. |
 | `sequence registry` | Prompt IDs, Response IDs, handoffs, consumes, cards, active lanes, lifecycle states, and current/latest pointers. |
 | `source status registry` | Current, reference, deprecated, invalid, and unknown sources with reasons and locators. |
-| `lane registry` | Primary and Frontier lanes, project complexity, selected runtime, same-runtime or cross-runtime relation, notification bridge policy, Frontier dispatch mode, lane-count reason, assigned CARDs, authority, child ledger refs, consume refs, closure refs, return-gate state, and per-lane B2 dispatch mode. |
+| `lane registry` | Primary and Frontier lanes, project complexity, selected runtime, same-runtime or cross-runtime relation, dispatch channel, notification bridge policy, Frontier dispatch mode, lane-count reason, assigned CARDs, authority, child ledger refs, consume refs, closure refs, return-gate state, and per-lane B2 dispatch mode. |
 | `child ledger` | Worker, reviewer, discovery, validation, or task-card-only child lifecycle, runtime relation, return event status, wake status, handoff status, consume status, and remaining risk. |
 | `decision registry` | Owner questions, Primary decisions, waivers, out-of-scope decisions, blockers, and safe defaults. |
 | `CARD` | A project-level work slice large enough for lane planning. A CARD can later become several task cards. |
@@ -184,7 +184,7 @@ Important artifacts:
 | `short launcher` | A compact seed that points a thread to the full prompt record. It is printed in chat only when manual fallback is needed. |
 | `handoff` | Evidence from a worker, reviewer, or discovery agent. It proves some things and leaves other things unproven. |
 | `consume result` | The orchestrator decision about what a handoff actually proves before acceptance. |
-| `return notification` | A bridge payload from `openaccp notify-return` that tells the parent there is returned evidence waiting for consume. It queues or wakes the parent while final authority stays with the parent or human owner. |
+| `bridge event` | A queued or delivered event in `.openaccp/coordination/bridge-events.jsonl`. `openaccp notify-dispatch` sends Primary-to-Frontier start events; `openaccp notify-return` sends Frontier-to-Primary consume events. The event moves lifecycle work across tools while final authority stays with Primary or the human owner. |
 | `lane-progress packet` | A stage packet showing useful Frontier progress. It stays inside the lane by default and becomes Primary evidence only when closure is ready. |
 | `frontier closure` | The gate proof for whether a Frontier can keep working, close, or return to Primary. A Primary-ready packet is valid only when this proof shows that all visible remaining gaps are final-authority-only or explicitly out. |
 | `formal report` | Human-readable status: what changed, progress, area, goal, gaps, next action, and evidence. |
