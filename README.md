@@ -2,6 +2,8 @@
 
 **Agentic Continuous Coordination Protocol**
 
+**Author:** Ocean Liu / Liu HanYang
+
 **Keep multi-agent software delivery coordinated, reviewable, and recoverable.**
 
 OpenACCP is an open workflow protocol for teams using multiple AI coding agents on real software projects. It gives Codex, Claude Code, Aider, OpenHands, SWE-agent, LangGraph, CrewAI, AutoGen, and the OpenAI Agents SDK a shared delivery layer for project facts, task cards, authority boundaries, handoffs, reviews, worktrees, and final acceptance.

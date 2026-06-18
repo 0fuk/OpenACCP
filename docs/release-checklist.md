@@ -5,7 +5,8 @@ This maintainer checklist is for the final pass before tagging a public release.
 Confirmed release metadata for the first public candidate:
 
 - License: MIT.
-- Copyright holder: Vyqo AI.
+- Author: Ocean Liu / Liu HanYang.
+- Copyright holder: Ocean Liu / Liu HanYang.
 - GitHub account: `0fuk`.
 - Package name: `openaccp`.
 

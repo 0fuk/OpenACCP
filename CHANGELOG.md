@@ -15,6 +15,7 @@
 
 ### Changed
 
+- Project author and maintainer metadata now names Ocean Liu / Liu HanYang.
 - Formal reports now require `Response ID`, `Response log path`, role-aware rows, numeric progress, and evidence details.
 - Authority charters now include data risk limits, resource-use limits, allowed inputs/outputs, forbidden side effects, and stop conditions.
 - Current manifests and sequence registries now track active lanes, superseded or cancelled prompts, consume records, and latest consume refs.

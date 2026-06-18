@@ -9,7 +9,8 @@ description = "Coordinate multi-agent software delivery across source facts, tas
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
-authors = [{ name = "Vyqo AI" }]
+authors = [{ name = "Ocean Liu / Liu HanYang" }]
+maintainers = [{ name = "Ocean Liu / Liu HanYang" }]
 keywords = [
   "ai-agents",
   "agentic-workflow",
