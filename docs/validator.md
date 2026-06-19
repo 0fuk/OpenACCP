@@ -19,7 +19,7 @@ The validator runs JSON Schema checks first, then applies OpenACCP semantic, cro
 - `handoff`: non-final worker or role claims, `Response ID`, authority, base and result commits, worktree, data risk, effects preset, changed file scope, task ID match, verification evidence, and forbidden claims.
   Handoff scope patterns use Python `fnmatch` semantics after path normalization. Backslashes are normalized to `/`, matching is case-sensitive on every platform, and `*` may match across `/`.
 - `review-report`: reviewer recommendation and review evidence shape.
-- `consume-result`: provisional or final consume decision, target handoffs/reviews, accepted/rejected claims, evidence status, authority limits, and next actions.
+- `consume-result`: provisional or final consume decision, target handoffs/reviews, accepted/rejected claims, evidence status, authority limits, and next actions. When Primary final-accepts a Frontier return, cite the closure `closureId`, `laneId`, or path in `basisRefs`, then use `--frontier-closure` to cross-check that supplied closure proof is ready or closed.
 - `machine-summary`: compact locator summary for worker, reviewer, discovery, Frontier, or Primary output with Prompt ID, Response ID, authority, effects, basisRefs, locators, claims, and next actions.
 - `status-report`: current state, unverified claims, blockers, next actions, authority limits, and `responseId`. `reportId` is deprecated.
 - `assumption-ledger`: assumptions, evidence, risk, and confirmation flags.
@@ -36,7 +36,7 @@ The validator runs JSON Schema checks first, then applies OpenACCP semantic, cro
 - `child-ledger`: Frontier child lifecycle registry with promptId, taskId, authority, effects, dispatch status, handoff status, consume status, and remaining risk. Response ID and handoffId are lifecycle fields.
 - `source-status-registry`: current, reference, deprecated, invalid, and unknown source status with reasons and locators.
 - `decision-registry`: owner questions, Primary decisions, waivers, out-of-scope decisions, blockers, safe defaults, and required authority.
-- `frontier-closure`: Frontier closure or return-gate proof. It rejects closed or blocked states while B0/B1/B2-safe work remains, while child work has not returned, while present handoffs are not consumed/rejected, while stage progress is mislabeled as a Primary-ready packet, or while a sibling lane registry still says the lane is not ready for Primary.
+- `frontier-closure`: Frontier closure or return-gate proof. It fails validation for closed or blocked states while B0/B1/B2-safe work remains, while child work has not returned, while present handoffs are not consumed/rejected, while stage progress is mislabeled as a Primary-ready packet, or while a sibling lane registry still says the lane is not ready for Primary.
 - `public-package`: UTF-8, common mojibake, local paths, internal identifier markers, lightweight secret markers, English-only root README, and internal formal reports placed in public report paths.
 
 ## Commands
@@ -104,6 +104,14 @@ python tools/openaccp_validate.py --artifact .openaccp/consume/consume-result.js
 python tools/openaccp_validate.py --artifact .openaccp/summaries/machine-summary.json --ruleset machine-summary --strict
 ```
 
+When Primary final-accepts a Frontier return or Primary-ready packet, include the closure proof and cite that closure in `basisRefs`:
+
+```bash
+python tools/openaccp_validate.py --artifact .openaccp/consume/consume-result.json --ruleset consume-result --frontier-closure .openaccp/coordination/frontier-closures/frontier-01.json --strict
+```
+
+The `--frontier-closure` cross-check is strict only for final accepted consume decisions. Amend, blocked, rejected, split-follow-up, or provisional consume decisions may still record the closure as evidence without treating it as final lane acceptance.
+
 Individual project artifacts may contain that project's local working paths. The `public-package` ruleset is stricter and is intended for release packages, where private local paths, internal identifiers, and secret-like strings must not appear.
 
 After editable install:
@@ -117,7 +125,7 @@ openaccp --version
 
 ## Interpreting Results
 
-A validator pass means the artifact is structurally usable for the selected ruleset. It does not mean:
+A validator pass means the artifact is structurally usable for the selected ruleset. It is protocol evidence, not runtime enforcement. It does not mean:
 
 - the product requirement is correct,
 - the code works,

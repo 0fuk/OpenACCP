@@ -4,7 +4,7 @@ OpenACCP defines roles by authority, not by model provider.
 
 ## Primary
 
-Primary owns delegated final coordination authority. It can assign charters, dispatch lanes and workers, consume final handoffs, and accept, reject, or amend evidence when the authority charter lists that decision in `delegatedFinalAuthority`.
+Primary owns delegated final coordination authority. It can assign charters, dispatch lanes and workers, consume final handoffs, and accept, reject, or amend evidence when the authority charter lists that decision in `delegatedFinalAuthority`. When Primary final-accepts a Frontier return or Primary-ready packet, it cross-checks the consume result against the matching Frontier closure proof.
 
 Primary also owns active closure. It should split work into lanes, dispatch bounded subagents, consume evidence, reclassify remaining gaps, and continue until the visible work is closed, explicitly out, child work is terminal and consumed or rejected, or the remaining gap is blocked on a real final-authority decision.
 
@@ -32,4 +32,4 @@ Human owner decides business meaning, legal or policy questions, real resource a
 
 Always distinguish role, thread, lane, workspace, branch, authority, and evidence state.
 
-Subagent output is evidence, not authority. The orchestrator that dispatched the subagent must consume the result before using it for closure.
+Subagent output is evidence, not authority. The orchestrator that dispatched the subagent must consume the result before using it for closure. Frontier closure proof is also evidence; final lane acceptance belongs to Primary or the human owner under the active authority charter.

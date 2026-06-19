@@ -12,7 +12,7 @@ Recommended order:
 6. `frontier prompt record`: full on-disk lane prompt with `openaccp-frontier-orchestration-contract.v1`.
 7. `child-ledgers/<lane-id>.json`: worker/reviewer/discovery/validation child lifecycle, response and handoff status, consume status, and remaining risk.
 8. `handoff.json` and `review-report.json`: provisional evidence from workers and reviewers.
-9. `consume-result.json`: Primary or Frontier consume decision for handoff evidence.
+9. `consume-result.json`: Primary or Frontier consume decision for handoff evidence. Primary final consume of a Frontier return should cite the closure `closureId`, `laneId`, or path in `basisRefs` and validate this file with that `frontier-closures/<lane-id>.json`.
 10. `frontier-closures/<lane-id>.json`: proof that a Frontier lane can continue, close, or return to Primary. Open lanes use `laneProgressPacketRef`; `primaryReadyPacketRef` is reserved for true return-gate closure.
 11. `formal-report.md`: short owner-facing report with evidence notes and a recommended next step.
 

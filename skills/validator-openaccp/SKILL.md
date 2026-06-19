@@ -31,6 +31,8 @@ python tools/openaccp_validate.py --artifact CARDS.md --ruleset card-registry --
 python tools/openaccp_validate.py --artifact current-manifest.json --ruleset current-manifest --source-pack source-pack.json --strict
 python tools/openaccp_validate.py --artifact sequence-registry.json --ruleset sequence-registry --strict
 python tools/openaccp_validate.py --artifact consume-result.json --ruleset consume-result --strict
+# Only for final accepted Frontier return or Primary-ready packet consume:
+python tools/openaccp_validate.py --artifact consume-result.json --ruleset consume-result --frontier-closure .openaccp/coordination/frontier-closures/<lane-id>.json --strict
 python tools/openaccp_validate.py --artifact machine-summary.json --ruleset machine-summary --strict
 ```
 
@@ -46,7 +48,9 @@ Use `source-status-registry` to make current/reference/deprecated/invalid/unknow
 
 Use `decision-registry` for owner questions, Primary decisions, waivers, and out-of-scope decisions that block or unblock lanes.
 
-Use `frontier-closure` before a Frontier reports closed or blocked-on-Primary. It rejects early return when B0/B1/B2-safe work remains, when child work is not terminal or consumed/rejected, when stage progress is mislabeled as a Primary-ready packet, when a Primary consume next step appears before the return gate is ready, or when the sibling lane registry still says the lane is not ready for Primary.
+Use `frontier-closure` before a Frontier reports closed or blocked-on-Primary. It fails validation for early return when B0/B1/B2-safe work remains, when child work is not terminal or consumed/rejected, when stage progress is mislabeled as a Primary-ready packet, when a Primary consume next step appears before the return gate is ready, or when the sibling lane registry still says the lane is not ready for Primary.
+
+Use `consume-result --frontier-closure` when Primary final-accepts a Frontier return or Primary-ready packet. The consume result must cite the closure `closureId`, `laneId`, or path in `basisRefs`. The cross-check allows final accepted consume only when the supplied closure proof is ready for Primary or closed with no lane-local safe work remaining. Amend, blocked, rejected, split-follow-up, or provisional consume decisions may still cite a closure proof without treating the lane as finally accepted.
 
 Use `card-registry` before Frontier dispatch. It checks that CARDs were cut from a broad domain scan, normal or medium/high-complexity projects have enough CARDs for useful parallelism, fewer CARDs have an explicit small/single-lane/user-request reason, and CARDs can map to task-card candidates and Frontier lane groups.
 
@@ -56,4 +60,4 @@ Use `formal-report` before publishing a report-like chat output or response log.
 
 Use `public-package` before release packaging. It checks UTF-8, mojibake, local path leaks, internal identifier markers, lightweight secret markers, English-only root README, and public report hygiene.
 
-Validator pass is not work completion.
+Validator pass is protocol evidence, not runtime enforcement or work completion.

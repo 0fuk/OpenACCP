@@ -155,6 +155,7 @@ worker / reviewer / discovery
 
 Primary
   -> consumes handoffs and reviewer evidence
+  -> cross-checks Frontier closure proof before final accepted consume of a Frontier return
   -> accepts, rejects, amends, splits follow-up, or asks for a B3 human decision
 ```
 
@@ -178,7 +179,7 @@ Important artifacts:
 | `prompt record` | The full role prompt saved on disk and executed by Prompt ID. |
 | `short launcher` | A compact seed that points a thread to the full prompt record. It is printed in chat only when manual fallback is needed. |
 | `handoff` | Evidence from a worker, reviewer, or discovery agent. It proves some things and leaves other things unproven. |
-| `consume result` | The orchestrator decision about what a handoff actually proves before acceptance. |
+| `consume result` | The orchestrator decision about what a handoff actually proves before acceptance. For Frontier returns, a final accepted consume should cite the `closureId`, `laneId`, or closure path in `basisRefs` and validate against that `frontier closure`. |
 | `lane-progress packet` | A stage packet showing useful Frontier progress. It stays inside the lane by default and becomes Primary evidence only when closure is ready. |
 | `frontier closure` | The gate proof for whether a Frontier can keep working, close, or return to Primary. A Primary-ready packet is valid only when this proof shows that all visible remaining gaps are final-authority-only or explicitly out. |
 | `formal report` | Human-readable status: what changed, progress, area, goal, gaps, next action, and evidence. |
@@ -237,7 +238,7 @@ OpenACCP skills are installable agent workflow instructions. Each skill maps to 
 | Skill | When to use it | Why it matters |
 |---|---|---|
 | `primary-orchestrator-openaccp` | Start or run project-level coordination. Use it for CARD decomposition, lane dispatch, final handoff consume, and acceptance decisions. | Keeps the project moving without mixing provisional agent output with final acceptance. |
-| `frontier-orchestrator-openaccp` | Run one bounded lane. Use it for lane backlog, discovery, package preparation, worker/reviewer dispatch, and child handoff consume. | Prevents Frontier from returning to the human too early when B0/B1/B2 work can still continue. |
+| `frontier-orchestrator-openaccp` | Run one bounded lane. Use it for lane backlog, discovery, package preparation, worker/reviewer dispatch, and child handoff consume. | Helps avoid early Frontier return when B0/B1/B2 work can still continue. |
 | `worker-openaccp` | Execute one narrow task under a task card and authority charter. | Keeps implementation scoped and evidence-backed. |
 | `reviewer-openaccp` | Review a task card, diff, branch, handoff, prompt, or status artifact. | Turns "looks okay" into an approve/amend/reject/split-follow-up recommendation with evidence. |
 | `discovery-openaccp` | Run read-only fact discovery when scope, source status, risk, or next safe action is unclear. | Prevents agents from treating guesses as facts. |
@@ -285,6 +286,8 @@ Frontier returns the lane to Primary only when all visible remaining gaps are fi
 ### Handoff Consume
 
 A handoff is evidence that becomes completion only after consume and acceptance. The consuming orchestrator checks scope, changed files, verification evidence, skipped checks, reviewer findings, data risk, authority limits, and overclaims.
+
+When Primary final-accepts a Frontier return or Primary-ready packet, the consume result cites the closure proof in `basisRefs` and is checked against that `frontier closure`. That cross-check keeps a stage-progress packet from being treated as final lane acceptance.
 
 ### Human-Readable Status
 
@@ -373,6 +376,8 @@ openaccp init ./my-openaccp-package --write
 ## How It Compares
 
 OpenACCP sits beside the tools that run agents.
+
+OpenACCP supplies protocol artifacts, role instructions, validator checks, and consume records. The agent runtime still runs the agents, tests, reviews, and code changes.
 
 - Codex, Claude Code, Aider, OpenHands, and SWE-agent are strong places to run coding work. OpenACCP gives that work a shared source pack, CARDs, authority boundaries, handoffs, reviews, and consume decisions.
 - LangGraph, CrewAI, AutoGen, and the OpenAI Agents SDK help teams build agent frameworks, flows, graphs, tools, and application-level agent behavior. OpenACCP adds the project delivery layer: which facts count, who can act, what evidence came back, and who can accept it.

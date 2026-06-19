@@ -26,6 +26,8 @@ Before consume, check:
 
 Use consume results to drive the next dispatch. If the handoff is incomplete, send it back for amendment or dispatch reviewer/discovery work instead of treating it as done.
 
+If consuming a Frontier return or Primary-ready packet with a final accepted decision, cite the closure `closureId`, `laneId`, or path in `basisRefs`, then validate the `consume-result` with that `frontier-closure`. A closure file is evidence; it is not final acceptance by itself.
+
 ## Consume Result Fields
 
 Record:
@@ -49,4 +51,6 @@ Validate with:
 
 ```bash
 openaccp-validate --artifact <consume-result.json> --ruleset consume-result --strict
+# Only for final accepted Frontier return or Primary-ready packet consume:
+openaccp-validate --artifact <consume-result.json> --ruleset consume-result --frontier-closure <frontier-closure.json> --strict
 ```

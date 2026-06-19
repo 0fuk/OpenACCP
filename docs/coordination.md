@@ -30,6 +30,8 @@ Primary and Frontier repeatedly:
 
 A lane closes when the current visible gaps are resolved, child dispatches have returned, failed, or been cancelled, present child handoffs are consumed or rejected by the parent orchestrator, remaining gaps are explicitly out, or the only remaining work is final-authority-only with a Primary-ready packet. Stage evidence is a `lane-progress packet` or `frontier-progress packet`; it keeps the Frontier moving and does not require Primary consume by default.
 
+A `primaryReadyPacketRef` is evidence for Primary to check. It is not acceptance by itself. Before Primary records a final accepted consume for a Frontier return, the consume result should cite the closure `closureId`, `laneId`, or path in `basisRefs` and validate with that `frontier-closure` so an open lane cannot be accepted as closed.
+
 ## Coordination Control Plane
 
 OpenACCP uses a small `.openaccp/coordination/` control plane so separate threads can share facts without relying on chat memory.
@@ -43,7 +45,7 @@ Core artifacts:
 - `child-ledgers/<lane-id>.json`: child worker/reviewer/discovery/validation lifecycle status and consume status for one lane.
 - `source-status-registry.json`: current, reference, deprecated, invalid, and unknown source status with reasons.
 - `decision-registry.json`: owner questions, Primary decisions, waivers, out-of-scope decisions, blockers, and safe defaults.
-- `frontier-closures/<lane-id>.json`: proof that a Frontier lane can continue, close, or return to Primary. Open lanes use `laneProgressPacketRef`; `primaryReadyPacketRef` appears only when the return gate is ready for Primary.
+- `frontier-closures/<lane-id>.json`: proof that a Frontier lane can continue, close, or return to Primary. Open lanes use `laneProgressPacketRef`; `primaryReadyPacketRef` appears only when the return gate is ready for Primary. Primary final consume should cross-check this file with `--frontier-closure`.
 
 Primary establishes the execution boundary before B2 Frontier dispatch. The user provides the repo path; Primary infers base branch, source roots, test entrypoints, writable scope, and worktree policy from the repo before asking follow-up questions. If repo path is missing, ambiguous, or explicitly `no repo yet`, Primary asks for the repo path or records `no repo yet` and continues safe B0/B1 packaging. A Frontier can still run coordination-only or read-only B2 work, while product-write B2 dispatch requires both execution `b2DispatchGate` and lane `b2DispatchGate` to be ready for product-write work. Frontier treats unresolved product-write readiness as an implementation-worker boundary, not as a reason to hand stage progress back to Primary.
 

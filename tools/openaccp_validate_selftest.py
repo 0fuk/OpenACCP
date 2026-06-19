@@ -192,6 +192,17 @@ def valid_consume_result() -> dict:
     }
 
 
+def valid_frontier_consume_result() -> dict:
+    data = valid_consume_result()
+    data["targetHandoffIds"] = ["HAND-FRONTIER-DOCS-001"]
+    data["targetReviewIds"] = []
+    data["basisRefs"] = ["FC-001", "frontier-docs", "frontier-closures/frontier-docs.json"]
+    data["evidenceStatus"] = ["Frontier closure proof was reviewed."]
+    data["claimsAccepted"] = ["Frontier return evidence is accepted within Primary authority."]
+    data["claimsRejected"] = ["No release, merge, publication, or waiver claim is accepted."]
+    return data
+
+
 def valid_machine_summary() -> dict:
     return {
         "schemaVersion": "openaccp-machine-summary.v1",
@@ -460,6 +471,25 @@ def valid_frontier_progress_closure() -> dict:
     return closure
 
 
+def valid_frontier_closed_closure() -> dict:
+    closure = valid_frontier_closure()
+    closure["branchState"] = "closed"
+    closure["gapDecisionMatrix"] = [{"gap": "lane-local evidence", "decision": "explicitly_out", "nextSafeAction": "No lane-local work remains."}]
+    closure["branchReturnGate"] = {
+        "state": "closed",
+        "safeWorkRemainingCount": 0,
+        "finalAuthorityGapCount": 0,
+        "explicitlyOutCount": 1,
+        "primaryReadyPacketExists": False,
+        "reason": "Lane-local work is closed with no final-authority gap.",
+    }
+    closure["primaryReadyPacketRef"] = ""
+    closure["remainingFinalAuthorityGaps"] = []
+    closure["explicitlyOutGaps"] = ["No additional lane-local work remains."]
+    closure["humanNextStep"] = "No human action is needed; lane-local closure is recorded."
+    return closure
+
+
 def write_coordination_fixtures(tmp: Path, source_path: Path) -> dict[str, Path]:
     files = {
         "sequence": tmp / "sequence-registry.json",
@@ -663,6 +693,70 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     consume_result_path = tmp / "consume-result.json"
     write_json(consume_result_path, valid_consume_result())
     assert_exit("valid consume result", run(["--artifact", str(consume_result_path), "--ruleset", "consume-result", "--strict"]), 0)
+    frontier_consume_result_path = tmp / "frontier-consume-result.json"
+    write_json(frontier_consume_result_path, valid_frontier_consume_result())
+    assert_exit(
+        "valid consume result accepts ready Frontier closure cross-check",
+        run(["--artifact", str(frontier_consume_result_path), "--ruleset", "consume-result", "--frontier-closure", str(coordination["closure"]), "--strict"]),
+        0,
+    )
+
+    mismatched_consume = valid_consume_result()
+    mismatched_consume["basisRefs"] = ["FC-OTHER", "frontier-other"]
+    mismatched_consume_path = tmp / "mismatched-frontier-consume-result.json"
+    write_json(mismatched_consume_path, mismatched_consume)
+    assert_exit(
+        "consume result rejects unmatched Frontier closure cross-check",
+        run(["--artifact", str(mismatched_consume_path), "--ruleset", "consume-result", "--frontier-closure", str(coordination["closure"]), "--strict"]),
+        1,
+    )
+
+    warning_closure = valid_frontier_closure()
+    warning_closure["childLedgerRef"] = "missing-child-ledger.json"
+    warning_closure_path = tmp / "warning-frontier-closure.json"
+    write_json(warning_closure_path, warning_closure)
+    assert_exit(
+        "consume result strict rejects Frontier closure warning failures",
+        run(["--artifact", str(frontier_consume_result_path), "--ruleset", "consume-result", "--frontier-closure", str(warning_closure_path), "--strict"]),
+        1,
+    )
+
+    open_closure_path = tmp / "open-frontier-closure.json"
+    write_json(open_closure_path, valid_frontier_progress_closure())
+    assert_exit(
+        "consume result rejects final accept of open Frontier closure",
+        run(["--artifact", str(frontier_consume_result_path), "--ruleset", "consume-result", "--frontier-closure", str(open_closure_path), "--strict"]),
+        1,
+    )
+
+    unsafe_ready_closure = valid_frontier_closure()
+    unsafe_ready_closure["branchReturnGate"]["safeWorkRemainingCount"] = 1
+    unsafe_ready_closure_path = tmp / "unsafe-ready-frontier-closure.json"
+    write_json(unsafe_ready_closure_path, unsafe_ready_closure)
+    assert_exit(
+        "consume result rejects final accept of Frontier closure with safe work",
+        run(["--artifact", str(frontier_consume_result_path), "--ruleset", "consume-result", "--frontier-closure", str(unsafe_ready_closure_path), "--strict"]),
+        1,
+    )
+
+    closed_closure_path = tmp / "closed-frontier-closure.json"
+    write_json(closed_closure_path, valid_frontier_closed_closure())
+    assert_exit(
+        "valid consume result accepts closed Frontier closure cross-check",
+        run(["--artifact", str(frontier_consume_result_path), "--ruleset", "consume-result", "--frontier-closure", str(closed_closure_path), "--strict"]),
+        0,
+    )
+
+    blocked_consume = valid_consume_result()
+    blocked_consume["decision"] = "blocked"
+    blocked_consume_path = tmp / "blocked-consume-result.json"
+    write_json(blocked_consume_path, blocked_consume)
+    assert_exit(
+        "consume result allows blocked decision against open Frontier closure",
+        run(["--artifact", str(blocked_consume_path), "--ruleset", "consume-result", "--frontier-closure", str(open_closure_path), "--strict"]),
+        0,
+    )
+
     machine_summary_path = tmp / "machine-summary.json"
     write_json(machine_summary_path, valid_machine_summary())
     assert_exit("valid machine summary", run(["--artifact", str(machine_summary_path), "--ruleset", "machine-summary", "--strict"]), 0)

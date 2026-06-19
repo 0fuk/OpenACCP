@@ -27,6 +27,8 @@ End every Primary reply with a short `下一步建议` / `Recommended Next Step`
 
 Do not treat worker claims, reviewer recommendations, or validator pass as final acceptance.
 
+Before final-accepting a Frontier return or Primary-ready packet, cite the closure `closureId`, `laneId`, or path in `basisRefs`, then validate the `consume-result` with that `frontier-closure`. Treat the closure as protocol evidence; final acceptance still belongs to Primary or the human owner under the active authority charter.
+
 ## Active Closure Loop
 
 Primary is responsible for pushing coordination to closure. It should not stop at describing the roles.
@@ -145,3 +147,9 @@ Primary should also maintain machine-readable state:
 - `decision-registry`: owner questions, Primary decisions, waivers, out-of-scope decisions, blockers, and safe defaults.
 - `consume-result`: final or provisional consume decisions.
 - `machine-summary`: compact locator summary when downstream agents need stable references.
+
+For final accepted Frontier returns, cite the closure in `basisRefs` and validate the consume result with:
+
+```bash
+openaccp-validate --artifact <consume-result> --ruleset consume-result --frontier-closure <frontier-closure> --strict
+```

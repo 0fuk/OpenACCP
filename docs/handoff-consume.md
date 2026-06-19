@@ -37,3 +37,11 @@ Validate it with:
 ```bash
 openaccp-validate --artifact <consume-result.json> --ruleset consume-result --strict
 ```
+
+When Primary final-accepts a Frontier return or Primary-ready packet, cite the closure `closureId`, `laneId`, or path in `basisRefs`, then validate the consume result with that Frontier closure proof:
+
+```bash
+openaccp-validate --artifact <consume-result.json> --ruleset consume-result --frontier-closure <frontier-closure.json> --strict
+```
+
+The closure proof is evidence. A returned packet becomes accepted only after Primary or the human owner records an accepted consume decision inside the active authority boundary.

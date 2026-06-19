@@ -2275,7 +2275,13 @@ def validate_sequence_registry(data: dict[str, Any], report: Report) -> None:
             report.add("SEQ_ACTIVE_LANE_PROMPT", "blocking", "fail", "active lane currentPromptId is not registered.", loc)
 
 
-def validate_consume_result(data: dict[str, Any], report: Report) -> None:
+def validate_consume_result(
+    data: dict[str, Any],
+    report: Report,
+    frontier_closure: dict[str, Any] | None = None,
+    frontier_closure_path: Path | None = None,
+    strict: bool = False,
+) -> None:
     if data.get("artifactType") != "consume-result":
         report.add("ARTIFACT_TYPE", "blocking", "fail", "artifactType must be consume-result.")
     else:
@@ -2311,6 +2317,108 @@ def validate_consume_result(data: dict[str, Any], report: Report) -> None:
         report.add("TARGET_REVIEW_IDS_ARRAY", "blocking", "pass", "targetReviewIds is an array.")
     else:
         report.add("TARGET_REVIEW_IDS_ARRAY", "blocking", "fail", "targetReviewIds must be an array.")
+    validate_consume_frontier_closure(data, frontier_closure, frontier_closure_path, report, strict)
+
+
+def consume_refs(data: dict[str, Any]) -> list[str]:
+    refs: list[str] = []
+    for field_name in ["targetHandoffIds", "targetReviewIds", "basisRefs"]:
+        value = data.get(field_name)
+        if isinstance(value, list):
+            refs.extend(str(item) for item in value if isinstance(item, str))
+    return refs
+
+
+def ref_matches(candidate: str, reference: str) -> bool:
+    normalized_candidate = normalize_scope_path(candidate).lower()
+    normalized_reference = normalize_scope_path(reference).lower()
+    return bool(normalized_reference) and (
+        normalized_candidate == normalized_reference
+        or normalized_candidate.endswith("/" + normalized_reference)
+    )
+
+
+def validate_consume_frontier_closure_match(data: dict[str, Any], frontier_closure: dict[str, Any], frontier_closure_path: Path | None, report: Report) -> None:
+    references = consume_refs(data)
+    if not references:
+        report.add("CONSUME_FRONTIER_CLOSURE_MATCH", "blocking", "fail", "Final accepted Frontier consume must cite the supplied closure in basisRefs or target refs.")
+        return
+    expected_refs = [
+        str(frontier_closure.get("closureId", "")).strip(),
+        str(frontier_closure.get("laneId", "")).strip(),
+    ]
+    if frontier_closure_path:
+        expected_refs.extend(
+            [
+                str(frontier_closure_path),
+                frontier_closure_path.name,
+                normalize_scope_path(str(frontier_closure_path)),
+            ]
+        )
+    expected_refs = [item for item in expected_refs if item]
+    if any(ref_matches(reference, expected) for reference in references for expected in expected_refs):
+        report.add("CONSUME_FRONTIER_CLOSURE_MATCH", "blocking", "pass", "Consume result cites the supplied Frontier closure evidence.")
+    else:
+        report.add("CONSUME_FRONTIER_CLOSURE_MATCH", "blocking", "fail", "Final accepted Frontier consume must cite the supplied closureId, laneId, or closure path.")
+
+
+def validate_consume_frontier_closure(data: dict[str, Any], frontier_closure: dict[str, Any] | None, frontier_closure_path: Path | None, report: Report, strict: bool) -> None:
+    if frontier_closure is None:
+        return
+    location = str(frontier_closure_path) if frontier_closure_path else ""
+    if data.get("authorityScope") != "final" or data.get("decision") != "accepted":
+        report.add("CONSUME_FRONTIER_CLOSURE_SCOPE", "warning", "pass", "Frontier closure readiness is enforced for final accepted consume results.", location)
+        return
+
+    closure_report = Report(location, "frontier-closure")
+    validate_json_schema_contract("frontier-closure", frontier_closure, closure_report)
+    if require_fields(frontier_closure, REQUIRED_FIELDS["frontier-closure"], closure_report):
+        validate_frontier_closure(frontier_closure, closure_report)
+    blocking_failures = [check.check_id for check in closure_report.checks if check.status == "fail" and check.severity == "blocking"]
+    warning_failures = [check.check_id for check in closure_report.checks if check.status == "fail" and check.severity == "warning"]
+    if blocking_failures:
+        report.add(
+            "CONSUME_FRONTIER_CLOSURE_VALIDATION",
+            "blocking",
+            "fail",
+            "Referenced Frontier closure does not pass frontier-closure validation: " + ", ".join(blocking_failures[:6]),
+            location,
+        )
+        return
+    if strict and warning_failures:
+        report.add(
+            "CONSUME_FRONTIER_CLOSURE_STRICT_VALIDATION",
+            "warning",
+            "fail",
+            "Referenced Frontier closure has strict warning failures: " + ", ".join(warning_failures[:6]),
+            location,
+        )
+        return
+    report.add("CONSUME_FRONTIER_CLOSURE_VALIDATION", "blocking", "pass", "Referenced Frontier closure passes frontier-closure validation.", location)
+    validate_consume_frontier_closure_match(data, frontier_closure, frontier_closure_path, report)
+
+    gate = frontier_closure.get("branchReturnGate")
+    remaining_safe = frontier_closure.get("remainingB0B1B2SafeWork")
+    remaining_final = frontier_closure.get("remainingFinalAuthorityGaps")
+    branch_state = frontier_closure.get("branchState")
+    gate_state = gate.get("state") if isinstance(gate, dict) else None
+    gate_safe_count = gate.get("safeWorkRemainingCount") if isinstance(gate, dict) else None
+    gate_final_count = gate.get("finalAuthorityGapCount") if isinstance(gate, dict) else None
+    is_primary_ready = branch_state == "blocked_on_primary" and gate_state == "ready_for_primary" and gate_safe_count == 0 and remaining_safe == []
+    is_closed = branch_state == "closed" and gate_state == "closed" and gate_safe_count == 0 and gate_final_count == 0 and remaining_safe == [] and remaining_final == []
+    not_ready: list[str] = []
+    if not isinstance(gate, dict):
+        not_ready.append("branchReturnGate must be an object")
+    if not is_primary_ready and not is_closed:
+        not_ready.append("closure must be blocked_on_primary/ready_for_primary or closed/closed")
+        if gate_safe_count != 0:
+            not_ready.append("branchReturnGate.safeWorkRemainingCount must be 0")
+        if remaining_safe != []:
+            not_ready.append("remainingB0B1B2SafeWork must be empty")
+    if not_ready:
+        report.add("CONSUME_FRONTIER_CLOSURE_READY", "blocking", "fail", "Final accepted consume requires a Primary-ready Frontier closure: " + "; ".join(not_ready), location)
+    else:
+        report.add("CONSUME_FRONTIER_CLOSURE_READY", "blocking", "pass", "Final accepted consume references a Primary-ready Frontier closure.", location)
 
 
 def validate_machine_summary(data: dict[str, Any], report: Report) -> None:
@@ -3326,6 +3434,8 @@ def validate_json_artifact(args: argparse.Namespace) -> Report:
 
     source_pack = load_cross_json(args.source_pack, "source-pack", report)
     task_card = load_cross_json(args.task_card, "task-card", report)
+    frontier_closure = load_cross_json(args.frontier_closure, "frontier-closure", report)
+    frontier_closure_path = Path(args.frontier_closure) if args.frontier_closure else None
 
     if args.ruleset == "source-pack":
         validate_source_pack(data, report)
@@ -3348,7 +3458,7 @@ def validate_json_artifact(args: argparse.Namespace) -> Report:
     elif args.ruleset == "sequence-registry":
         validate_sequence_registry(data, report)
     elif args.ruleset == "consume-result":
-        validate_consume_result(data, report)
+        validate_consume_result(data, report, frontier_closure, frontier_closure_path, args.strict)
     elif args.ruleset == "machine-summary":
         validate_machine_summary(data, report)
     elif args.ruleset == "execution-boundary":
@@ -3464,6 +3574,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--ruleset", choices=sorted(RULESETS), required=True)
     parser.add_argument("--source-pack", help="Optional source pack JSON for task-card cross-checks.")
     parser.add_argument("--task-card", help="Optional task card JSON for handoff scope cross-checks.")
+    parser.add_argument("--frontier-closure", help="Optional Frontier closure JSON for consume-result cross-checks.")
     parser.add_argument("--prompt-record", help="Optional full prompt record for launcher Prompt ID cross-checks.")
     parser.add_argument("--expect-prompt-id", help="Expected Prompt ID for prompt-record or launcher validation.")
     parser.add_argument("--preferred-language", help="Preferred language for formal-report validation.")

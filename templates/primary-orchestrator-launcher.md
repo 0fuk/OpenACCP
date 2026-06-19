@@ -81,7 +81,8 @@ Primary must actively push work toward closure:
 2. Dispatch subagents when bounded work can reduce risk.
 3. Consume handoffs and reviewer reports before claiming progress.
 4. Reclassify remaining gaps after every consume.
-5. Stop only when remaining gaps are final-authority-only, explicitly out, or blocked on user facts that cannot be safely assumed.
+5. Before final-accepting a Frontier return or Primary-ready packet, cite the closure `closureId`, `laneId`, or path in `basisRefs`, then validate the consume result with that `frontier-closure`.
+6. Stop only when remaining gaps are final-authority-only, explicitly out, or blocked on user facts that cannot be safely assumed.
 
 Use B0/B1/B2 preparation before asking for B3. A B3 boundary does not prevent safer package, review, or validation work.
 
@@ -140,6 +141,8 @@ openaccp-validate --artifact <frontier-prompt-record> --ruleset frontier-contrac
 openaccp-validate --artifact <current-manifest> --ruleset current-manifest --strict
 openaccp-validate --artifact <sequence-registry> --ruleset sequence-registry --strict
 openaccp-validate --artifact <consume-result> --ruleset consume-result --strict
+# Only for final accepted Frontier return or Primary-ready packet consume:
+openaccp-validate --artifact <consume-result> --ruleset consume-result --frontier-closure <frontier-closure> --strict
 openaccp-validate --artifact <machine-summary> --ruleset machine-summary --strict
 ```
 
