@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "openaccp"
 dynamic = ["version"]
-description = "Coordinate multi-agent software delivery across source facts, task cards, handoffs, reviews, worktrees, and final acceptance."
+description = "OpenACCP is an open workflow protocol for coordinating multi-agent software work."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -17,6 +17,11 @@ keywords = [
   "multi-agent",
   "software-delivery",
   "coordination",
+  "ai-coding-agents",
+  "agent-orchestration",
+  "claude-code-workflow",
+  "codex-workflow",
+  "spec-driven-development",
   "handoff",
   "task-cards",
   "worktrees",

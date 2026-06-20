@@ -1,12 +1,26 @@
-# OpenACCP - Coordinate AI Coding Agents From PRD to Accepted Code
+# OpenACCP - Coordination Layer for AI Coding Agents
 
 **Agentic Continuous Coordination Protocol**
 
-**Keep multi-agent software delivery coordinated, reviewable, and recoverable.**
+**Stop babysitting agents. Start coordinating them.**
 
-OpenACCP is an open workflow protocol for teams using multiple AI coding agents on real software projects. It gives Codex, Claude Code, Aider, OpenHands, SWE-agent, LangGraph, CrewAI, AutoGen, and the OpenAI Agents SDK a shared delivery layer for project facts, task cards, authority boundaries, handoffs, reviews, worktrees, and final acceptance.
+OpenACCP is an open workflow protocol for coordinating multi-agent software work.
 
-Use OpenACCP when a PRD, a repo, and several agent threads need one clear path from source facts to accepted work.
+It gives Codex, Claude Code, Aider, OpenHands, SWE-agent, LangGraph, CrewAI, AutoGen, and the OpenAI Agents SDK a shared way to move from project facts to accepted work: `source pack`, `CARD`, `task-card`, `authority boundary`, `handoff`, review evidence, validator gates, worktrees, return wake, and final acceptance.
+
+One agent can keep a small task moving with a good prompt or a loop. Real projects get harder: the PRD is fuzzy, specs drift, several agents work in parallel, reviewers return partial evidence, CI only proves part of the story, and the human quietly becomes the event bus. OpenACCP gives that work a coordination layer so the team knows which facts count, which agent owns which lane, what came back, and what is actually accepted.
+
+## The Moment OpenACCP Is For
+
+Use OpenACCP when your AI coding workflow has grown past "paste a prompt and hope":
+
+- A vague ticket, PRD, or design note needs to become agent-ready work.
+- Several agents need to work at the same time without mixing scope.
+- A returned handoff needs consume, review, or follow-up dispatch.
+- Reviewers need evidence instead of a cheerful summary.
+- A Frontier lane can keep closing B0/B1/B2 work without bouncing every question to the human.
+- Specs, decisions, and code need one recoverable source of truth.
+- CI passes, but final acceptance still needs a clear owner.
 
 ## Why Teams Use OpenACCP
 
@@ -21,7 +35,7 @@ Use OpenACCP when a PRD, a repo, and several agent threads need one clear path f
 
 | Need | OpenACCP gives you |
 |---|---|
-| Several agents working at once | Primary/Frontier lanes, CARDs, task cards, child ledgers, and handoffs. |
+| Several agents working at once | Primary/Frontier lanes, CARDs, task cards, child ledgers, return wake, and handoffs. |
 | A rough PRD or scattered notes | Bootstrap flow for source packs, assumptions, open questions, starter specs, and first CARDs. |
 | Real code changes | Authority charters, worktree policy, scoped worker dispatch, verification evidence, and reviewer loops. |
 | Clear acceptance | Consume results that say what evidence proves before final acceptance or release decisions. |
@@ -29,7 +43,7 @@ Use OpenACCP when a PRD, a repo, and several agent threads need one clear path f
 
 ## Who This Is For
 
-OpenACCP is for people who have moved beyond one-off prompts and are starting to use AI agents like a small project team.
+OpenACCP is for people who already see the ceiling of one-off prompts and want AI agents to behave more like a small delivery team.
 
 | You are | Common pain | What OpenACCP gives you |
 |---|---|---|
@@ -38,7 +52,7 @@ OpenACCP is for people who have moved beyond one-off prompts and are starting to
 | A large repo maintainer | Migration, refactor, testing, docs, and release prep happen across branches, PRs, CI, and chat history. | Source packs, CARDs, authority charters, handoffs, review reports, and consume results connect the work. |
 | An AI coding workflow owner | The team already uses Codex, Claude Code, Aider, OpenHands, or other tools, but handoff and review practices differ by tool. | A tool-neutral coordination layer that different agents can share. |
 | A complex delivery owner | Backend, frontend, tests, security, docs, and launch work move in parallel, but only some agent output should be accepted. | A clean distinction between "an agent produced this" and "the project accepted this." |
-| A team with only a PRD or rough product idea | There is no source pack, spec, scope boundary, or task card, so agents start guessing. | Bootstrap turns rough material into a minimal source pack, scope boundary, assumptions ledger, open questions, starter spec, and first CARDs. |
+| A team with only a PRD or rough product idea | The starting material needs structure before agents can execute safely. | Bootstrap turns rough material into a minimal source pack, scope boundary, assumptions ledger, open questions, starter spec, and first CARDs. |
 
 OpenACCP keeps tests, CI, code review, security review, legal review, release ownership, and engineering judgment visible inside one coordination flow.
 
@@ -381,13 +395,18 @@ openaccp init ./my-openaccp-package --write
 
 ## How It Compares
 
-OpenACCP sits beside the tools that run agents.
+OpenACCP sits around the tools that run agents.
 
-OpenACCP supplies protocol artifacts, role instructions, validator checks, and consume records. The agent runtime still runs the agents, tests, reviews, and code changes.
+A prompt tells one agent what to try next. A loop keeps one agent moving until a check passes. A spec tells agents what the product should become. OpenACCP coordinates the project around all of that.
 
-- Codex, Claude Code, Aider, OpenHands, and SWE-agent are strong places to run coding work. OpenACCP gives that work a shared source pack, CARDs, authority boundaries, handoffs, reviews, and consume decisions.
-- LangGraph, CrewAI, AutoGen, and the OpenAI Agents SDK help teams build agent frameworks, flows, graphs, tools, and application-level agent behavior. OpenACCP adds the project delivery layer: which facts count, who can act, what evidence came back, and who can accept it.
-- Teams can keep their current coding agent or agent framework. OpenACCP gives the surrounding workflow a protocol so parallel work stays traceable, reviewable, and recoverable.
+Loops help an agent finish a task. OpenACCP helps a team of agents finish a project.
+
+- **Codex, Claude Code, Aider, OpenHands, and SWE-agent** are strong places to run coding work. OpenACCP gives that work a shared source pack, CARDs, authority boundaries, handoffs, return wake, reviews, and consume decisions.
+- **LangGraph, CrewAI, AutoGen, and the OpenAI Agents SDK** help teams build agent frameworks, flows, graphs, tools, and application-level agent behavior. OpenACCP adds the project delivery layer: which facts count, who can act, what evidence came back, which returns need consume, and who can accept the result.
+- **Agent loops** keep one lane of work alive. OpenACCP keeps multiple lanes aligned, especially when a returned handoff, reviewer result, or Frontier closure needs the right owner to consume it.
+- **Spec-driven workflows** make intent clearer. OpenACCP carries that intent into execution, review, handoff, and final acceptance so the source facts remain visible after agents start changing files.
+
+The practical difference is simple: OpenACCP lets you keep your current agent tool while adding a shared coordination protocol for source facts, roles, authority, evidence, and acceptance.
 
 ## Public Package Hygiene
 
