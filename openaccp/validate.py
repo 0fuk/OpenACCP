@@ -450,7 +450,7 @@ PROMPT_RECORD_RE = re.compile(r"(?im)^\s*-\s*Prompt Record\s*:\s*(.+?)\s*$")
 JSON_FENCE_RE = re.compile(r"```(?:json|JSON)?\s*(\{.*?\})\s*```", re.DOTALL)
 PROMPT_FENCE_RE = re.compile(r"```prompt\s*(.*?)```", re.DOTALL | re.IGNORECASE)
 LAUNCHER_TITLE_RE = re.compile(
-    r"^(?P<project>[^#\r\n][^-`\r\n]{1,80}?)\s+-\s+(?P<slot>Primary Orchestrator|Frontier 0[1-5]|PO\s+(?:Worker|Reviewer|Discovery|Validation|Task-Card Packager|Task-Card Worker)|F0[1-5]\s+(?:Worker|Reviewer|Discovery|Validation|Task-Card Packager|Task-Card Worker))\s+-\s+(?P<title>[^`\r\n]{3,120})$",
+    r"^(?P<project>[^#\r\n][^-`\r\n]{1,80}?)\s+-\s+(?P<slot>Primary Orchestrator|Frontier (?:0[1-9]|10)|PO\s+(?:Worker|Reviewer|Discovery|Validation|Task-Card Packager|Task-Card Worker)|F(?:0[1-9]|10)\s+(?:Worker|Reviewer|Discovery|Validation|Task-Card Packager|Task-Card Worker))\s+-\s+(?P<title>[^`\r\n]{3,120})$",
     re.IGNORECASE,
 )
 ZH_ITEM = "\u9879"
@@ -1117,7 +1117,7 @@ def validate_primary_prompt_contract_text(text: str, report: Report) -> None:
             "fail",
             "Primary prompt must scan product domains before CARD finalization; missing examples: " + ", ".join(missing_domain_terms[:5]),
         )
-    if re.search(r"(?i)at\s+least\s+two\s+Frontier|2\s*[-\u2010-\u2015]\s*5\s+Frontier|two\s+to\s+five\s+Frontier", text):
+    if re.search(r"(?i)at\s+least\s+two\s+Frontier|2\s*[-\u2010-\u2015]\s*10\s+Frontier|two\s+to\s+ten\s+Frontier", text):
         report.add("PRIMARY_FRONTIER_MIN_RULE", "blocking", "pass", "Primary prompt defaults to multiple Frontier lanes when safe.")
     else:
         report.add(
@@ -1308,7 +1308,7 @@ def launcher_non_empty_lines(text: str) -> list[str]:
 def is_child_launcher_slot(slot: str | None) -> bool:
     if not slot:
         return False
-    return bool(re.match(r"(?i)^(?:F0[1-5]|PO)\s+", slot.strip()))
+    return bool(re.match(r"(?i)^(?:F(?:0[1-9]|10)|PO)\s+", slot.strip()))
 
 
 def validate_launcher_contract_text(text: str, report: Report, location: str = "") -> re.Match[str] | None:
@@ -1326,7 +1326,7 @@ def validate_launcher_contract_text(text: str, report: Report, location: str = "
             "LAUNCHER_TITLE",
             "blocking",
             "fail",
-            "Launcher title must be `<Project> - Primary Orchestrator - <Title>`, `<Project> - Frontier 01..05 - <Title>`, `F01..F05 Worker/Reviewer/Discovery/Validation/Task-Card Worker - <Title>`, or `PO Worker/Reviewer/Discovery/Validation/Task-Card Worker - <Title>`.",
+            "Launcher title must be `<Project> - Primary Orchestrator - <Title>`, `<Project> - Frontier 01..10 - <Title>`, `F01..F10 Worker/Reviewer/Discovery/Validation/Task-Card Worker - <Title>`, or `PO Worker/Reviewer/Discovery/Validation/Task-Card Worker - <Title>`.",
             location,
         )
     legacy_hits: list[str] = []
@@ -2763,10 +2763,10 @@ def validate_lane_registry_dispatch_policy(data: dict[str, Any], lanes: list[Any
             report.add("LANE_DISPATCH_POLICY_COUNT", "blocking", "pass", "single Frontier mode has an explicit exception reason.")
         return
     if mode == "multi_frontier":
-        if 2 <= frontier_count <= 5:
+        if 2 <= frontier_count <= 10:
             report.add("LANE_DISPATCH_POLICY_COUNT", "blocking", "pass", f"multi_frontier mode has {frontier_count} Frontier lanes.")
         else:
-            report.add("LANE_DISPATCH_POLICY_COUNT", "blocking", "fail", f"multi_frontier mode requires 2-5 Frontier lanes; found {frontier_count}.")
+            report.add("LANE_DISPATCH_POLICY_COUNT", "blocking", "fail", f"multi_frontier mode requires 2-10 Frontier lanes; found {frontier_count}.")
 
 
 def validate_lane_b2_dispatch_gate(lane: dict[str, Any], report: Report, loc: str) -> None:

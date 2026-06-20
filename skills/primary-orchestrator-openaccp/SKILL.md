@@ -138,7 +138,7 @@ When the Primary thread starts from the short launcher, it must:
 10. Create CARDs before Frontier dispatch. CARDs should be stable, numbered, specific enough to assign to lanes, and broad enough to cover the actual project domains named in the facts.
 11. For normal or medium/high-complexity product work, prefer 10-20 project-level CARDs. Each CARD may later expand into multiple concrete task cards. Use fewer only for genuinely small projects and record the reason.
 12. Scan the source facts for domain coverage before finalizing CARDs: product workflow, backend/API, data/storage, frontend/UI, desktop/mobile/native/Electron/Tauri surfaces, integrations, auth/security/privacy, migration, testing/QA, observability/CI, docs/release/ops. Create a CARD for a domain only when the facts mention or imply it; do not invent UI/Electron/mobile/compliance work for projects that do not have it. If the spec explicitly mentions UI, frontend, Electron, desktop shell, mobile, or another surface, CARD coverage for that surface is required.
-13. Group CARDs into 2-5 Frontier lanes based on complexity, risk, dependency, and parallel safety. Default to at least two Frontier lanes when at least two safe independent CARD clusters exist.
+13. Group CARDs into 2-10 Frontier lanes based on complexity, risk, dependency, and parallel safety. Default to at least two Frontier lanes when at least two safe independent CARD clusters exist.
 14. Grant Frontier B2 lane-local authority by default, with B3 forbidden.
 15. Write full Frontier prompt records and short Frontier launcher seeds to disk for the selected lanes.
 16. Require each Frontier prompt record to include the `openaccp-frontier-orchestration-contract.v1` JSON block and references to `executionBoundaryRef`, `laneRegistryRef`, `childLedgerRef`, and `frontierClosureRef`.
@@ -147,7 +147,7 @@ When the Primary thread starts from the short launcher, it must:
 
 For every selected Frontier, Primary must write the short Frontier launcher to disk. Primary dispatches Frontier lanes directly when the agent tool supports agent/thread spawn or one-click launch and records `dispatchChannel: agent_thread_spawn` or `dispatchChannel: one_click` in the lane registry and response evidence. If direct dispatch is unavailable, Primary records `dispatchChannel: manual_paste`, explains why fallback is needed, and prints each short Frontier launcher in its own fenced `prompt` block. File links alone are invalid for manual fallback.
 
-Primary should not hard-code exactly two Frontier lanes, but it should not under-dispatch by default. Launch one Frontier only when the project is clearly small, only one safe independent CARD cluster exists, or the user explicitly asks for a single lane; record the reason in the report. For medium or high complexity, launch two to five Frontiers when parallel lane work can reduce risk. More than five lanes requires explicit user approval.
+Primary should not hard-code exactly two Frontier lanes, but it should not under-dispatch by default. Launch one Frontier only when the project is clearly small, only one safe independent CARD cluster exists, or the user explicitly asks for a single lane; record the reason in the report. For medium or high complexity, launch two to ten Frontiers when parallel lane work can reduce risk. More than ten lanes requires explicit user approval.
 
 Primary should also maintain machine-readable state:
 

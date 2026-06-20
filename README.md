@@ -112,7 +112,7 @@ Primary does the coordination work:
 7. Write full Frontier prompt records and short Frontier launchers for selected lanes.
 8. Dispatch selected Frontier lanes directly when the agent tool supports it; otherwise print fallback Frontier launchers as copyable fenced `prompt` blocks.
 
-Primary defaults to **at least two Frontier lanes** for normal or medium-complexity projects when two safe independent CARD clusters exist. It launches one Frontier only when the project is clearly small, only one safe lane exists, or the user explicitly asks for a single lane. Broad or medium-high-complexity projects normally receive two to five Frontier lanes. More than five requires explicit user approval.
+Primary defaults to **at least two Frontier lanes** for normal or medium-complexity projects when two safe independent CARD clusters exist. It launches one Frontier only when the project is clearly small, only one safe lane exists, or the user explicitly asks for a single lane. Broad or medium-high-complexity projects normally receive two to ten Frontier lanes. More than ten requires explicit user approval.
 
 ## Manual Primary And Frontier Startup
 

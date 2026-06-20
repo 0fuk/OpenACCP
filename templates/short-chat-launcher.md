@@ -9,8 +9,8 @@ The short launcher must be written to disk. When the agent tool supports direct 
 The first non-empty line is always the launcher title. It is plain text, not a Markdown heading. Use these slots:
 
 - `<Project> - Primary Orchestrator - <Short Task>`
-- `<Project> - Frontier 01 - <Short Task>` through `<Project> - Frontier 05 - <Short Task>`
-- `<Project> - F01 Worker - <Short Task>` through `<Project> - F05 Worker - <Short Task>` for child fallback launchers owned by a Frontier lane
+- `<Project> - Frontier 01 - <Short Task>` through `<Project> - Frontier 10 - <Short Task>`
+- `<Project> - F01 Worker - <Short Task>` through `<Project> - F10 Worker - <Short Task>` for child fallback launchers owned by a Frontier lane
 - `<Project> - PO Worker - <Short Task>` for child fallback launchers owned by Primary
 
 The same pattern applies to Reviewer, Discovery, Validation, Task-Card Packager, and Task-Card Worker child fallback launchers. Do not use generic titles such as `Frontier Launcher`, `Frontier A`, or `Frontier B`.

@@ -901,6 +901,37 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     write_json(bad_single_frontier_path, bad_single_frontier)
     assert_exit("lane registry rejects normal project single Frontier without exception", run(["--artifact", str(bad_single_frontier_path), "--ruleset", "lane-registry", "--strict"]), 1)
 
+    frontier_lane_template = json.loads(json.dumps(valid_lane_registry()["lanes"][0]))
+    frontier_lane_template["role"] = "frontier"
+    frontier_lane_template["authorityLevel"] = "B2"
+    frontier_lane_template["returnGateStatus"]["state"] = "not_ready"
+    ten_frontier_registry = valid_lane_registry()
+    ten_frontier_registry["projectComplexity"] = "high"
+    ten_frontier_registry["frontierDispatchMode"] = "multi_frontier"
+    ten_frontier_registry["frontierDispatchReason"] = "High-complexity project with ten safe independent Frontier lanes."
+    ten_frontier_registry["lanes"] = []
+    for lane_number in range(1, 11):
+        lane = json.loads(json.dumps(frontier_lane_template))
+        lane["laneId"] = f"frontier-{lane_number:02d}"
+        lane["objective"] = f"Coordinate lane {lane_number:02d}"
+        lane["currentPromptId"] = f"PROMPT-F{lane_number:02d}"
+        lane["assignedCardIds"] = [f"CARD-{lane_number:03d}"]
+        ten_frontier_registry["lanes"].append(lane)
+    ten_frontier_path = tmp / "valid-ten-frontier-lanes.json"
+    write_json(ten_frontier_path, ten_frontier_registry)
+    assert_exit("lane registry accepts ten Frontier lanes", run(["--artifact", str(ten_frontier_path), "--ruleset", "lane-registry", "--strict"]), 0)
+
+    eleven_frontier_registry = json.loads(json.dumps(ten_frontier_registry))
+    lane = json.loads(json.dumps(frontier_lane_template))
+    lane["laneId"] = "frontier-11"
+    lane["objective"] = "Coordinate lane 11"
+    lane["currentPromptId"] = "PROMPT-F11"
+    lane["assignedCardIds"] = ["CARD-011"]
+    eleven_frontier_registry["lanes"].append(lane)
+    eleven_frontier_path = tmp / "bad-eleven-frontier-lanes.json"
+    write_json(eleven_frontier_path, eleven_frontier_registry)
+    assert_exit("lane registry rejects eleven Frontier lanes", run(["--artifact", str(eleven_frontier_path), "--ruleset", "lane-registry", "--strict"]), 1)
+
     bad_execution = valid_execution_boundary(tmp)
     bad_execution["productRepoStatus"] = "found"
     bad_execution["productRepoPath"] = ""
@@ -1128,9 +1159,9 @@ def assert_text_rules(tmp: Path) -> None:
     write_launcher(frontier_01_launcher, "Project - Frontier 01 - Source Pack Lane", "openaccp-frontier-01")
     assert_exit("valid Frontier 01 launcher", run(["--artifact", str(frontier_01_launcher), "--ruleset", "launcher", "--strict"]), 0)
 
-    frontier_05_launcher = tmp / "frontier-05.short.md"
-    write_launcher(frontier_05_launcher, "Project - Frontier 05 - Release Lane", "openaccp-frontier-05")
-    assert_exit("valid Frontier 05 launcher", run(["--artifact", str(frontier_05_launcher), "--ruleset", "launcher", "--strict"]), 0)
+    frontier_10_launcher = tmp / "frontier-10.short.md"
+    write_launcher(frontier_10_launcher, "Project - Frontier 10 - Release Lane", "openaccp-frontier-10")
+    assert_exit("valid Frontier 10 launcher", run(["--artifact", str(frontier_10_launcher), "--ruleset", "launcher", "--strict"]), 0)
 
     f01_worker_launcher = tmp / "f01-worker.short.md"
     write_launcher(
@@ -1140,6 +1171,15 @@ def assert_text_rules(tmp: Path) -> None:
         ["Fallback launcher: direct subagent dispatch is unavailable."],
     )
     assert_exit("valid F01 worker fallback launcher", run(["--artifact", str(f01_worker_launcher), "--ruleset", "launcher", "--strict"]), 0)
+
+    f10_worker_launcher = tmp / "f10-worker.short.md"
+    write_launcher(
+        f10_worker_launcher,
+        "Project - F10 Worker - Scoped Fix",
+        "openaccp-f10-worker",
+        ["Fallback launcher: direct subagent dispatch is unavailable."],
+    )
+    assert_exit("valid F10 worker fallback launcher", run(["--artifact", str(f10_worker_launcher), "--ruleset", "launcher", "--strict"]), 0)
 
     po_reviewer_launcher = tmp / "po-reviewer.short.md"
     write_launcher(
@@ -1155,9 +1195,9 @@ def assert_text_rules(tmp: Path) -> None:
         "reject generic Frontier launcher": "Project - Frontier Launcher - Source Pack Lane",
         "reject Frontier A launcher": "Project - Frontier A - Source Pack Lane",
         "reject Frontier 1 launcher": "Project - Frontier 1 - Source Pack Lane",
-        "reject Frontier 06 launcher": "Project - Frontier 06 - Source Pack Lane",
+        "reject Frontier 11 launcher": "Project - Frontier 11 - Source Pack Lane",
         "reject F1 child launcher": "Project - F1 Worker - Scoped Fix",
-        "reject F06 child launcher": "Project - F06 Worker - Scoped Fix",
+        "reject F11 child launcher": "Project - F11 Worker - Scoped Fix",
     }
     for case_name, title in invalid_launcher_cases.items():
         bad_launcher = tmp / (case_name.replace(" ", "-") + ".short.md")
@@ -1199,7 +1239,7 @@ def assert_text_rules(tmp: Path) -> None:
                 "```",
                 "",
                 "```prompt",
-                frontier_05_launcher.read_text(encoding="utf-8"),
+                frontier_10_launcher.read_text(encoding="utf-8"),
                 "```",
             ]
         ),

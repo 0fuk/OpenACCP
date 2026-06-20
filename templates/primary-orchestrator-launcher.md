@@ -68,7 +68,7 @@ Every status-like reply must use `formal-report-openaccp` structure with stable 
 10. Create CARDs before Frontier dispatch. CARDs must be stable, numbered, specific enough to assign to lanes, and broad enough to cover the actual project domains named in the facts.
 11. For normal or medium/high-complexity product work, prefer 10-20 project-level CARDs. Each CARD may later expand into multiple concrete task cards. Use fewer only for genuinely small projects and record the reason.
 12. Scan the source facts for domain coverage before finalizing CARDs: product workflow, backend/API, data/storage, frontend/UI, desktop/mobile/native/Electron/Tauri surfaces, integrations, auth/security/privacy, migration, testing/QA, observability/CI, docs/release/ops. Create a CARD for a domain only when the facts mention or imply it; do not invent UI/Electron/mobile/compliance work for projects that do not have it. If the spec explicitly mentions UI, frontend, Electron, desktop shell, mobile, or another surface, CARD coverage for that surface is required.
-13. Group CARDs into 2-5 Frontier lanes based on complexity, risk, dependencies, and parallel safety. Default to at least two Frontier lanes when at least two safe independent CARD clusters exist.
+13. Group CARDs into 2-10 Frontier lanes based on complexity, risk, dependencies, and parallel safety. Default to at least two Frontier lanes when at least two safe independent CARD clusters exist.
 14. Write full Frontier prompt records only for selected lanes. Each Frontier prompt record must include the `openaccp-frontier-orchestration-contract.v1` JSON block.
 15. Validate each Frontier prompt record with the `frontier-contract` ruleset before direct dispatch or manual fallback.
 16. Write every selected short Frontier launcher to disk, then dispatch selected Frontier lanes directly when the agent tool supports agent/thread spawn or one-click launch. If direct dispatch is unavailable, print each selected short Frontier launcher in its own fenced `prompt` block as manual fallback. File links to `.short.md` launchers are evidence only and must not replace manual fallback prompt blocks.
@@ -115,7 +115,7 @@ Subagents may produce evidence or packages. They do not own final acceptance.
 
 ## Frontier Dispatch Rules
 
-Do not hard-code exactly two Frontier lanes, but do not under-dispatch by default. Launch one Frontier only when the project is clearly small, only one safe independent CARD cluster exists, or the user explicitly asks for a single lane; record the reason in the report. For medium or high complexity, launch two to five Frontiers when parallel lane work can reduce risk. More than five lanes requires explicit user approval.
+Do not hard-code exactly two Frontier lanes, but do not under-dispatch by default. Launch one Frontier only when the project is clearly small, only one safe independent CARD cluster exists, or the user explicitly asks for a single lane; record the reason in the report. For medium or high complexity, launch two to ten Frontiers when parallel lane work can reduce risk. More than ten lanes requires explicit user approval.
 
 Each Frontier prompt record must include:
 
@@ -147,7 +147,7 @@ Return:
 - execution boundary, current manifest, lane registry, source status registry, decision registry, and sequence registry status,
 - CARD list, CARD coverage gaps, or CARD creation blocker,
 - one recommended Primary next action,
-- two to five Frontier Orchestrator lanes for normal or medium/high-complexity projects based on CARD and lane analysis, dispatched directly when available. One Frontier is allowed only for a clearly small project, a single safe independent lane, or an explicit user request, and the report must state that reason. If direct dispatch is unavailable, return manual fallback short launchers as copyable fenced `prompt` blocks.
+- two to ten Frontier Orchestrator lanes for normal or medium/high-complexity projects based on CARD and lane analysis, dispatched directly when available. One Frontier is allowed only for a clearly small project, a single safe independent lane, or an explicit user request, and the report must state that reason. If direct dispatch is unavailable, return manual fallback short launchers as copyable fenced `prompt` blocks.
 
 ## Validation Expectations
 
