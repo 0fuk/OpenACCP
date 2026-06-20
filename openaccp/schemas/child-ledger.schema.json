@@ -21,6 +21,7 @@
           "effects",
           "subagentIdOrToolStatus",
           "expectedHandoffPath",
+          "returnWake",
           "dispatchStatus",
           "handoffStatus",
           "consumeStatus",
@@ -36,10 +37,52 @@
           "effects": { "type": "array", "items": { "type": "string" } },
           "subagentIdOrToolStatus": { "type": "string", "minLength": 1 },
           "expectedHandoffPath": { "type": "string", "minLength": 1 },
+          "returnWake": {
+            "type": "object",
+            "required": [
+              "required",
+              "protocol",
+              "returnOwnerRole",
+              "returnOwnerThreadId",
+              "wakeChannel",
+              "wakeCapability",
+              "wakeOn",
+              "expectedWakePath"
+            ],
+            "properties": {
+              "required": { "const": true },
+              "protocol": { "const": "openaccp-return-wake-owner.v1" },
+              "returnOwnerRole": { "enum": ["primary", "frontier"] },
+              "returnOwnerThreadId": { "type": "string", "minLength": 1 },
+              "primaryThreadId": { "type": "string" },
+              "primaryMirrorWake": { "type": "boolean" },
+              "wakeChannel": { "enum": ["direct_thread_message", "coordination_pending", "manual_fallback"] },
+              "wakeCapability": { "enum": ["available", "unavailable", "unknown"] },
+              "wakeOn": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "enum": [
+                    "handoff_ready",
+                    "review_ready",
+                    "amendment_needed",
+                    "blocked",
+                    "primary_ready",
+                    "early_return_risk",
+                    "failed"
+                  ]
+                }
+              },
+              "expectedWakePath": { "type": "string", "minLength": 1 }
+            },
+            "additionalProperties": true
+          },
           "dispatchStatus": { "enum": ["not_started", "startup_provided", "dispatched", "running", "returned", "failed", "cancelled"] },
           "handoffStatus": { "enum": ["not_expected", "not_started", "expected", "present", "missing", "invalid"] },
           "parentConsumeRef": { "type": "string" },
           "fallbackLauncherReason": { "type": "string" },
+          "wakeStatus": { "enum": ["not_applicable", "not_sent", "sent", "pending", "failed"] },
+          "wakeRef": { "type": "string" },
           "consumeStatus": { "enum": ["not_applicable", "not_consumed", "consumed", "rejected"] },
           "remainingRisk": { "type": "string" }
         },

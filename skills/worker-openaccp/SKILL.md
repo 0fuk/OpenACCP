@@ -74,3 +74,11 @@ Write or return a `machine-summary` when the orchestrator needs a compact locato
 - claims and nextActions.
 
 Keep the handoff factual. Worker results are provisional until consumed by the authorized orchestrator or owner.
+
+## Return Wake
+
+Every worker prompt must include structured `returnWake` using `openaccp-return-wake-owner.v1` with `returnOwnerRole`, `returnOwnerThreadId`, `wakeChannel`, `wakeCapability`, `wakeOn`, and `expectedWakePath`.
+
+After writing the expected handoff or blocker artifact and running required validation when available, send a concise wake packet to the return owner named in `returnWake`. A worker spawned by Frontier wakes that Frontier by default. A worker spawned directly by Primary wakes Primary. Mirror wake Primary only when `primaryMirrorWake: true`.
+
+If direct wake is unavailable, write `.openaccp/coordination/wake-pending/<wakeId>.json` and print the same packet in the final response. The wake asks the owner to consume or inspect the result; it does not claim final acceptance.

@@ -34,6 +34,7 @@ python tools/openaccp_validate.py --artifact consume-result.json --ruleset consu
 # Only for final accepted Frontier return or Primary-ready packet consume:
 python tools/openaccp_validate.py --artifact consume-result.json --ruleset consume-result --frontier-closure .openaccp/coordination/frontier-closures/<lane-id>.json --strict
 python tools/openaccp_validate.py --artifact machine-summary.json --ruleset machine-summary --strict
+python tools/openaccp_validate.py --artifact return-wake.json --ruleset return-wake --strict
 ```
 
 Use `frontier-contract` before launching or reusing a Frontier prompt. It checks the B2 lane contract, `openaccp-frontier-orchestration-contract.v1` JSON block, subagent-first dispatch, child ledger, branch return gate, worktree decision, human-readable reporting, and fallback-only child launcher rule.
@@ -42,7 +43,9 @@ Use `execution-boundary` during Primary startup before B2 Frontier dispatch. It 
 
 Use `lane-registry` for the active Primary/Frontier control plane. It records project complexity, Frontier dispatch mode, lane-count reason, lane ids, objectives, authority, assigned CARDs, execution boundary, child ledger, latest consume refs, return gate status, and per-lane `b2DispatchGate`.
 
-Use `child-ledger` inside each Frontier lane. It records every worker/reviewer/discovery/validation child with Prompt ID, taskId, authority, effects, dispatch status, handoff status, consume status, and remaining risk. Response ID and handoffId become required by lifecycle when a child returns or a handoff is present. B3 child authority is invalid.
+Use `child-ledger` inside each Frontier lane. It records every worker/reviewer/discovery/validation child with Prompt ID, taskId, authority, effects, returnWake, dispatch status, handoff status, wake status, consume status, and remaining risk. Response ID and handoffId become required by lifecycle when a child returns or a handoff is present. B3 child authority is invalid.
+
+Use `return-wake` when a Frontier, worker, reviewer, discovery, validation, or task-card-only child returns actionable evidence. It checks the `openaccp-return-wake-owner.v1` packet, return owner, wake channel, idempotency key, artifact refs, validation status, owner action, and early-return safety.
 
 Use `source-status-registry` to make current/reference/deprecated/invalid/unknown facts explicit. Deprecated, invalid, and unknown sources require a reason.
 

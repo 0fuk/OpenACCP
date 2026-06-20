@@ -73,6 +73,25 @@ Every status-like reply must use `formal-report-openaccp` structure with stable 
 15. Validate each Frontier prompt record with the `frontier-contract` ruleset before direct dispatch or manual fallback.
 16. Write every selected short Frontier launcher to disk, then dispatch selected Frontier lanes directly when the agent tool supports agent/thread spawn or one-click launch. If direct dispatch is unavailable, print each selected short Frontier launcher in its own fenced `prompt` block as manual fallback. File links to `.short.md` launchers are evidence only and must not replace manual fallback prompt blocks.
 
+## Return Wake Owner Protocol
+
+Primary must include a `returnWake` block in every delegated Frontier, worker, reviewer, discovery, validation, or task-card-only prompt record.
+
+Use protocol `openaccp-return-wake-owner.v1`.
+
+Return ownership:
+
+- Frontier returns wake Primary.
+- Any child spawned directly by Primary wakes Primary unless `returnWake` names a narrower owner. This includes Frontiers, workers, reviewers, discovery, validation, and task-card-only children.
+- Frontier-spawned workers, reviewers, discovery, validation, and task-card-only children wake their owning Frontier by default.
+- A Frontier child may also mirror wake Primary only when the lane charter explicitly sets `primaryMirrorWake: true`.
+
+The returning thread must write its handoff, review report, blocker, closure, or return artifact first, run relevant validation when available, then send a concise wake packet to the return owner. The wake packet is an action request, not acceptance.
+
+If direct thread messaging is available, use `wakeChannel: direct_thread_message`. If it is unavailable, write the same packet under `.openaccp/coordination/wake-pending/<wakeId>.json` with `wakeChannel: coordination_pending`. Manual fallback is only for tools that cannot write the coordination pending file.
+
+On receiving a return wake, Primary must read the named artifact, validate it when the ruleset exists, consume or classify the return, and dispatch the next safe B0/B1/B2 action or record the B3/human decision needed. Do not answer only "received".
+
 ## Active Closure Rules
 
 Primary must actively push work toward closure:
@@ -89,6 +108,8 @@ Use B0/B1/B2 preparation before asking for B3. A B3 boundary does not prevent sa
 ## Subagent Dispatch Rules
 
 Dispatch packages must include role, authority, inputs, allowed scope, forbidden scope, validation, expected output, and handoff or report path.
+
+Dispatch packages must also include structured `returnWake` using `openaccp-return-wake-owner.v1` with `returnOwnerRole`, `returnOwnerThreadId`, `wakeChannel`, `wakeCapability`, `wakeOn`, and `expectedWakePath`.
 
 Subagents may produce evidence or packages. They do not own final acceptance.
 
@@ -113,6 +134,7 @@ Each Frontier prompt record must include:
 - a rule that human-managed child launchers are fallback only,
 - `dispatchChannel` policy: `agent_thread_spawn` or `one_click` is the default when available; `manual_paste` is fallback only,
 - child ledger and child handoff consume expectations,
+- returnWake owner routing and wake fallback expectations,
 - human next-step reporting expectations,
 - handoff path and validation expectations.
 

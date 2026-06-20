@@ -227,7 +227,7 @@ Primary must first:
 6. Create CARDs before Frontier dispatch. For normal or medium/high-complexity product work, prefer 10-20 project-level CARDs. Use fewer only for genuinely small projects and record why.
 7. Scan the facts for domain coverage before finalizing CARDs: product workflow, backend/API, data/storage, frontend/UI, desktop/mobile/native/Electron/Tauri surfaces, integrations, auth/security/privacy, migration, testing/QA, observability/CI, docs/release/ops, and project-specific domains. Create CARDs only for domains present in the facts, but never miss a domain the facts explicitly name.
 8. Group CARDs into Frontier lanes based on complexity, risk, dependencies, and parallel safety. Default to at least two Frontier lanes when two safe independent CARD clusters exist; use one only for small/single-lane/user-request cases with a stated reason; use two to five for medium/high complexity when parallel work is useful.
-9. Write full Frontier prompt records to disk only for the lanes it decides are useful.
+9. Write full Frontier prompt records to disk only for the lanes it decides are useful. Each delegated Frontier, worker, reviewer, discovery, validation, or task-card-only prompt record must include structured `returnWake` using `openaccp-return-wake-owner.v1` with `returnOwnerRole`, `returnOwnerThreadId`, `wakeChannel`, `wakeCapability`, `wakeOn`, and `expectedWakePath`.
 10. Validate each full Frontier prompt record with the `frontier-contract` ruleset before direct dispatch or manual fallback.
 11. Write each short Frontier launcher to disk for audit, then dispatch each selected Frontier directly when the agent tool supports it. If direct dispatch is unavailable, print each selected Frontier launcher in its own fenced `prompt` block in chat as manual fallback.
 
@@ -243,7 +243,8 @@ Primary and Frontier maintain machine-readable coordination state:
 - `current-manifest` records current facts, invalid or deprecated sources, active lanes, superseded prompts, cancelled prompts, registry refs, and latest consume refs.
 - `sequence-registry` records Prompt IDs, Response IDs, handoffs, consume results, active cards, active lanes, lifecycle status, and current/latest pointers.
 - `lane-registry` records Primary/Frontier lanes, assigned CARDs, `child-ledgers/<lane-id>.json` refs, `frontier-closures/<lane-id>.json` refs, and return-gate status.
-- `child-ledger` records child worker/reviewer/discovery/validation lifecycle, handoff status, consume status, and remaining risk.
+- `child-ledger` records child worker/reviewer/discovery/validation lifecycle, returnWake, handoff status, wake status, consume status, and remaining risk.
+- `return-wake` packets tell the owning orchestrator that a return artifact is ready to consume or inspect. The packet wakes the owner; it does not accept the work.
 - `source-status-registry` records current, reference, deprecated, invalid, and unknown sources with reasons.
 - `decision-registry` records owner questions, Primary decisions, waivers, out-of-scope decisions, blockers, and safe defaults.
 - `frontier-closure` proves whether a Frontier can keep working, close, or return to Primary.

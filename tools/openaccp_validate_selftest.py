@@ -255,6 +255,59 @@ def valid_authority_charter() -> dict:
     }
 
 
+def return_wake_contract(owner_role: str = "frontier") -> dict:
+    return {
+        "required": True,
+        "protocol": "openaccp-return-wake-owner.v1",
+        "returnOwnerRole": owner_role,
+        "returnOwnerThreadId": "THREAD-OWNER-001",
+        "primaryThreadId": "THREAD-PRIMARY-001",
+        "primaryMirrorWake": False,
+        "wakeChannel": "direct_thread_message",
+        "wakeCapability": "available",
+        "wakeOn": ["handoff_ready", "review_ready", "amendment_needed", "blocked", "failed"],
+        "expectedWakePath": ".openaccp/coordination/wake-pending/WAKE-001.json",
+    }
+
+
+def valid_return_wake() -> dict:
+    return {
+        "schemaVersion": "openaccp-return-wake.v1",
+        "artifactType": "return-wake",
+        "protocol": "openaccp-return-wake-owner.v1",
+        "wakeId": "project:thread:RESP-FRONTIER-001:frontier-docs",
+        "dedupeKey": "project:RESP-FRONTIER-001:frontier-docs",
+        "projectId": "project",
+        "sourceThreadId": "THREAD-FRONTIER-001",
+        "role": "frontier",
+        "laneId": "frontier-docs",
+        "taskCardId": "",
+        "promptId": "PROMPT-FRONTIER-001",
+        "responseId": "RESP-FRONTIER-001",
+        "returnClass": "primary_ready",
+        "returnOwner": {"role": "primary", "threadId": "THREAD-PRIMARY-001", "laneId": "primary"},
+        "primaryMirrorWake": False,
+        "primaryThreadId": "THREAD-PRIMARY-001",
+        "wakeChannel": "direct_thread_message",
+        "wakeCapability": "available",
+        "artifactRefs": {
+            "handoffPath": ".openaccp/handoffs/HAND-FRONTIER-DOCS-001.json",
+            "closurePath": ".openaccp/coordination/frontier-closures/frontier-docs.json",
+            "consumeResultPath": "",
+            "reportPath": "",
+            "blockerPath": "",
+            "wakePendingPath": "",
+        },
+        "branchReturnGate": "satisfied",
+        "safeWorkRemainingCount": 0,
+        "validation": {"status": "pass", "evidence": "frontier-closure strict pass"},
+        "ownerActionNeeded": "consume",
+        "summary": "Frontier docs lane is ready for Primary consume.",
+        "blockers": [],
+        "createdChildThreads": [],
+    }
+
+
 def valid_execution_boundary(tmp: Path) -> dict:
     return {
         "schemaVersion": "openaccp-execution-boundary.v1",
@@ -343,8 +396,11 @@ def valid_child_ledger() -> dict:
                 "effects": ["docs-only"],
                 "subagentIdOrToolStatus": "direct-subagent",
                 "expectedHandoffPath": ".openaccp/handoffs/HAND-001.json",
+                "returnWake": return_wake_contract("frontier"),
                 "dispatchStatus": "returned",
                 "handoffStatus": "present",
+                "wakeStatus": "sent",
+                "wakeRef": ".openaccp/coordination/wake-pending/WAKE-001.json",
                 "consumeStatus": "consumed",
                 "remainingRisk": "none",
             }
@@ -761,6 +817,17 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     write_json(machine_summary_path, valid_machine_summary())
     assert_exit("valid machine summary", run(["--artifact", str(machine_summary_path), "--ruleset", "machine-summary", "--strict"]), 0)
 
+    return_wake_path = tmp / "return-wake.json"
+    write_json(return_wake_path, valid_return_wake())
+    assert_exit("valid return wake", run(["--artifact", str(return_wake_path), "--ruleset", "return-wake", "--strict"]), 0)
+
+    bad_return_wake = valid_return_wake()
+    bad_return_wake["returnClass"] = "primary_ready"
+    bad_return_wake["safeWorkRemainingCount"] = 1
+    bad_return_wake_path = tmp / "bad-return-wake-safe-work.json"
+    write_json(bad_return_wake_path, bad_return_wake)
+    assert_exit("return wake rejects primary_ready with safe work", run(["--artifact", str(bad_return_wake_path), "--ruleset", "return-wake", "--strict"]), 1)
+
     bad_consume = valid_consume_result()
     bad_consume["consumerRole"] = "worker"
     bad_consume_path = tmp / "bad-final-consume-worker.json"
@@ -885,6 +952,12 @@ def assert_json_rules(tmp: Path, paths: dict[str, Path]) -> None:
     write_json(bad_child_path, bad_child)
     assert_exit("child ledger rejects B3 child authority", run(["--artifact", str(bad_child_path), "--ruleset", "child-ledger", "--strict"]), 1)
 
+    missing_wake_child = valid_child_ledger()
+    del missing_wake_child["children"][0]["returnWake"]
+    missing_wake_child_path = tmp / "bad-child-ledger-missing-return-wake.json"
+    write_json(missing_wake_child_path, missing_wake_child)
+    assert_exit("child ledger requires returnWake", run(["--artifact", str(missing_wake_child_path), "--ruleset", "child-ledger", "--strict"]), 1)
+
     bad_source_status = valid_source_status_registry()
     bad_source_status["sources"][1]["status"] = "invalid"
     bad_source_status["sources"][1]["reason"] = ""
@@ -986,11 +1059,26 @@ def assert_text_rules(tmp: Path) -> None:
             "Scan product workflow, backend/API, data/storage, frontend/UI, desktop/mobile/native/Electron/Tauri surfaces, integrations, security, testing, CI, release, and ops before finalizing CARDs.",
             "Default to at least two Frontier lanes when two safe independent CARD clusters exist.",
             "Use one Frontier only for a small project, a single safe lane, or an explicit user request, and record the reason.",
+            "Every delegated Frontier, worker, reviewer, discovery, validation, and task-card-only prompt must include structured returnWake using openaccp-return-wake-owner.v1 with returnOwnerRole, returnOwnerThreadId, wakeChannel, wakeCapability, wakeOn, and expectedWakePath.",
         ]
     )
     primary_prompt_path = tmp / "primary.prompt.md"
     primary_prompt_path.write_text(primary_prompt, encoding="utf-8")
     assert_exit("valid prompt record", run(["--artifact", str(primary_prompt_path), "--ruleset", "prompt-record", "--strict"]), 0)
+
+    prose_only_worker_prompt = "\n".join(
+        [
+            "Prompt ID: PROMPT-WORKER-PROSE-ONLY",
+            "Role: worker",
+            "Authority level: B1",
+            "Preferred language: Chinese",
+            "Use human-explain-openaccp for every reply.",
+            "This worker will use returnWake with protocol openaccp-return-wake-owner.v1 when it is done.",
+        ]
+    )
+    prose_only_worker_prompt_path = tmp / "bad-worker-return-wake-prose-only.prompt.md"
+    prose_only_worker_prompt_path.write_text(prose_only_worker_prompt, encoding="utf-8")
+    assert_exit("prompt record rejects prose-only returnWake", run(["--artifact", str(prose_only_worker_prompt_path), "--ruleset", "prompt-record", "--strict"]), 1)
 
     launcher_path = tmp / "primary.short.md"
     launcher_path.write_text(
@@ -1433,7 +1521,8 @@ def assert_text_rules(tmp: Path) -> None:
                 "Dispatch bounded worker, reviewer, discovery, validation, and subagent work inside the lane.",
                 "Do not use the human as a thread launcher for B0/B1/B2-safe child work.",
                 "Human-managed child launchers are fallback only when direct subagent dispatch is unavailable, unsafe, explicitly requested, or requires a separately user-managed session.",
-                "Maintain a child ledger with promptId, taskId, role, authority, effects, subagent id, dispatchStatus, handoffStatus, consumeStatus, and remaining risk.",
+                "Maintain a child ledger with promptId, taskId, role, authority, effects, subagent id, returnWake, dispatchStatus, handoffStatus, consumeStatus, and remaining risk.",
+                "Return wake owner routing is required: use returnWake with openaccp-return-wake-owner.v1; child work wakes the owning Frontier, and this Frontier will wake Primary when the branchReturnGate is ready.",
                 "Every Frontier reply must end with a recommended next step.",
                 "Do not return to Primary merely because a provisional packet, source baseline, handoff, or consume-result was written.",
                 "`blocked on Primary` is valid only when branchReturnGate is satisfied and every visible remaining gap is needs_final_authority or explicitly_out.",
@@ -1473,10 +1562,23 @@ def assert_text_rules(tmp: Path) -> None:
                                 "role",
                                 "authority",
                                 "effects",
+                                "returnWake",
                                 "dispatchStatus",
                                 "handoffStatus",
                                 "consumeStatus",
                             ]
+                        },
+                        "returnWake": {
+                            "required": True,
+                            "protocol": "openaccp-return-wake-owner.v1",
+                            "returnOwnerRole": "primary",
+                            "returnOwnerThreadId": "THREAD-PRIMARY-001",
+                            "primaryThreadId": "THREAD-PRIMARY-001",
+                            "primaryMirrorWake": False,
+                            "wakeChannel": "direct_thread_message",
+                            "wakeCapability": "available",
+                            "wakeOn": ["primary_ready", "early_return_risk", "blocked", "failed"],
+                            "expectedWakePath": ".openaccp/coordination/wake-pending/WAKE-001.json",
                         },
                         "subagentFirst": {"enabled": True},
                         "defaultMode": "continue_until_lane_closure_or_true_final_authority_blocker",

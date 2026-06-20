@@ -152,12 +152,17 @@ Frontier
 
 worker / reviewer / discovery
   -> returns handoff, review report, machine summary, or evidence summary
+  -> wakes the owning orchestrator after writing the return artifact
 
 Primary
   -> consumes handoffs and reviewer evidence
   -> cross-checks Frontier closure proof before final accepted consume of a Frontier return
   -> accepts, rejects, amends, splits follow-up, or asks for a B3 human decision
 ```
+
+OpenACCP uses a return wake owner rule. A child return should not depend on a human noticing it in the sidebar. A returning Frontier wakes Primary. A worker or reviewer wakes the orchestrator that spawned it: Primary if Primary spawned it, or Frontier if Frontier spawned it. The wake is short and points to the written artifact; it is not acceptance. The owner still has to consume the evidence.
+
+When direct thread messaging exists, the child sends a short wake to the owner. When it does not, the child writes `.openaccp/coordination/wake-pending/<wakeId>.json` so the pending consume is visible in the coordination workbench. Heartbeat polling can still be used as a temporary safety net, but it is not the normal return path.
 
 Important artifacts:
 
@@ -171,7 +176,7 @@ Important artifacts:
 | `sequence registry` | Prompt IDs, Response IDs, handoffs, consumes, cards, active lanes, lifecycle states, and current/latest pointers. |
 | `source status registry` | Current, reference, deprecated, invalid, and unknown sources with reasons and locators. |
 | `lane registry` | Primary and Frontier lanes, project complexity, Frontier dispatch mode, lane-count reason, assigned CARDs, authority, child ledger refs, consume refs, closure refs, return-gate state, and per-lane B2 dispatch mode. |
-| `child ledger` | Worker, reviewer, discovery, validation, or task-card-only child lifecycle, handoff status, consume status, and remaining risk. |
+| `child ledger` | Worker, reviewer, discovery, validation, or task-card-only child lifecycle, return wake contract, handoff status, wake status, consume status, and remaining risk. |
 | `decision registry` | Owner questions, Primary decisions, waivers, out-of-scope decisions, blockers, and safe defaults. |
 | `CARD` | A project-level work slice large enough for lane planning. A CARD can later become several task cards. |
 | `task card` | A bounded executable task with scope, acceptance, verification, and stop conditions. |
@@ -179,6 +184,7 @@ Important artifacts:
 | `prompt record` | The full role prompt saved on disk and executed by Prompt ID. |
 | `short launcher` | A compact seed that points a thread to the full prompt record. It is printed in chat only when manual fallback is needed. |
 | `handoff` | Evidence from a worker, reviewer, or discovery agent. It proves some things and leaves other things unproven. |
+| `return wake` | A concise packet that tells the owning orchestrator a child has returned and which artifact needs consume or inspection. |
 | `consume result` | The orchestrator decision about what a handoff actually proves before acceptance. For Frontier returns, a final accepted consume should cite the `closureId`, `laneId`, or closure path in `basisRefs` and validate against that `frontier closure`. |
 | `lane-progress packet` | A stage packet showing useful Frontier progress. It stays inside the lane by default and becomes Primary evidence only when closure is ready. |
 | `frontier closure` | The gate proof for whether a Frontier can keep working, close, or return to Primary. A Primary-ready packet is valid only when this proof shows that all visible remaining gaps are final-authority-only or explicitly out. |

@@ -16,6 +16,8 @@ Frontier runs a B0/B1/B2 closure loop. It does discovery and review at B0, prepa
 
 Frontier should dispatch worker, reviewer, discovery, validation, and task-card-only child work from its current lane thread when subagent or delegation tools are available. Asking the human to open child threads is fallback only, not the default closure path.
 
+Frontier children wake the owning Frontier when they return. They mirror wake Primary only when the lane charter explicitly says `primaryMirrorWake: true`. This keeps Primary from becoming a noise sink while preserving final-authority visibility when the lane asks for it.
+
 ## Worker
 
 Worker executes one narrow task card. It works inside allowed files or effects, runs verification, and writes a handoff. It stops when new authority, new scope, real credentials, production data, external side effects, or dependency changes are required.
@@ -33,3 +35,5 @@ Human owner decides business meaning, legal or policy questions, real resource a
 Always distinguish role, thread, lane, workspace, branch, authority, and evidence state.
 
 Subagent output is evidence, not authority. The orchestrator that dispatched the subagent must consume the result before using it for closure. Frontier closure proof is also evidence; final lane acceptance belongs to Primary or the human owner under the active authority charter.
+
+Return wake packets are action requests, not acceptance. A returning Frontier wakes Primary. A worker or reviewer wakes the orchestrator that spawned it. The owner still reads the named artifact, validates when possible, and records a consume or classification decision.

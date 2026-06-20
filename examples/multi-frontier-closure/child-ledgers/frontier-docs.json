@@ -14,8 +14,22 @@
       "effects": ["docs-only"],
       "subagentIdOrToolStatus": "direct-subagent",
       "expectedHandoffPath": "handoff-docs.json",
+      "returnWake": {
+        "required": true,
+        "protocol": "openaccp-return-wake-owner.v1",
+        "returnOwnerRole": "frontier",
+        "returnOwnerThreadId": "THREAD-FRONTIER-DOCS-001",
+        "primaryThreadId": "THREAD-PRIMARY-001",
+        "primaryMirrorWake": false,
+        "wakeChannel": "direct_thread_message",
+        "wakeCapability": "available",
+        "wakeOn": ["handoff_ready", "review_ready", "amendment_needed", "blocked", "failed"],
+        "expectedWakePath": ".openaccp/coordination/wake-pending/WAKE-DOCS-001.json"
+      },
       "dispatchStatus": "returned",
       "handoffStatus": "present",
+      "wakeStatus": "sent",
+      "wakeRef": ".openaccp/coordination/wake-pending/WAKE-DOCS-001.json",
       "consumeStatus": "consumed",
       "parentConsumeRef": "CONSUME-DOCS-001",
       "remainingRisk": "Final acceptance remains with Primary."

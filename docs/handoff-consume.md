@@ -6,6 +6,8 @@ Handoff consume decides what a handoff proves.
 
 A handoff can exist while remaining incomplete, unverified, out of scope, or overclaimed.
 
+A return wake can also exist before acceptance. The wake only tells the owning orchestrator that a handoff, review, closure, blocker, or report is ready to inspect. The owner still has to read it, validate it when possible, and record a consume or classification decision.
+
 ## Checklist
 
 - task card exists,

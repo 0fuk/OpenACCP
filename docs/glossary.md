@@ -11,6 +11,7 @@
 - `handoff`: structured evidence from a role. Analogy: a delivery note that says what changed, what was checked, what remains, and what cannot be claimed.
 - `Primary`: final-authority role. It consumes reviewed evidence and owns binding decisions.
 - `reviewer`: read-only sidecar reviewer. It checks scope, tests, claims, and residual risk.
+- `return wake`: concise packet that tells the owning orchestrator a return artifact is ready to consume or inspect. It is not acceptance.
 - `source pack`: current fact base. Analogy: the folder of documents everyone agrees to read first.
 - `task card`: smallest safe executable unit. It tells a worker what to do, what not to do, how to verify, and when to stop.
 - `validator`: structure and hygiene checker. It catches missing fields and common unsafe claims, but it is not a judge of product correctness.

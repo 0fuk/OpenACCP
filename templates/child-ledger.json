@@ -12,8 +12,22 @@
       "effects": ["<allowed-effect>"],
       "subagentIdOrToolStatus": "direct-subagent | unavailable | fallback-launcher",
       "expectedHandoffPath": ".openaccp/handoffs/<handoff-id>.json",
+      "returnWake": {
+        "required": true,
+        "protocol": "openaccp-return-wake-owner.v1",
+        "returnOwnerRole": "frontier",
+        "returnOwnerThreadId": "<owning-orchestrator-thread-id-or-current-frontier>",
+        "primaryThreadId": "<primary-thread-id-or-empty>",
+        "primaryMirrorWake": false,
+        "wakeChannel": "direct_thread_message",
+        "wakeCapability": "available",
+        "wakeOn": ["handoff_ready", "review_ready", "amendment_needed", "blocked", "failed"],
+        "expectedWakePath": ".openaccp/coordination/wake-pending/<wake-id>.json"
+      },
       "dispatchStatus": "not_started",
       "handoffStatus": "expected",
+      "wakeStatus": "not_sent",
+      "wakeRef": "",
       "consumeStatus": "not_consumed",
       "remainingRisk": "Not dispatched yet."
     }

@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openaccp.dev/schemas/return-wake.schema.json",
+  "title": "OpenACCP Return Wake",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "artifactType",
+    "protocol",
+    "wakeId",
+    "dedupeKey",
+    "projectId",
+    "role",
+    "returnClass",
+    "returnOwner",
+    "wakeChannel",
+    "wakeCapability",
+    "promptId",
+    "responseId",
+    "artifactRefs",
+    "validation",
+    "ownerActionNeeded",
+    "summary"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "openaccp-return-wake.v1" },
+    "artifactType": { "const": "return-wake" },
+    "protocol": { "const": "openaccp-return-wake-owner.v1" },
+    "wakeId": { "type": "string", "minLength": 1 },
+    "dedupeKey": { "type": "string", "minLength": 1 },
+    "projectId": { "type": "string", "minLength": 1 },
+    "sourceThreadId": { "type": "string" },
+    "role": {
+      "enum": [
+        "frontier",
+        "worker",
+        "reviewer",
+        "validator",
+        "discovery",
+        "primary-worker",
+        "primary-reviewer"
+      ]
+    },
+    "laneId": { "type": "string" },
+    "taskCardId": { "type": "string" },
+    "promptId": { "type": "string", "minLength": 1 },
+    "responseId": { "type": "string", "minLength": 1 },
+    "returnClass": {
+      "enum": [
+        "handoff_ready",
+        "review_ready",
+        "amendment_needed",
+        "blocked",
+        "primary_ready",
+        "early_return_risk",
+        "failed"
+      ]
+    },
+    "returnOwner": {
+      "type": "object",
+      "required": ["role", "threadId"],
+      "properties": {
+        "role": { "enum": ["primary", "frontier"] },
+        "threadId": { "type": "string", "minLength": 1 },
+        "laneId": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "primaryMirrorWake": { "type": "boolean" },
+    "primaryThreadId": { "type": "string" },
+    "wakeChannel": {
+      "enum": ["direct_thread_message", "coordination_pending", "manual_fallback"]
+    },
+    "wakeCapability": { "enum": ["available", "unavailable", "unknown"] },
+    "artifactRefs": {
+      "type": "object",
+      "properties": {
+        "handoffPath": { "type": "string" },
+        "closurePath": { "type": "string" },
+        "consumeResultPath": { "type": "string" },
+        "reportPath": { "type": "string" },
+        "blockerPath": { "type": "string" },
+        "wakePendingPath": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "branchReturnGate": {
+      "enum": ["satisfied", "not_satisfied", "not_applicable", "unknown"]
+    },
+    "safeWorkRemainingCount": { "type": "integer", "minimum": 0 },
+    "validation": {
+      "type": "object",
+      "required": ["status", "evidence"],
+      "properties": {
+        "status": { "enum": ["pass", "fail", "not_run", "not_applicable"] },
+        "evidence": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "ownerActionNeeded": {
+      "enum": [
+        "consume",
+        "dispatch_reviewer",
+        "dispatch_amend_worker",
+        "judge_branch_return_gate",
+        "final_acceptance_review",
+        "human_decision",
+        "inspect_failure",
+        "none"
+      ]
+    },
+    "summary": { "type": "string", "minLength": 1 },
+    "blockers": { "type": "array", "items": { "type": "string" } },
+    "createdChildThreads": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

@@ -47,6 +47,7 @@ RULESETS = {
     "machine-summary",
     "prompt-record",
     "review-report",
+    "return-wake",
     "execution-boundary",
     "scope-boundary",
     "sequence-registry",
@@ -322,6 +323,25 @@ REQUIRED_FIELDS: dict[str, list[str]] = {
         "worktreeDecision",
         "humanNextStep",
     ],
+    "return-wake": [
+        "schemaVersion",
+        "artifactType",
+        "protocol",
+        "wakeId",
+        "dedupeKey",
+        "projectId",
+        "role",
+        "returnClass",
+        "returnOwner",
+        "wakeChannel",
+        "wakeCapability",
+        "promptId",
+        "responseId",
+        "artifactRefs",
+        "validation",
+        "ownerActionNeeded",
+        "summary",
+    ],
 }
 
 ARTIFACT_TYPE_BY_RULESET = {
@@ -331,6 +351,7 @@ ARTIFACT_TYPE_BY_RULESET = {
     "authority-charter": "authority-charter",
     "handoff": "handoff",
     "review-report": "review-report",
+    "return-wake": "return-wake",
     "assumption-ledger": "assumption-ledger",
     "current-manifest": "current-manifest",
     "sequence-registry": "sequence-registry",
@@ -378,6 +399,35 @@ ROLE_MAX_AUTHORITY = {
 AUTHORITY_RANK = {"B0": 0, "B1": 1, "B2": 2, "B3": 3}
 REVIEW_RECOMMENDATIONS = {"approve", "amend", "split-follow-up", "reject"}
 CONSUME_DECISIONS = {"accepted", "amend", "split-follow-up", "rejected", "blocked"}
+RETURN_WAKE_PROTOCOL = "openaccp-return-wake-owner.v1"
+RETURN_WAKE_CLASSES = {
+    "handoff_ready",
+    "review_ready",
+    "amendment_needed",
+    "blocked",
+    "primary_ready",
+    "early_return_risk",
+    "failed",
+}
+RETURN_WAKE_CHANNELS = {"direct_thread_message", "coordination_pending", "manual_fallback"}
+RETURN_WAKE_PROMPT_FIELDS = {
+    "returnOwnerRole",
+    "returnOwnerThreadId",
+    "wakeChannel",
+    "wakeCapability",
+    "wakeOn",
+    "expectedWakePath",
+}
+RETURN_WAKE_ACTIONS = {
+    "consume",
+    "dispatch_reviewer",
+    "dispatch_amend_worker",
+    "judge_branch_return_gate",
+    "final_acceptance_review",
+    "human_decision",
+    "inspect_failure",
+    "none",
+}
 AUTHORITY_SCOPES = {"provisional", "final"}
 VERIFY_RESULTS = {"pass", "fail", "skipped"}
 SOURCE_STATUSES = {"current", "reference", "deprecated"}
@@ -945,6 +995,18 @@ def validate_expected_prompt_id(prompt_ids: list[str], expected_prompt_id: str |
         report.add(check_id, "blocking", "fail", f"Prompt ID must match expected value {expected_prompt_id}; found {sorted(unique_ids)}.")
 
 
+def missing_return_wake_prompt_fields(text: str) -> list[str]:
+    missing: list[str] = []
+    if "returnWake" not in text:
+        missing.append("returnWake")
+    if RETURN_WAKE_PROTOCOL not in text:
+        missing.append("protocol")
+    for field in sorted(RETURN_WAKE_PROMPT_FIELDS):
+        if not re.search(rf"\b{re.escape(field)}\b", text):
+            missing.append(field)
+    return missing
+
+
 def validate_prompt_record_text(text: str, report: Report, expected_prompt_id: str | None = None) -> None:
     prompt_ids = PROMPT_ID_RE.findall(text)
     if not prompt_ids:
@@ -970,6 +1032,19 @@ def validate_prompt_record_text(text: str, report: Report, expected_prompt_id: s
         report.add("HUMAN_EXPLAIN_REQUIRED", "blocking", "pass", "Prompt record requires human-explain-openaccp.")
     else:
         report.add("HUMAN_EXPLAIN_REQUIRED", "blocking", "fail", "Prompt record must require human-explain-openaccp for replies.")
+    role_match = re.search(r"(?im)^\s*(?:Role|角色)\s*:\s*([A-Za-z0-9_-]+)", text)
+    role_value = role_match.group(1).strip().lower() if role_match else ""
+    if role_value in {"frontier", "worker", "reviewer", "discovery", "validation", "task-card-only"}:
+        missing_return_wake_fields = missing_return_wake_prompt_fields(text)
+        if not missing_return_wake_fields:
+            report.add("PROMPT_RETURN_WAKE", "blocking", "pass", "Delegated prompt record includes structured returnWake owner routing.")
+        else:
+            report.add(
+                "PROMPT_RETURN_WAKE",
+                "blocking",
+                "fail",
+                f"Delegated {role_value} prompt records must include structured returnWake using {RETURN_WAKE_PROTOCOL}; missing: {', '.join(missing_return_wake_fields)}.",
+            )
     if is_primary_prompt_record(text):
         validate_primary_prompt_contract_text(text, report)
 
@@ -1059,6 +1134,16 @@ def validate_primary_prompt_contract_text(text: str, report: Report) -> None:
             "blocking",
             "fail",
             "Primary prompt must allow one Frontier only for a small project, single safe lane, or explicit user request, with a recorded reason.",
+        )
+    missing_return_wake_fields = missing_return_wake_prompt_fields(text)
+    if not missing_return_wake_fields:
+        report.add("PRIMARY_DISPATCH_RETURN_WAKE", "blocking", "pass", "Primary dispatch rules require structured returnWake owner routing for delegated work.")
+    else:
+        report.add(
+            "PRIMARY_DISPATCH_RETURN_WAKE",
+            "blocking",
+            "fail",
+            f"Primary dispatch rules must require structured returnWake using {RETURN_WAKE_PROTOCOL}; missing: {', '.join(missing_return_wake_fields)}.",
         )
 
 
@@ -1560,6 +1645,7 @@ def validate_frontier_contract_text(text: str, report: Report) -> None:
         "laneRegistryRef",
         "childLedgerRef",
         "frontierClosureRef",
+        "returnWake",
     ]
     missing = [term for term in required_terms if term not in text]
     if missing:
@@ -1620,6 +1706,15 @@ def validate_frontier_contract_text(text: str, report: Report) -> None:
         report.add("FRONTIER_CHILD_LEDGER", "blocking", "pass", "Frontier contract requires child ledger identifiers and lifecycle status.")
     else:
         report.add("FRONTIER_CHILD_LEDGER", "blocking", "fail", "Frontier contract must require a child ledger with promptId, taskId, dispatchStatus, and handoffStatus.")
+    if "returnWake" in text and RETURN_WAKE_PROTOCOL in text and re.search(r"(?i)return owner|owning Frontier|owning orchestrator|wake Primary|wake owner", text):
+        report.add("FRONTIER_RETURN_WAKE", "blocking", "pass", "Frontier contract requires return wake owner routing.")
+    else:
+        report.add(
+            "FRONTIER_RETURN_WAKE",
+            "blocking",
+            "fail",
+            f"Frontier contract must require returnWake owner routing with {RETURN_WAKE_PROTOCOL}.",
+        )
     if re.search(r"(?is)(?:every|all)\s+Frontier\s+repl(?:y|ies).{0,160}(?:end|finish).{0,160}(?:recommended\s+next\s+step|\u4e0b\u4e00\u6b65\u5efa\u8bae)", text) or re.search(
         r"(?is)(?:end|finish).{0,160}(?:every|all)\s+Frontier\s+repl(?:y|ies).{0,160}(?:recommended\s+next\s+step|\u4e0b\u4e00\u6b65\u5efa\u8bae)",
         text,
@@ -1677,6 +1772,7 @@ def validate_frontier_contract_block(text: str, report: Report) -> None:
         "coordinationRefs",
         "worktreeDecision",
         "childLedger",
+        "returnWake",
         "subagentFirst",
         "defaultMode",
         "continuationPolicy",
@@ -1741,7 +1837,7 @@ def validate_frontier_contract_block(text: str, report: Report) -> None:
         report.add("FRONTIER_CONTRACT_SUBAGENT_FIRST", "blocking", "fail", "Contract must set subagentFirst true or {enabled: true}.")
     child_ledger = contract.get("childLedger", {})
     ledger_fields = set(child_ledger.get("requiredFields", [])) if isinstance(child_ledger, dict) and isinstance(child_ledger.get("requiredFields"), list) else set()
-    ledger_required = {"promptId", "taskId", "role", "authority", "effects", "dispatchStatus", "handoffStatus", "consumeStatus"}
+    ledger_required = {"promptId", "taskId", "role", "authority", "effects", "returnWake", "dispatchStatus", "handoffStatus", "consumeStatus"}
     missing_ledger = sorted(ledger_required - ledger_fields)
     if missing_ledger:
         report.add("FRONTIER_CONTRACT_CHILD_LEDGER", "blocking", "fail", "childLedger missing fields: " + ", ".join(missing_ledger))
@@ -1757,6 +1853,16 @@ def validate_frontier_contract_block(text: str, report: Report) -> None:
             "blocking",
             "fail",
             "branchReturnGate must only allow return when remaining gaps are needs_final_authority or explicitly_out.",
+        )
+    return_wake = contract.get("returnWake")
+    if isinstance(return_wake, dict) and return_wake.get("protocol") == RETURN_WAKE_PROTOCOL and return_wake.get("returnOwnerRole") == "primary":
+        report.add("FRONTIER_CONTRACT_RETURN_WAKE", "blocking", "pass", "Contract routes Frontier returns to Primary.")
+    else:
+        report.add(
+            "FRONTIER_CONTRACT_RETURN_WAKE",
+            "blocking",
+            "fail",
+            "Contract returnWake must route Frontier returns to Primary with the current protocol.",
         )
 
 
@@ -2729,6 +2835,117 @@ def validate_lane_return_gate_consistency(lane: dict[str, Any], return_gate: dic
         report.add("LANE_RETURN_GATE_CONSISTENCY", "warning", "fail", "open/prepared lanes should not carry terminal returnGateStatus.state.", loc)
 
 
+def validate_return_wake_contract(value: Any, report: Report, loc: str = "returnWake") -> bool:
+    if not isinstance(value, dict):
+        report.add("RETURN_WAKE_OBJECT", "blocking", "fail", "returnWake must be an object.", loc)
+        return False
+    required = [
+        "required",
+        "protocol",
+        "returnOwnerRole",
+        "returnOwnerThreadId",
+        "wakeChannel",
+        "wakeCapability",
+        "wakeOn",
+        "expectedWakePath",
+    ]
+    missing = [field for field in required if field not in value]
+    if missing:
+        report.add("RETURN_WAKE_FIELDS", "blocking", "fail", "returnWake missing fields: " + ", ".join(missing), loc)
+    else:
+        report.add("RETURN_WAKE_FIELDS", "blocking", "pass", "returnWake has required dispatch fields.", loc)
+    if value.get("required") is not True:
+        report.add("RETURN_WAKE_REQUIRED", "blocking", "fail", "returnWake.required must be true.", loc)
+    if value.get("protocol") != RETURN_WAKE_PROTOCOL:
+        report.add("RETURN_WAKE_PROTOCOL", "blocking", "fail", f"returnWake.protocol must be {RETURN_WAKE_PROTOCOL}.", loc)
+    else:
+        report.add("RETURN_WAKE_PROTOCOL", "blocking", "pass", "returnWake protocol is current.", loc)
+    if value.get("returnOwnerRole") not in {"primary", "frontier"}:
+        report.add("RETURN_WAKE_OWNER_ROLE", "blocking", "fail", "returnOwnerRole must be primary or frontier.", loc)
+    if value.get("wakeChannel") not in RETURN_WAKE_CHANNELS:
+        report.add("RETURN_WAKE_CHANNEL", "blocking", "fail", "wakeChannel must be direct_thread_message, coordination_pending, or manual_fallback.", loc)
+    if value.get("wakeCapability") not in {"available", "unavailable", "unknown"}:
+        report.add("RETURN_WAKE_CAPABILITY", "blocking", "fail", "wakeCapability must be available, unavailable, or unknown.", loc)
+    if value.get("wakeChannel") == "direct_thread_message" and value.get("wakeCapability") != "available":
+        report.add("RETURN_WAKE_DIRECT_CAPABILITY", "blocking", "fail", "direct_thread_message requires wakeCapability available.", loc)
+    if value.get("wakeChannel") in {"coordination_pending", "manual_fallback"} and value.get("wakeCapability") == "available":
+        report.add("RETURN_WAKE_FALLBACK_REASON", "warning", "fail", "fallback wake channels should not be used when direct wake capability is available.", loc)
+    wake_on = value.get("wakeOn")
+    if not isinstance(wake_on, list) or not wake_on:
+        report.add("RETURN_WAKE_ON", "blocking", "fail", "wakeOn must be a non-empty array.", loc)
+    else:
+        unknown = [item for item in wake_on if item not in RETURN_WAKE_CLASSES]
+        if unknown:
+            report.add("RETURN_WAKE_ON", "blocking", "fail", "wakeOn has unsupported return classes: " + ", ".join(map(str, unknown[:5])), loc)
+        else:
+            report.add("RETURN_WAKE_ON", "blocking", "pass", "wakeOn uses supported return classes.", loc)
+    return not any(check.check_id.startswith("RETURN_WAKE_") and check.status == "fail" and check.location == loc for check in report.checks)
+
+
+def maybe_int(value: Any, default: int) -> int:
+    if isinstance(value, int) and not isinstance(value, bool):
+        return value
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def validate_return_wake(data: dict[str, Any], report: Report) -> None:
+    if data.get("artifactType") != "return-wake":
+        report.add("ARTIFACT_TYPE", "blocking", "fail", "artifactType must be return-wake.")
+    else:
+        report.add("ARTIFACT_TYPE", "blocking", "pass", "artifactType is return-wake.")
+    if data.get("protocol") != RETURN_WAKE_PROTOCOL:
+        report.add("WAKE_PROTOCOL", "blocking", "fail", f"protocol must be {RETURN_WAKE_PROTOCOL}.")
+    else:
+        report.add("WAKE_PROTOCOL", "blocking", "pass", "protocol is current.")
+    if data.get("returnClass") not in RETURN_WAKE_CLASSES:
+        report.add("WAKE_RETURN_CLASS", "blocking", "fail", "returnClass is not supported.")
+    if data.get("wakeChannel") not in RETURN_WAKE_CHANNELS:
+        report.add("WAKE_CHANNEL", "blocking", "fail", "wakeChannel is not supported.")
+    if data.get("ownerActionNeeded") not in RETURN_WAKE_ACTIONS:
+        report.add("WAKE_OWNER_ACTION", "blocking", "fail", "ownerActionNeeded is not supported.")
+    return_owner = data.get("returnOwner")
+    if not isinstance(return_owner, dict):
+        report.add("WAKE_RETURN_OWNER", "blocking", "fail", "returnOwner must be an object.")
+    elif return_owner.get("role") not in {"primary", "frontier"}:
+        report.add("WAKE_RETURN_OWNER", "blocking", "fail", "returnOwner.role must be primary or frontier.")
+    else:
+        report.add("WAKE_RETURN_OWNER", "blocking", "pass", "returnOwner is explicit.")
+    artifact_refs = data.get("artifactRefs")
+    if not isinstance(artifact_refs, dict):
+        report.add("WAKE_ARTIFACT_REFS", "blocking", "fail", "artifactRefs must be an object.")
+    else:
+        ref_values = [str(value).strip() for value in artifact_refs.values() if value is not None]
+        if data.get("returnClass") not in {"blocked", "failed"} and not any(ref_values):
+            report.add("WAKE_ARTIFACT_REFS", "blocking", "fail", "non-blocker wake packets must cite at least one artifact path.")
+        else:
+            report.add("WAKE_ARTIFACT_REFS", "blocking", "pass", "wake packet cites artifact refs or is a blocker/failure.")
+        if data.get("role") == "frontier" and data.get("returnClass") in {"primary_ready", "early_return_risk"} and not str(artifact_refs.get("closurePath", "")).strip():
+            report.add("WAKE_FRONTIER_CLOSURE_REF", "blocking", "fail", "Frontier primary_ready or early_return_risk wakes must cite closurePath.")
+    validation = data.get("validation")
+    if not isinstance(validation, dict):
+        report.add("WAKE_VALIDATION", "blocking", "fail", "validation must be an object.")
+    elif validation.get("status") not in {"pass", "fail", "not_run", "not_applicable"}:
+        report.add("WAKE_VALIDATION", "blocking", "fail", "validation.status is invalid.")
+    else:
+        report.add("WAKE_VALIDATION", "blocking", "pass", "validation status is explicit.")
+    if data.get("wakeChannel") == "direct_thread_message" and data.get("wakeCapability") != "available":
+        report.add("WAKE_DIRECT_CAPABILITY", "blocking", "fail", "direct_thread_message requires wakeCapability available.")
+    safe_work_remaining = maybe_int(data.get("safeWorkRemainingCount"), -1)
+    if data.get("returnClass") == "primary_ready" and safe_work_remaining != 0:
+        report.add("WAKE_PRIMARY_READY_SAFE_WORK", "blocking", "fail", "primary_ready wake requires safeWorkRemainingCount 0.")
+    if data.get("returnClass") == "early_return_risk" and safe_work_remaining <= 0:
+        report.add("WAKE_EARLY_RETURN_SAFE_WORK", "blocking", "fail", "early_return_risk must name remaining safe work.")
+    if data.get("returnClass") in {"handoff_ready", "review_ready", "primary_ready"} and data.get("ownerActionNeeded") == "none":
+        report.add("WAKE_OWNER_ACTION_REQUIRED", "blocking", "fail", "ready wakes must ask the owner to consume, review, or judge the return.")
+    if not str(data.get("wakeId", "")).strip() or not str(data.get("dedupeKey", "")).strip():
+        report.add("WAKE_IDEMPOTENCY", "blocking", "fail", "wakeId and dedupeKey are required for idempotency.")
+    else:
+        report.add("WAKE_IDEMPOTENCY", "blocking", "pass", "wakeId and dedupeKey are present.")
+
+
 def validate_child_ledger(data: dict[str, Any], report: Report) -> None:
     if data.get("artifactType") != "child-ledger":
         report.add("ARTIFACT_TYPE", "blocking", "fail", "artifactType must be child-ledger.")
@@ -2755,6 +2972,7 @@ def validate_child_ledger(data: dict[str, Any], report: Report) -> None:
             "effects",
             "subagentIdOrToolStatus",
             "expectedHandoffPath",
+            "returnWake",
             "dispatchStatus",
             "handoffStatus",
             "consumeStatus",
@@ -2779,10 +2997,18 @@ def validate_child_ledger(data: dict[str, Any], report: Report) -> None:
             report.add("CHILD_CONSUME_STATUS", "blocking", "fail", "child consumeStatus is invalid.", loc)
         if child.get("dispatchStatus") in {"returned", "failed", "cancelled"} and not str(child.get("responseId", "")).strip():
             report.add("CHILD_RESPONSE_ID_LIFECYCLE", "blocking", "fail", "returned, failed, or cancelled child entries must include responseId.", loc)
+        if "returnWake" in child:
+            validate_return_wake_contract(child.get("returnWake"), report, f"{loc}.returnWake")
         if child.get("handoffStatus") == "present" and not str(child.get("handoffId", "")).strip():
             report.add("CHILD_HANDOFF_ID_LIFECYCLE", "blocking", "fail", "child entries with handoffStatus present must include handoffId.", loc)
         if child.get("handoffStatus") == "present" and child.get("consumeStatus") == "not_applicable":
             report.add("CHILD_CONSUME_LIFECYCLE", "blocking", "fail", "present handoffs must be consumed, rejected, or marked not_consumed.", loc)
+        if child.get("dispatchStatus") in {"returned", "failed"}:
+            wake_status = str(child.get("wakeStatus", "")).strip()
+            if wake_status not in {"sent", "pending", "failed"}:
+                report.add("CHILD_WAKE_STATUS", "blocking", "fail", "returned or failed child entries must record wakeStatus sent, pending, or failed.", loc)
+            if not str(child.get("wakeRef", "")).strip():
+                report.add("CHILD_WAKE_REF", "blocking", "fail", "returned or failed child entries must record wakeRef.", loc)
         if child.get("fallbackLauncherReason") and child.get("dispatchStatus") not in {"not_started", "startup_provided"}:
             report.add("CHILD_FALLBACK_REASON", "blocking", "fail", "fallbackLauncherReason should only be used before direct dispatch succeeds.", loc)
 
@@ -3449,6 +3675,8 @@ def validate_json_artifact(args: argparse.Namespace) -> Report:
         validate_handoff(data, report, task_card)
     elif args.ruleset == "review-report":
         validate_review_report(data, report)
+    elif args.ruleset == "return-wake":
+        validate_return_wake(data, report)
     elif args.ruleset == "status-report":
         validate_status_report(data, report)
     elif args.ruleset == "assumption-ledger":

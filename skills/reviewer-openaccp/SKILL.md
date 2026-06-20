@@ -37,3 +37,11 @@ The reviewer owns the final recommendation. Subagents do not edit files, expand 
 ## Evidence And Locator Rules
 
 Reviewer summaries should make downstream consume easy. Include locators for the target task card, handoff, diff or branch, validator output, relevant files or lines, and skipped checks. A reviewer recommendation is provisional review evidence until Primary or the human owner consumes it.
+
+## Return Wake
+
+Every reviewer prompt must include structured `returnWake` using `openaccp-return-wake-owner.v1` with `returnOwnerRole`, `returnOwnerThreadId`, `wakeChannel`, `wakeCapability`, `wakeOn`, and `expectedWakePath`.
+
+After writing the review report, review handoff, blocker, or machine summary, send a concise wake packet to the return owner named in `returnWake`. A reviewer spawned by Frontier wakes that Frontier by default. A reviewer spawned directly by Primary wakes Primary. Mirror wake Primary only when `primaryMirrorWake: true`.
+
+If direct wake is unavailable, write `.openaccp/coordination/wake-pending/<wakeId>.json` and print the same packet in the final response. The wake asks the owner to consume or inspect the review; it does not claim final acceptance.

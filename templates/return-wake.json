@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "openaccp-return-wake.v1",
+  "artifactType": "return-wake",
+  "protocol": "openaccp-return-wake-owner.v1",
+  "wakeId": "<project-id>:<source-thread-id>:<response-id-or-return-class>:<artifact-basename>",
+  "dedupeKey": "<stable-key-for-this-return>",
+  "projectId": "<project-or-workflow-id>",
+  "sourceThreadId": "<returning-thread-id-or-agent-ref>",
+  "role": "frontier",
+  "laneId": "<lane-id>",
+  "taskCardId": "<task-card-id-or-empty>",
+  "promptId": "<prompt-id>",
+  "responseId": "<response-id>",
+  "returnClass": "primary_ready",
+  "returnOwner": {
+    "role": "primary",
+    "threadId": "<owning-orchestrator-thread-id>",
+    "laneId": "primary"
+  },
+  "primaryMirrorWake": false,
+  "primaryThreadId": "<primary-thread-id-or-empty>",
+  "wakeChannel": "direct_thread_message",
+  "wakeCapability": "available",
+  "artifactRefs": {
+    "handoffPath": ".openaccp/handoffs/<handoff-id>.json",
+    "closurePath": ".openaccp/coordination/frontier-closures/<lane-id>.json",
+    "consumeResultPath": "",
+    "reportPath": "",
+    "blockerPath": "",
+    "wakePendingPath": ""
+  },
+  "branchReturnGate": "satisfied",
+  "safeWorkRemainingCount": 0,
+  "validation": {
+    "status": "pass",
+    "evidence": "Relevant artifact validators passed, or explain why validation was not applicable."
+  },
+  "ownerActionNeeded": "consume",
+  "summary": "A concise return summary for the owning orchestrator. This wake is not acceptance.",
+  "blockers": [],
+  "createdChildThreads": []
+}

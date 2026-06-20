@@ -19,6 +19,7 @@ The validator runs JSON Schema checks first, then applies OpenACCP semantic, cro
 - `handoff`: non-final worker or role claims, `Response ID`, authority, base and result commits, worktree, data risk, effects preset, changed file scope, task ID match, verification evidence, and forbidden claims.
   Handoff scope patterns use Python `fnmatch` semantics after path normalization. Backslashes are normalized to `/`, matching is case-sensitive on every platform, and `*` may match across `/`.
 - `review-report`: reviewer recommendation and review evidence shape.
+- `return-wake`: concise return notification packet using `openaccp-return-wake-owner.v1`. It records return owner, wake channel, wake capability, artifact refs, validation status, idempotency key, return class, and owner action. A wake packet asks the owner to consume or inspect evidence; it is not acceptance.
 - `consume-result`: provisional or final consume decision, target handoffs/reviews, accepted/rejected claims, evidence status, authority limits, and next actions. When Primary final-accepts a Frontier return, cite the closure `closureId`, `laneId`, or path in `basisRefs`, then use `--frontier-closure` to cross-check that supplied closure proof is ready or closed.
 - `machine-summary`: compact locator summary for worker, reviewer, discovery, Frontier, or Primary output with Prompt ID, Response ID, authority, effects, basisRefs, locators, claims, and next actions.
 - `status-report`: current state, unverified claims, blockers, next actions, authority limits, and `responseId`. `reportId` is deprecated.
@@ -33,7 +34,7 @@ The validator runs JSON Schema checks first, then applies OpenACCP semantic, cro
 - `current-manifest`: current fact anchor that records preferred language, facts input, current source pack, invalid sources, deprecated sources, sequence registry, lane registry, execution boundary, source status registry, card registry, active lanes, superseded prompts, cancelled prompts, and latest consume refs.
 - `sequence-registry`: registry of prompt records, responses, handoffs, consumes, active cards, active lanes, lifecycle states, and current/latest pointers.
 - `lane-registry`: Primary/Frontier lane registry with project complexity, Frontier dispatch mode, dispatch channel, lane-count reason, assigned CARDs, authority, execution boundary ref, child ledger ref, consume refs, return-gate status, and per-lane `b2DispatchGate`.
-- `child-ledger`: Frontier child lifecycle registry with promptId, taskId, authority, effects, dispatch status, handoff status, consume status, and remaining risk. Response ID and handoffId are lifecycle fields.
+- `child-ledger`: Frontier child lifecycle registry with promptId, taskId, authority, effects, returnWake, dispatch status, handoff status, wake status, consume status, and remaining risk. Response ID, handoffId, wakeStatus, and wakeRef are lifecycle fields when a child returns or fails.
 - `source-status-registry`: current, reference, deprecated, invalid, and unknown source status with reasons and locators.
 - `decision-registry`: owner questions, Primary decisions, waivers, out-of-scope decisions, blockers, safe defaults, and required authority.
 - `frontier-closure`: Frontier closure or return-gate proof. It fails validation for closed or blocked states while B0/B1/B2-safe work remains, while child work has not returned, while present handoffs are not consumed/rejected, while stage progress is mislabeled as a Primary-ready packet, or while a sibling lane registry still says the lane is not ready for Primary.
@@ -95,6 +96,7 @@ Frontier lifecycle artifacts can be checked before a lane reports blocked, close
 ```bash
 python tools/openaccp_validate.py --artifact .openaccp/coordination/child-ledgers/frontier-01.json --ruleset child-ledger --strict
 python tools/openaccp_validate.py --artifact .openaccp/coordination/frontier-closures/frontier-01.json --ruleset frontier-closure --strict
+python tools/openaccp_validate.py --artifact .openaccp/coordination/wake-pending/<wake-id>.json --ruleset return-wake --strict
 ```
 
 Consume results and compact machine summaries can be checked after handoff consume, worker output, reviewer output, or discovery output:

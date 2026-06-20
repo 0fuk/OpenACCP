@@ -78,7 +78,19 @@ Frontier prompt records should carry this machine-readable contract block, updat
     "requiredFields": ["base", "worktree", "branch", "allowedFiles", "verification", "handoffPath", "dataRisk", "resourceUse", "noDispatchReason"]
   },
   "childLedger": {
-    "requiredFields": ["promptId", "taskId", "role", "authority", "effects", "subagentIdOrToolStatus", "expectedHandoffPath", "dispatchStatus", "handoffStatus", "consumeStatus", "remainingRisk"]
+    "requiredFields": ["promptId", "taskId", "role", "authority", "effects", "subagentIdOrToolStatus", "expectedHandoffPath", "returnWake", "dispatchStatus", "handoffStatus", "wakeStatus", "wakeRef", "consumeStatus", "remainingRisk"]
+  },
+  "returnWake": {
+    "required": true,
+    "protocol": "openaccp-return-wake-owner.v1",
+    "returnOwnerRole": "primary",
+    "returnOwnerThreadId": "<primary-thread-id-or-primary-thread-ref>",
+    "primaryThreadId": "<primary-thread-id-or-primary-thread-ref>",
+    "primaryMirrorWake": false,
+    "wakeChannel": "<direct_thread_message-or-coordination_pending-or-manual_fallback>",
+    "wakeCapability": "<available-unavailable-or-unknown>",
+    "wakeOn": ["primary_ready", "early_return_risk", "blocked", "failed"],
+    "expectedWakePath": ".openaccp/coordination/wake-pending/<wake-id>.json"
   },
   "subagentFirst": {
     "enabled": true,
@@ -153,8 +165,12 @@ Default order:
 1. Continue simple B0/B1 orchestration directly in the current Frontier thread.
 2. When a bounded worker, reviewer, discovery, validation, or task-card-only task can reduce lane risk, dispatch it through available subagent or delegation tools from the current Frontier thread.
 3. Write full child prompt records to disk when useful for audit, reproducibility, or a tool-backed child handoff. The on-disk prompt record is evidence and control surface; it is not a reason to ask the human to open another thread.
-4. Maintain a child ledger with promptId, taskId, role, authority, effects, subagent id or tool status, expected handoff path, dispatchStatus, handoffStatus, consumeStatus, and remaining risk. Add responseId when the child returns and handoffId when the handoff is present.
+4. Maintain a child ledger with promptId, taskId, role, authority, effects, subagent id or tool status, expected handoff path, returnWake, dispatchStatus, handoffStatus, wakeStatus, wakeRef, consumeStatus, and remaining risk. Add responseId when the child returns and handoffId when the handoff is present.
 5. Consume child handoffs before claiming lane progress, then reclassify the remaining gaps.
+
+Every child dispatch must include structured `returnWake` using `openaccp-return-wake-owner.v1` with `returnOwnerRole`, `returnOwnerThreadId`, `wakeChannel`, `wakeCapability`, `wakeOn`, and `expectedWakePath`. Child work spawned by this Frontier wakes this Frontier as the return owner by default. Mirror wake Primary only when the lane charter explicitly sets `primaryMirrorWake: true`.
+
+When this Frontier itself reaches a real Primary return state, write the closure or blocker artifact first, run relevant validation, then send a concise wake packet to Primary. Use `returnClass: "primary_ready"` only when `branchReturnGate` is satisfied and `safeWorkRemainingCount` is 0. Use `returnClass: "early_return_risk"` when the return gate is not satisfied but a return attempt or blocker needs Primary judgment. The wake packet is not acceptance.
 
 Short downstream chat launchers are fallback only. Use them only when direct subagent dispatch is unavailable, unsafe in the current environment, explicitly requested by Primary or the human owner, or when the child must run in a separately user-managed session. When returning a fallback launcher, write it to disk, print it in chat as a fenced `prompt` block, label it `Fallback launcher`, state why direct dispatch was unavailable or unsafe, and include the exact recommended next step.
 
@@ -162,7 +178,7 @@ Do not return to Primary or the human merely because a child prompt package was 
 
 ## Child Handoff Consume
 
-If Frontier dispatched a child subagent, Frontier must consume the child handoff before claiming lane progress. A child handoff being present is not enough.
+If Frontier dispatched a child subagent, Frontier must consume the child handoff before claiming lane progress. A child handoff being present is not enough. A child return wake is an action request to Frontier, not proof that the child work is accepted.
 
 A bundle is complete only when every child dispatch is returned, failed, or cancelled and each present handoff has been consumed or explicitly rejected.
 

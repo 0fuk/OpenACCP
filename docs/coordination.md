@@ -61,6 +61,23 @@ Use subagents for bounded work:
 
 Each subagent needs a role, authority boundary, input facts, allowed scope, forbidden scope, stop conditions, and expected output. The parent orchestrator must consume the result before claiming progress.
 
+## Return Wake Owner Protocol
+
+OpenACCP uses return-time wakeups so parent orchestrators do not depend on humans noticing that a child thread has returned.
+
+The rule is owner-based:
+
+- A Frontier return wakes Primary.
+- Any child spawned directly by Primary wakes Primary unless `returnWake` names a narrower owner. This includes Frontiers, workers, reviewers, discovery, validation, and task-card-only children.
+- A worker, reviewer, discovery, validation, or task-card-only child spawned by a Frontier wakes that Frontier.
+- A Frontier child mirror wakes Primary only when the lane charter explicitly sets `primaryMirrorWake: true`.
+
+Every delegated prompt record must include structured `returnWake` with protocol `openaccp-return-wake-owner.v1`, `returnOwnerRole`, `returnOwnerThreadId`, `wakeChannel`, `wakeCapability`, `wakeOn`, and `expectedWakePath`. The returning thread writes the expected handoff, review report, closure, blocker, or report artifact first. It then sends a concise wake packet to the return owner. The wake packet is an action request. It is not acceptance.
+
+When direct thread messaging is available, the return uses `wakeChannel: direct_thread_message`. When direct wake is unavailable, the returning thread writes `.openaccp/coordination/wake-pending/<wakeId>.json` and prints the same packet in its final response. This fallback keeps the pending consume visible without making heartbeat polling the normal path.
+
+The return owner must read the named artifact, validate it when a ruleset exists, and consume or classify the return. The owner then dispatches the next safe B0/B1/B2 action, records an amend/reject/split-follow-up decision, or escalates only true B3/human decisions.
+
 Primary creates or refreshes CARDs before Frontier dispatch. A Primary-launched Frontier usually receives B2 lane-local authority so it can actively run B0 discovery, B1 packaging, B2 scoped worker or reviewer dispatch, child handoff consume, and closure proof inside the assigned lane.
 
 Frontier keeps worker, reviewer, discovery, validation, and task-card-only child work inside its current lane thread when direct subagent or delegation tools are available and the work is B0/B1/B2-safe. Full child prompt records may still be written to disk for audit and reproducibility, while the Frontier dispatches and consumes that child work itself. Short child launchers are fallback artifacts only; when used, they state why direct dispatch was unavailable or unsafe and what the human must do next.

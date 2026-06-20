@@ -9,6 +9,7 @@ OpenACCP is built around artifacts that separate facts, scope, execution, review
 - `assumptions ledger`: visible assumptions, evidence, risk, whether work can proceed, and confirmation needs.
 - `task card`: smallest safe executable unit with objective, allowed scope, forbidden scope, acceptance, verification, stop conditions, and handoff.
 - `handoff`: structured evidence from a worker, reviewer, discovery thread, or lane orchestrator.
+- `return wake`: concise notification that points the owning orchestrator to a returned handoff, review, closure, blocker, or report. It wakes the owner to consume or inspect; it does not accept the work.
 - `review report`: read-only assessment of scope, correctness, verification, side effects, and claims.
 - `authority charter`: explicit role authority, allowed actions, forbidden actions, delegation rules, and final authority reserve.
 - `status report`: human-readable project or lane status with basis, gaps, next action, and authority limits.

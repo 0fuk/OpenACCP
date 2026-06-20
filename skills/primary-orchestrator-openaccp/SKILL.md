@@ -66,7 +66,20 @@ Dispatch a subagent when a bounded independent task can reduce risk or unblock t
 - Frontier subagent for a lane that needs rolling backlog management,
 - validation subagent or validator command for artifact structure.
 
-Each dispatch must name role, scope, allowed effects, forbidden effects, inputs, expected output, and handoff or report path. Subagent conclusions are evidence; Primary still owns final consume.
+Each dispatch must name role, scope, allowed effects, forbidden effects, inputs, expected output, handoff or report path, and `returnWake`. Subagent conclusions are evidence; Primary still owns final consume.
+
+Every delegated Frontier, worker, reviewer, discovery, validation, or task-card-only prompt record must include structured `returnWake` using `openaccp-return-wake-owner.v1` with `returnOwnerRole`, `returnOwnerThreadId`, `wakeChannel`, `wakeCapability`, `wakeOn`, and `expectedWakePath`.
+
+Return ownership:
+
+- Frontier returns wake Primary.
+- Any child spawned directly by Primary wakes Primary unless `returnWake` names a narrower owner. This includes Frontiers, workers, reviewers, discovery, validation, and task-card-only children.
+- Frontier-spawned children wake their owning Frontier by default.
+- A Frontier child mirror wakes Primary only when the lane charter explicitly sets `primaryMirrorWake: true`.
+
+The returning thread writes its artifact first, runs relevant validation when available, then sends a concise wake packet to the return owner. If direct thread messaging is unavailable, the returning thread writes `.openaccp/coordination/wake-pending/<wakeId>.json` and prints the same packet in its final response. A wake is an action request, not acceptance.
+
+When Primary receives a return wake, it must read the named artifact, validate it when the ruleset exists, consume or classify the return, and dispatch the next safe B0/B1/B2 action or record the exact B3/human decision needed. Do not answer only "received".
 
 ## Startup Flow
 
@@ -147,6 +160,7 @@ Primary should also maintain machine-readable state:
 - `decision-registry`: owner questions, Primary decisions, waivers, out-of-scope decisions, blockers, and safe defaults.
 - `consume-result`: final or provisional consume decisions.
 - `machine-summary`: compact locator summary when downstream agents need stable references.
+- `return-wake`: concise return notification packet that wakes the owning orchestrator after a child writes handoff, review, closure, blocker, or report evidence.
 
 For final accepted Frontier returns, cite the closure in `basisRefs` and validate the consume result with:
 

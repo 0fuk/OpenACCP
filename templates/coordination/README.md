@@ -10,10 +10,11 @@ Recommended order:
 4. `authority-charter.json`: role authority and scope boundaries.
 5. `lane-registry.json`: active Primary and Frontier lanes, assigned CARDs, execution boundary reference, child ledger reference, consume refs, return-gate state, and per-lane `b2DispatchGate`.
 6. `frontier prompt record`: full on-disk lane prompt with `openaccp-frontier-orchestration-contract.v1`.
-7. `child-ledgers/<lane-id>.json`: worker/reviewer/discovery/validation child lifecycle, response and handoff status, consume status, and remaining risk.
+7. `child-ledgers/<lane-id>.json`: worker/reviewer/discovery/validation child lifecycle, response and handoff status, returnWake, wake status, consume status, and remaining risk.
 8. `handoff.json` and `review-report.json`: provisional evidence from workers and reviewers.
-9. `consume-result.json`: Primary or Frontier consume decision for handoff evidence. Primary final consume of a Frontier return should cite the closure `closureId`, `laneId`, or path in `basisRefs` and validate this file with that `frontier-closures/<lane-id>.json`.
-10. `frontier-closures/<lane-id>.json`: proof that a Frontier lane can continue, close, or return to Primary. Open lanes use `laneProgressPacketRef`; `primaryReadyPacketRef` is reserved for true return-gate closure.
-11. `formal-report.md`: short owner-facing report with evidence notes and a recommended next step.
+9. `wake-pending/<wake-id>.json`: return wake fallback packet when direct owner wake is unavailable.
+10. `consume-result.json`: Primary or Frontier consume decision for handoff evidence. Primary final consume of a Frontier return should cite the closure `closureId`, `laneId`, or path in `basisRefs` and validate this file with that `frontier-closures/<lane-id>.json`.
+11. `frontier-closures/<lane-id>.json`: proof that a Frontier lane can continue, close, or return to Primary. Open lanes use `laneProgressPacketRef`; `primaryReadyPacketRef` is reserved for true return-gate closure.
+12. `formal-report.md`: short owner-facing report with evidence notes and a recommended next step.
 
 Do not use a chat formal report as the only coordination state. When a lane is active, keep the machine-readable registries current enough that another agent can understand what is current, what is provisional, what is invalid, and what still needs final authority.
