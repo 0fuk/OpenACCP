@@ -423,4 +423,4 @@ python -m twine check dist/*
 
 Then install the built wheel or sdist in a clean environment and run a small validator smoke test. The validator checks structure, common leakage patterns, and common overclaims. Pair it with a dedicated secret scanner and human review before a formal release.
 
-Author: Ocean Liu / Liu HanYang
+
