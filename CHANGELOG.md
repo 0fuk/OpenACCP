@@ -8,6 +8,7 @@
 
 ### Added
 
+- `field/`: the author's production-evolved rule set (2026-10) — 17 Chinese skills (`5gate` five-gate release paradigm, `verify-3way`, `senior-review`, `keep-pushing`, `moniter-on`, `compact-s`, `compass`, `coordination-worktree`, `orch-plan`, `reboot`, `db-cutover`, `gh-backup`, `formal-report`, `human-explain`, `cn-prose`, `need-research`, `feature-dev`) plus the construction rules file, with a mapping from the original OpenACCP role model in `field/README.md`.
 - `consume-result` and `machine-summary` schemas, templates, examples, and validator rulesets.
 - Machine-readable Frontier contract block `openaccp-frontier-orchestration-contract.v1` for B2 lane closure, subagent-first dispatch, child ledger, and branch return gates.
 - Prompt launcher cross-check support with `--prompt-record` and `--expect-prompt-id`.

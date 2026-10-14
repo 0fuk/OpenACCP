@@ -269,6 +269,10 @@ OpenACCP skills are installable agent workflow instructions. Each skill maps to 
 | `human-explain-openaccp` | Explain orchestration status in plain language. | Translates Prompt IDs, lanes, handoffs, and B0/B1/B2/B3 into delivery meaning. |
 | `validator-openaccp` | Validate artifacts before dispatch, consume, reports, launchers, or release packaging. | Checks structure, encoding, source status, authority boundary, overclaiming, and public package hygiene. |
 
+### Field-evolved rule set
+
+`field/` holds the author's current production rules (2026-10), evolved from the role model above while shipping a real multi-agent project: a five-gate release paradigm (`5gate`), three-way verification, independent senior review, unattended pushing with wake fallbacks, compact-safe checkpoints, and construction rules. See [`field/README.md`](field/README.md) for the mapping and install notes. Written in Chinese.
+
 ## Language Contract
 
 If the user chooses a preferred language, all Primary, Frontier, worker, reviewer, discovery, and formal report replies use that language as the main language.
